@@ -62,9 +62,10 @@ This phase wires everything together with GitHub Actions workflows that automate
     - Prints a summary of what was set up and next steps
   - ✅ Completed: Created `scripts/setup.ts` with exported `setup()` function and CLI entry point. Creates config from defaults, adds banner markers to README (or creates README), ensures `data/` and `data/archive/` dirs, prints secrets checklist and next steps summary. Tests: 259/259 pass (11 new in `tests/setup.test.ts`).
 
-- [ ] Write tests for the Polar.sh integration module:
+- [x] Write tests for the Polar.sh integration module:
   - Create `scripts/__tests__/polar-integration.test.ts`:
     - Test `createCheckoutSession()` with mocked fetch responses
     - Test `getPaymentStatus()` with paid and unpaid states
     - Test graceful fallback when POLAR_ACCESS_TOKEN is not set
   - Run `bun test` and fix any failures
+  - ✅ Completed: Tests already existed at `scripts/__tests__/polar-integration.test.ts` with 12 tests covering all required scenarios: createCheckoutSession (correct params, unconfigured throw, API error), getPaymentStatus (succeeded/open/expired states), createProduct, graceful fallback with no token, non-JSON error handling, and authorization headers. Full suite: 259/259 pass.
