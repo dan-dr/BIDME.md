@@ -39,18 +39,20 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
   - Include proper error handling with typed error responses
   > Completed: GitHubAPI class created with all 6 methods using native fetch, Bearer token auth from GITHUB_TOKEN env var or constructor param, typed GitHubAPIError with status/message/documentation_url. updateReadme handles both create and update via Contents API sha. 13 new tests passing, 37 total across project.
 
-- [ ] Build the badge generator utility:
+- [x] Build the badge generator utility:
   - Create `scripts/utils/badge-generator.ts` with functions:
     - `generateViewsBadge(count: number): string` — returns shields.io markdown for view count
     - `generateCountriesBadge(count: number): string` — returns shields.io markdown for country count
     - `generateCTRBadge(rate: number): string` — returns shields.io markdown for click-through rate
     - `generateBannerSection(bannerUrl: string, destUrl: string, badges: string[]): string` — returns full markdown banner block with badges underneath
   - Format large numbers with K/M suffixes (e.g., 1200 → "1.2k")
+  > Completed: badge-generator.ts created with formatNumber (K/M suffixes), generateViewsBadge (blue), generateCountriesBadge (green), generateCTRBadge (orange), generateBannerSection (linked banner + badge row). 14 new tests passing, 51 total across project. No git remote configured — push skipped.
 
-- [ ] Create the GitHub Pages landing page and redirect tracker:
+- [x] Create the GitHub Pages landing page and redirect tracker:
   - Create `pages/index.html` — a clean landing page for BidMe explaining what it is, how it works (3-step flow: Install → Bids come in → Get paid), and a "Get Started" CTA linking to the GitHub repo. Use inline CSS with a modern dark theme, monospace headings, and green accent color (#22c55e)
   - Create `pages/redirect.html` — the click-tracking redirect page that reads `id` and `dest` query parameters, appends `ref` parameter to destination URL, logs the click timestamp to `localStorage` (placeholder for future analytics), and redirects the user. Include a fallback "Click here if not redirected" link
   - Create `pages/assets/css/style.css` with shared styles for dashboard and admin pages (CSS custom properties for theming, responsive grid, card components)
+  > Completed: pages/index.html created with dark theme (#0a0a0a bg), monospace headings, green accent (#22c55e), 3-step flow (Install/Bids Come In/Get Paid), GitHub CTA. pages/redirect.html reads id/dest query params, appends ref=bidme, logs clicks to localStorage with timestamps, shows fallback link after 2s, handles missing/invalid dest gracefully. pages/assets/css/style.css provides CSS custom properties, responsive grid, card/badge/button/table/input components, layout utilities. 25 new tests passing, 76 total across project.
 
 - [ ] Create a demo script that exercises the core modules end-to-end:
   - Create `scripts/demo.ts` that:

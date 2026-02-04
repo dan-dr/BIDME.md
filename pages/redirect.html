@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BidMe — Redirecting...</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0a;
+      --text:#e5e5e5;
+      --text-muted:#888;
+      --accent:#22c55e;
+      --font-mono:'SF Mono','Fira Code','JetBrains Mono',Consolas,monospace;
+      --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    }
+    body{
+      font-family:var(--font-sans);
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      text-align:center;
+      padding:1.5rem;
+    }
+    .container{max-width:400px}
+    h1{font-family:var(--font-mono);font-size:1.25rem;margin-bottom:.75rem}
+    p{color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem}
+    .spinner{
+      width:32px;height:32px;
+      border:3px solid #222;
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+      margin:0 auto 1.5rem;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    a{color:var(--accent);text-decoration:none;font-family:var(--font-mono);font-size:.85rem}
+    a:hover{text-decoration:underline}
+    .error{color:#ef4444}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner" id="spinner"></div>
+    <h1>Redirecting...</h1>
+    <p id="message">You are being redirected to the advertiser's page.</p>
+    <a id="fallback" href="#" style="display:none">Click here if not redirected</a>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get("id");
+      var dest = params.get("dest");
+
+      if (!dest) {
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("message").textContent = "No destination specified.";
+        document.getElementById("message").classList.add("error");
+        return;
+      }
+
+      try {
+        var url = new URL(dest);
+        url.searchParams.set("ref", "bidme");
+
+        var finalUrl = url.toString();
+
+        // Log click to localStorage (placeholder for future analytics)
+        try {
+          var clicks = JSON.parse(localStorage.getItem("bidme_clicks") || "[]");
+          clicks.push({
+            id: id,
+            dest: finalUrl,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem("bidme_clicks", JSON.stringify(clicks));
+        } catch (e) {
+          // localStorage unavailable — continue with redirect
+        }
+
+        // Show fallback link after short delay
+        var fallbackEl = document.getElementById("fallback");
+        fallbackEl.href = finalUrl;
+        setTimeout(function () {
+          fallbackEl.style.display = "inline";
+        }, 2000);
+
+        // Redirect
+        window.location.href = finalUrl;
+      } catch (e) {
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("message").textContent = "Invalid destination URL.";
+        document.getElementById("message").classList.add("error");
+      }
+    })();
+  </script>
+</body>
+</html>
