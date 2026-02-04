@@ -19,7 +19,7 @@ This phase wires everything together with GitHub Actions workflows that automate
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-opener.ts`
     - Pass `GITHUB_TOKEN` as environment variable
 
-- [ ] Create the bid processing workflow:
+- [x] Create the bid processing workflow:
   - Create `.github/workflows/process-bid.yml`:
     - Trigger: `issue_comment` with types `[created]`, filtered to issues with the `bidme` label (check `github.event.issue.labels`)
     - Condition: only run if comment body contains the bid YAML frontmatter markers (`---`), and the issue is NOT a pull request (check `!github.event.issue.pull_request`)
