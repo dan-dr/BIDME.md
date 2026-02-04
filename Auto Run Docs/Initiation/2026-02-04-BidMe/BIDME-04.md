@@ -23,13 +23,14 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - `getClickThroughRate(views, clicks)` — calculates CTR as percentage
     - `aggregateByPeriod(data, periodId)` — filters analytics for a specific bidding period
 
-- [ ] Create the analytics GitHub Action workflow:
+- [x] Create the analytics GitHub Action workflow:
   - Create `.github/workflows/update-analytics.yml`:
     - Trigger: `schedule` with cron `0 */6 * * *` (every 6 hours) plus `workflow_dispatch`
     - Permissions: `contents: write`
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/analytics-updater.ts`
     - Commit and push any changes to `data/analytics.json` and README badge updates
     - Pass `GITHUB_TOKEN` for Traffic API access
+  - ✅ Completed: Created workflow following existing project conventions (matches close-bidding.yml pattern). Commits both `data/analytics.json` and `README.md` badge updates.
 
 - [ ] Enhance the redirect page with proper click tracking:
   - Update `pages/redirect.html` to:
