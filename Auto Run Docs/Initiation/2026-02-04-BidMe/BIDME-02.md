@@ -16,7 +16,7 @@ This phase builds the heart of BidMe — the TypeScript scripts that power the b
     - Creates a `data/current-period.json` file tracking: period ID, start/end dates, issue number, status "open", bids array
   - The script should be runnable via `bun run scripts/bid-opener.ts` (will fail without GITHUB_TOKEN but should show intent clearly via console output)
 
-- [ ] Create the bid processor script that handles incoming bid comments:
+- [x] Create the bid processor script that handles incoming bid comments: *(Completed: scripts/bid-processor.ts with comment fetching, bid parsing, validation, increment checking, period data update, issue body update with bid table, and confirmation replies. Added getComment() and getIssue() to GitHubAPI. Tests in tests/bid-processor.test.ts — 13 tests passing including generateBidTable, updateIssueBodyWithBids, processBid flow, CLI argument handling, and new API methods.)*
   - Create `scripts/bid-processor.ts` that:
     - Accepts issue number and comment ID as CLI arguments (these come from the GitHub Action event payload)
     - Fetches the comment body using `GitHubAPI.getComments()`

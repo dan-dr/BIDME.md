@@ -16,12 +16,13 @@ export class GitHubAPIError extends Error {
   }
 }
 
-interface PRData {
+interface IssueData {
   number: number;
   html_url: string;
   title: string;
   body: string;
   state: string;
+  node_id: string;
 }
 
 interface CommentData {
@@ -100,13 +101,59 @@ export class GitHubAPI {
     return (await response.json()) as T;
   }
 
-  async createPR(
+  async createIssue(
     title: string,
     body: string,
-    head: string,
-    base: string,
-  ): Promise<PRData> {
-    return this.request<PRData>("POST", "/pulls", { title, body, head, base });
+    labels?: string[],
+  ): Promise<IssueData> {
+    return this.request<IssueData>("POST", "/issues", {
+      title,
+      body,
+      labels,
+    });
+  }
+
+  async getIssue(issueNumber: number): Promise<IssueData> {
+    return this.request<IssueData>("GET", `/issues/${issueNumber}`);
+  }
+
+  async updateIssueBody(
+    issueNumber: number,
+    body: string,
+  ): Promise<IssueData> {
+    return this.request<IssueData>("PATCH", `/issues/${issueNumber}`, {
+      body,
+    });
+  }
+
+  async closeIssue(issueNumber: number): Promise<IssueData> {
+    return this.request<IssueData>("PATCH", `/issues/${issueNumber}`, {
+      state: "closed",
+    });
+  }
+
+  async pinIssue(issueNodeId: string): Promise<void> {
+    const query = `mutation { pinIssue(input: { issueId: "${issueNodeId}" }) { issue { id } } }`;
+    await fetch(`${this.baseUrl.replace("/repos/" + this.owner + "/" + this.repo, "")}/graphql`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    });
+  }
+
+  async unpinIssue(issueNodeId: string): Promise<void> {
+    const query = `mutation { unpinIssue(input: { issueId: "${issueNodeId}" }) { issue { id } } }`;
+    await fetch(`${this.baseUrl.replace("/repos/" + this.owner + "/" + this.repo, "")}/graphql`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    });
   }
 
   async addComment(issueNumber: number, body: string): Promise<CommentData> {
@@ -117,8 +164,11 @@ export class GitHubAPI {
     );
   }
 
-  async updatePRBody(prNumber: number, body: string): Promise<PRData> {
-    return this.request<PRData>("PATCH", `/pulls/${prNumber}`, { body });
+  async getComment(commentId: number): Promise<CommentData> {
+    return this.request<CommentData>(
+      "GET",
+      `/issues/comments/${commentId}`,
+    );
   }
 
   async getComments(issueNumber: number): Promise<CommentData[]> {
