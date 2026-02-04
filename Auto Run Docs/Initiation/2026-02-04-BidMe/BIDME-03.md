@@ -1,10 +1,10 @@
 # Phase 03: GitHub Actions Workflows & Payment Integration
 
-This phase wires everything together with GitHub Actions workflows that automate the full bidding lifecycle, and integrates Polar.sh for payment processing. After this phase, BidMe is a fully deployable GitHub Action that any repo owner can install — bids open on schedule, get processed automatically, owners approve via emoji, winners get their banner placed, and payments flow through Polar.sh.
+This phase wires everything together with GitHub Actions workflows that automate the full bidding lifecycle, and integrates Polar.sh for payment processing. After this phase, BidMe is a fully deployable GitHub Action that any repo owner can install — bids open on schedule as pinned issues, get processed automatically, owners approve via emoji, winners get their banner placed, and payments flow through Polar.sh.
 
 ## Tasks
 
-- [ ] Create the Polar.sh payment integration utility:
+- [x] Create the Polar.sh payment integration utility:
   - Create `scripts/utils/polar-integration.ts` with a `PolarAPI` class:
     - `createCheckoutSession(amount, bidderEmail, periodId)` — creates a Polar.sh checkout link for the winning bid amount. Uses the Polar.sh API (`https://api.polar.sh/v1/`) with `POLAR_ACCESS_TOKEN` from environment
     - `getPaymentStatus(checkoutId)` — checks if a checkout session has been paid
@@ -15,30 +15,29 @@ This phase wires everything together with GitHub Actions workflows that automate
 - [ ] Create the scheduled bid opening workflow:
   - Create `.github/workflows/schedule-bidding.yml`:
     - Trigger: `schedule` with cron expression (default monthly: `0 0 1 * *`), plus `workflow_dispatch` for manual trigger
-    - Permissions: `contents: write`, `pull-requests: write`
+    - Permissions: `contents: write`, `issues: write`
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-opener.ts`
     - Pass `GITHUB_TOKEN` as environment variable
 
 - [ ] Create the bid processing workflow:
   - Create `.github/workflows/process-bid.yml`:
-    - Trigger: `issue_comment` with types `[created]`, filtered to PRs only (check `github.event.issue.pull_request`)
-    - Condition: only run if comment body contains the bid YAML frontmatter markers (`---`)
-    - Permissions: `contents: write`, `pull-requests: write`, `issues: write`
-    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-processor.ts -- --pr=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
+    - Trigger: `issue_comment` with types `[created]`, filtered to issues with the `bidme` label (check `github.event.issue.labels`)
+    - Condition: only run if comment body contains the bid YAML frontmatter markers (`---`), and the issue is NOT a pull request (check `!github.event.issue.pull_request`)
+    - Permissions: `contents: write`, `issues: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-processor.ts -- --issue=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
     - Pass `GITHUB_TOKEN`
 
 - [ ] Create the bid approval workflow:
   - Create `.github/workflows/process-approval.yml`:
-    - Trigger: `issue_comment` with types `[edited]` (reaction events), plus `pull_request_review` for alternative approval
-    - Also trigger on: workflow dispatch with PR number and comment ID inputs for manual processing
-    - Condition: only process if the reactor is the repository owner
-    - Permissions: `contents: write`, `pull-requests: write`
-    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/approval-processor.ts -- --pr=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
+    - Trigger: `issue_comment` with types `[edited]` (reaction events), plus workflow dispatch with issue number and comment ID inputs for manual processing
+    - Condition: only process if the reactor is the repository owner, and the issue has the `bidme` label
+    - Permissions: `contents: write`, `issues: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/approval-processor.ts -- --issue=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
 
 - [ ] Create the bid closing workflow:
   - Create `.github/workflows/close-bidding.yml`:
     - Trigger: `schedule` (runs daily, checks if current period has ended), plus `workflow_dispatch` for manual close
-    - Permissions: `contents: write`, `pull-requests: write`
+    - Permissions: `contents: write`, `issues: write`
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-closer.ts`
     - Pass both `GITHUB_TOKEN` and `POLAR_ACCESS_TOKEN`
     - After bid-closer runs, commit any data file changes and push
@@ -47,7 +46,7 @@ This phase wires everything together with GitHub Actions workflows that automate
   - Modify `scripts/bid-closer.ts` to add payment processing after selecting winner:
     - Call `PolarAPI.createProduct()` to create a product for this bidding period
     - Call `PolarAPI.createCheckoutSession()` with the winning bid amount and bidder email
-    - Include the Polar.sh checkout link in the winner announcement comment on the PR
+    - Include the Polar.sh checkout link in the winner announcement comment on the issue
     - Store the checkout URL and payment status in the archived period data
     - If Polar.sh is not configured (no token), skip payment and note it in the closing comment
 
@@ -58,7 +57,6 @@ This phase wires everything together with GitHub Actions workflows that automate
     - Validates that required GitHub secrets are mentioned (prints checklist of: `POLAR_ACCESS_TOKEN` — optional but recommended)
     - Creates the `data/` directory if it doesn't exist
     - Prints a summary of what was set up and next steps
-  - This enables the "copy-paste installation" goal from the plan
 
 - [ ] Write tests for the Polar.sh integration module:
   - Create `scripts/__tests__/polar-integration.test.ts`:
