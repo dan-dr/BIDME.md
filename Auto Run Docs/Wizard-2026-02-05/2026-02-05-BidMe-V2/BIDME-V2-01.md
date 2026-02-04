@@ -21,7 +21,7 @@ This phase transforms BidMe from a private GitHub-Actions-only tool into a publi
   - The `--defaults` flag skips interactive prompts and uses all defaults (for CI/testing)
   - Include shebang `#!/usr/bin/env node` at top of cli.ts for npx/bunx compatibility
 
-- [ ] Build the interactive setup wizard using @clack/prompts:
+- [x] Build the interactive setup wizard using @clack/prompts: *(Completed: src/commands/init.ts with clack.intro/select/text/multiselect/spinner/outro; WizardConfig interface & DEFAULT_WIZARD_CONFIG; collectConfig() with all 10 prompts; runInit() with --defaults bypass; cancel handling on every prompt; dynamic scaffold import for forward-compat; 470 tests pass, typecheck clean)*
   - `src/commands/init.ts` — the init command implementation:
     - Use `clack.intro()` with styled "BidMe Setup" banner
     - First prompt: "Default setup or Customize?" using `clack.select()`
