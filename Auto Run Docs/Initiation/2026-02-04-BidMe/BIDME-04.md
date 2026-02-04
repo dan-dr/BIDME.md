@@ -66,7 +66,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
   - Create `pages/assets/js/admin.js` with the admin page logic
   - ✅ Completed: Created admin.html with 5 sections: Current Bids (approve/reject linking to GitHub issue comments), Configuration (parsed from bidme-config.yml via simple YAML parser), Current Bidding Issue (links to GitHub issue with status badge), Payment History (table with period/winner/amount/status), Manual Actions (workflow_dispatch links for update-analytics, schedule-bidding, close-bidding). admin.js follows dashboard.js conventions: IIFE, owner/repo auto-detection, parallel data fetching with tryRender pattern, escapeHtml/escapeAttr, formatNumber. Tests: 342 pass / 0 fail.
 
-- [ ] Write tests for the analytics store module:
+- [x] Write tests for the analytics store module:
   - Create `scripts/__tests__/analytics-store.test.ts`:
     - Test `loadAnalytics()` with existing data and missing file
     - Test `recordClick()` appends correctly
@@ -76,3 +76,4 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Test number formatting: 0, 999, 1200→"1.2k", 1500000→"1.5M"
     - Test badge URL generation for views, countries, CTR
   - Run `bun test` and fix any failures
+  - ✅ Completed: Tests already exist at `tests/utils/analytics-store.test.ts` (22 tests) and `tests/utils/badge-generator.test.ts` (14 tests) following project convention of placing tests in `tests/` rather than `scripts/__tests__/`. Coverage: loadAnalytics (5 cases: missing file, empty file, invalid JSON, existing data, partial data), saveAnalytics (3 cases: write+read, nested dirs, overwrite), recordClick (4 cases: basic, with referrer, preserves existing, immutability), getClickThroughRate (6 cases: normal, 0 views, negative views, 0 clicks, 100%, small rate), aggregateByPeriod (4 cases: match, different period, non-existent, empty), formatNumber (4 cases: below 1000, thousands, millions, trailing zero), badge generators (views/countries/CTR/bannerSection). Full suite: 342 pass / 0 fail.
