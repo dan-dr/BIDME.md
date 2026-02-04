@@ -20,9 +20,10 @@
 
     "paths": {
       "@scripts/*": ["./scripts/*"],
-      "@utils/*": ["./scripts/utils/*"]
+      "@utils/*": ["./scripts/utils/*"],
+      "@src/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "src"],
   "exclude": ["node_modules", "dist"]
 }
