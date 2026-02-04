@@ -27,7 +27,7 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
   - Export all types: `ParsedBid`, `ValidationResult`, `ValidationError`
   > Completed: validation.ts created with parseBidComment (YAML frontmatter extraction), validateBid (minimum/increment/URL/contact validation), validateBannerUrl (format + accessibility checks). All types exported. 19 new tests passing, 24 total across project.
 
-- [ ] Build the GitHub API utility module:
+- [x] Build the GitHub API utility module:
   - Create `scripts/utils/github-api.ts` with a `GitHubAPI` class that wraps the GitHub REST API using fetch (no external SDK):
     - `createPR(title, body, head, base)` — creates a pull request
     - `addComment(issueNumber, body)` — adds a comment to a PR
@@ -37,6 +37,7 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
     - `updateReadme(content, message)` — commits updated README content
   - Use `GITHUB_TOKEN` environment variable for authentication
   - Include proper error handling with typed error responses
+  > Completed: GitHubAPI class created with all 6 methods using native fetch, Bearer token auth from GITHUB_TOKEN env var or constructor param, typed GitHubAPIError with status/message/documentation_url. updateReadme handles both create and update via Contents API sha. 13 new tests passing, 37 total across project.
 
 - [ ] Build the badge generator utility:
   - Create `scripts/utils/badge-generator.ts` with functions:
