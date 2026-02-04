@@ -59,7 +59,7 @@ This phase builds the heart of BidMe — the TypeScript scripts that power the b
     - `generateWinnerAnnouncement(bid, period)` — returns closing comment markdown celebrating the winner
     - `generateNoBidsMessage(period)` — returns closing comment for periods with no valid bids
 
-- [ ] Write tests for the bid validation and parsing logic:
+- [x] Write tests for the bid validation and parsing logic: *(Completed: scripts/__tests__/validation.test.ts with 19 tests covering parseBidComment (valid bid, missing fields, malformed YAML, extra whitespace, bid with optional message, non-numeric amount, empty fields) and validateBid (below minimum, valid bid, below increment, invalid URL format, ftp protocol, invalid destination, invalid contact, exact minimum edge case, GitHub username contact, URL with query params, multiple errors). scripts/__tests__/issue-template.test.ts with 13 tests covering generateBidTable (0 bids, 1 bid, multiple bids sorted, rank numbers, status emojis, banner preview links) and generateBiddingIssueBody (all sections, config values, bids present, no bids, future deadline countdown, past deadline, custom config). All 166 tests passing across 13 files.)*
   - Create `scripts/__tests__/validation.test.ts` using Bun's built-in test runner:
     - Test `parseBidComment()`: valid bid, missing fields, malformed YAML, extra whitespace, bid with optional message
     - Test `validateBid()`: below minimum, valid bid, below increment, invalid URL format, valid edge cases
