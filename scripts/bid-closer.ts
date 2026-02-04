@@ -1,5 +1,9 @@
 import { GitHubAPI } from "./utils/github-api";
 import { generateBannerSection } from "./utils/badge-generator";
+import {
+  generateWinnerAnnouncement,
+  generateNoBidsMessage,
+} from "./utils/issue-template";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
 import { mkdir } from "fs/promises";
@@ -119,35 +123,11 @@ export async function closeBiddingPeriod(): Promise<{
 }
 
 function generateWinnerComment(bid: BidRecord, period: PeriodData): string {
-  return `## 🏆 Bidding Period Closed — Winner Announced!
-
-Congratulations **@${bid.bidder}**! 🎉
-
-Your bid of **$${bid.amount}** has won the banner slot for this period.
-
-| Detail | Value |
-|--------|-------|
-| Winner | @${bid.bidder} |
-| Amount | $${bid.amount} |
-| Period | ${period.start_date.split("T")[0]} to ${period.end_date.split("T")[0]} |
-| Banner | [View](${bid.banner_url}) |
-| Destination | ${bid.destination_url} |
-
-The README banner has been updated. Thank you to all bidders!
-
----
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+  return generateWinnerAnnouncement(bid, period);
 }
 
 function generateNoWinnerComment(period: PeriodData): string {
-  return `## 📭 Bidding Period Closed — No Winner
-
-The bidding period (**${period.start_date.split("T")[0]}** to **${period.end_date.split("T")[0]}**) has ended with no approved bids.
-
-The banner slot remains unchanged. A new bidding period will open on the next scheduled cycle.
-
----
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+  return generateNoBidsMessage(period);
 }
 
 async function archivePeriod(periodData: PeriodData): Promise<void> {

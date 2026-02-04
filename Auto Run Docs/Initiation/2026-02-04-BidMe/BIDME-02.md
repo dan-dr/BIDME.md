@@ -52,7 +52,7 @@ This phase builds the heart of BidMe — the TypeScript scripts that power the b
     - Archives the period data to `data/archive/period-YYYY-MM-DD.json`
     - Clears `data/current-period.json`
 
-- [ ] Create the issue body template generator for consistent formatting:
+- [x] Create the issue body template generator for consistent formatting: *(Completed: scripts/utils/issue-template.ts with generateBiddingIssueBody, generateBidTable, generateWinnerAnnouncement, generateNoBidsMessage. Updated bid-opener.ts, bid-processor.ts, and bid-closer.ts to import from shared module. Tests in tests/utils/issue-template.test.ts — 15 tests passing covering all four functions with edge cases.)*
   - Create `scripts/utils/issue-template.ts` with functions:
     - `generateBiddingIssueBody(period, config, bids)` — returns full issue body markdown with: rules section, bid table (rank, bidder, amount, status, banner preview), how-to-bid section with format template, deadline countdown
     - `generateBidTable(bids)` — returns a markdown table of all bids sorted by amount descending, with status emoji (⏳ pending, ✅ approved, ❌ rejected)

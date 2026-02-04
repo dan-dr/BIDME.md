@@ -1,5 +1,6 @@
 import { loadConfig } from "./utils/config";
 import { GitHubAPI } from "./utils/github-api";
+import { generateBiddingIssueBody } from "./utils/issue-template";
 import { resolve } from "path";
 
 export interface PeriodData {
@@ -35,48 +36,16 @@ function generateIssueBody(
   endDate: Date,
   config: Awaited<ReturnType<typeof loadConfig>>,
 ): string {
-  const formats = config.banner.format.split(",").map((f) => f.trim());
-  const deadline = endDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return `## 🎯 BidMe Banner Bidding
-
-### Rules
-- **Minimum bid:** $${config.bidding.minimum_bid}
-- **Bid increment:** $${config.bidding.increment}
-- **Accepted banner formats:** ${formats.join(", ")}
-- **Banner dimensions:** ${config.banner.width}x${config.banner.height}px
-- **Max file size:** ${config.banner.max_size}KB
-
-### Current Status
-
-| Rank | Bidder | Amount | Status | Banner Preview |
-|------|--------|--------|--------|----------------|
-| — | No bids yet | — | — | — |
-
-### How to Bid
-
-Post a comment with the following format:
-
-\`\`\`yaml
-amount: 100
-banner_url: https://example.com/banner.png
-destination_url: https://example.com
-contact: you@example.com
-\`\`\`
-
-### Deadline
-
-**${deadline}**
-
-Bids must be submitted before the deadline. The highest approved bid wins the banner slot.
-
----
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+  const period: PeriodData = {
+    period_id: `period-${startDate.toISOString().split("T")[0]}`,
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
+    issue_number: 0,
+    issue_node_id: "",
+    status: "open",
+    bids: [],
+  };
+  return generateBiddingIssueBody(period, config, []);
 }
 
 export async function openBiddingPeriod(configPath?: string): Promise<void> {

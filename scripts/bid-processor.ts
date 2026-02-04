@@ -1,35 +1,9 @@
 import { loadConfig } from "./utils/config";
 import { GitHubAPI } from "./utils/github-api";
+import { generateBidTable } from "./utils/issue-template";
 import { parseBidComment, validateBid } from "./utils/validation";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
-
-function generateBidTable(bids: BidRecord[]): string {
-  if (bids.length === 0) {
-    return `| Rank | Bidder | Amount | Status | Banner Preview |
-|------|--------|--------|--------|----------------|
-| — | No bids yet | — | — | — |`;
-  }
-
-  const sorted = [...bids].sort((a, b) => b.amount - a.amount);
-  const statusEmoji: Record<string, string> = {
-    pending: "⏳",
-    approved: "✅",
-    rejected: "❌",
-  };
-
-  const rows = sorted
-    .map((bid, i) => {
-      const emoji = statusEmoji[bid.status] ?? "⏳";
-      const preview = `[preview](${bid.banner_url})`;
-      return `| ${i + 1} | @${bid.bidder} | $${bid.amount} | ${emoji} ${bid.status} | ${preview} |`;
-    })
-    .join("\n");
-
-  return `| Rank | Bidder | Amount | Status | Banner Preview |
-|------|--------|--------|--------|----------------|
-${rows}`;
-}
 
 function updateIssueBodyWithBids(
   existingBody: string,
