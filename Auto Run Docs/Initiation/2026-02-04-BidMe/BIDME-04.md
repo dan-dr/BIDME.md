@@ -4,7 +4,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
 
 ## Tasks
 
-- [ ] Create the analytics updater script:
+- [x] Create the analytics updater script:
   - Create `scripts/analytics-updater.ts` that:
     - Fetches repository traffic data using the GitHub Traffic API (`/repos/{owner}/{repo}/traffic/views` and `/traffic/clones`)
     - Fetches referrer data from `/repos/{owner}/{repo}/traffic/popular/referrers`
@@ -58,7 +58,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Shows all current bids with approve/reject buttons (these generate the correct emoji reaction URL for the owner to click)
     - Displays configuration summary from `bidme-config.yml`
     - Shows payment status for completed periods (fetched from `data/archive/` files)
-    - Links to the current bidding PR directly
+    - Links to the current bidding issue directly
     - Includes a "Manual Actions" section with buttons to trigger workflows via `workflow_dispatch` (links to the GitHub Actions run URL)
   - Create `pages/assets/js/admin.js` with the admin page logic
 

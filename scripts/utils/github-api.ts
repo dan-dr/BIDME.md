@@ -185,6 +185,38 @@ export class GitHubAPI {
     );
   }
 
+  async getTrafficViews(): Promise<{
+    count: number;
+    uniques: number;
+    views: { timestamp: string; count: number; uniques: number }[];
+  }> {
+    return this.request("GET", "/traffic/views");
+  }
+
+  async getTrafficClones(): Promise<{
+    count: number;
+    uniques: number;
+    clones: { timestamp: string; count: number; uniques: number }[];
+  }> {
+    return this.request("GET", "/traffic/clones");
+  }
+
+  async getPopularReferrers(): Promise<
+    { referrer: string; count: number; uniques: number }[]
+  > {
+    return this.request("GET", "/traffic/popular/referrers");
+  }
+
+  async dispatchEvent(
+    eventType: string,
+    clientPayload: Record<string, unknown>,
+  ): Promise<void> {
+    await this.request("POST", "/dispatches", {
+      event_type: eventType,
+      client_payload: clientPayload,
+    });
+  }
+
   async updateReadme(
     content: string,
     message: string,
