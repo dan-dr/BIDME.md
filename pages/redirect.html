@@ -8,9 +8,12 @@
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
       --bg:#0a0a0a;
+      --surface:#141414;
+      --border:#222;
       --text:#e5e5e5;
       --text-muted:#888;
       --accent:#22c55e;
+      --danger:#ef4444;
       --font-mono:'SF Mono','Fira Code','JetBrains Mono',Consolas,monospace;
       --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     }
@@ -25,7 +28,19 @@
       text-align:center;
       padding:1.5rem;
     }
-    .container{max-width:400px}
+    .container{max-width:420px}
+    .brand{
+      font-family:var(--font-mono);
+      font-size:.75rem;
+      color:var(--accent);
+      border:1px solid var(--accent);
+      border-radius:999px;
+      padding:.2rem .65rem;
+      display:inline-block;
+      margin-bottom:1.25rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
     h1{font-family:var(--font-mono);font-size:1.25rem;margin-bottom:.75rem}
     p{color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem}
     .spinner{
@@ -39,15 +54,18 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     a{color:var(--accent);text-decoration:none;font-family:var(--font-mono);font-size:.85rem}
     a:hover{text-decoration:underline}
-    .error{color:#ef4444}
+    .error{color:var(--danger)}
+    .tracking-pixel{display:none}
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="brand">BidMe</div>
     <div class="spinner" id="spinner"></div>
-    <h1>Redirecting...</h1>
+    <h1>Redirecting via BidMe...</h1>
     <p id="message">You are being redirected to the advertiser's page.</p>
     <a id="fallback" href="#" style="display:none">Click here if not redirected</a>
+    <img id="tracking-pixel" class="tracking-pixel" alt="" width="1" height="1">
   </div>
 
   <script>
@@ -55,47 +73,103 @@
       var params = new URLSearchParams(window.location.search);
       var id = params.get("id");
       var dest = params.get("dest");
+      var ref = params.get("ref");
+
+      var spinnerEl = document.getElementById("spinner");
+      var messageEl = document.getElementById("message");
+      var fallbackEl = document.getElementById("fallback");
+
+      function showError(msg) {
+        spinnerEl.style.display = "none";
+        messageEl.textContent = msg;
+        messageEl.classList.add("error");
+      }
 
       if (!dest) {
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("message").textContent = "No destination specified.";
-        document.getElementById("message").classList.add("error");
+        showError("No destination specified.");
         return;
       }
 
+      var finalUrl;
       try {
         var url = new URL(dest);
-        url.searchParams.set("ref", "bidme");
+        if (ref) {
+          url.searchParams.set("ref", ref);
+        } else {
+          url.searchParams.set("ref", "bidme");
+        }
+        finalUrl = url.toString();
+      } catch (e) {
+        showError("Invalid destination URL.");
+        return;
+      }
 
-        var finalUrl = url.toString();
+      fallbackEl.href = finalUrl;
 
-        // Log click to localStorage (placeholder for future analytics)
-        try {
-          var clicks = JSON.parse(localStorage.getItem("bidme_clicks") || "[]");
-          clicks.push({
-            id: id,
-            dest: finalUrl,
-            timestamp: new Date().toISOString()
-          });
-          localStorage.setItem("bidme_clicks", JSON.stringify(clicks));
-        } catch (e) {
-          // localStorage unavailable — continue with redirect
+      function trackClick() {
+        var payload = {
+          banner_id: id || "unknown",
+          timestamp: new Date().toISOString(),
+          referrer: ref || document.referrer || undefined
+        };
+
+        // Extract owner/repo from the current page URL (GitHub Pages: {owner}.github.io/{repo})
+        var host = window.location.hostname;
+        var pathParts = window.location.pathname.split("/").filter(Boolean);
+        var owner = host.replace(".github.io", "");
+        var repo = pathParts[0] || "";
+
+        if (!owner || !repo) {
+          return fallbackTrack(payload);
         }
 
-        // Show fallback link after short delay
-        var fallbackEl = document.getElementById("fallback");
-        fallbackEl.href = finalUrl;
-        setTimeout(function () {
-          fallbackEl.style.display = "inline";
-        }, 2000);
+        // Attempt to send repository_dispatch event to log click
+        var dispatchUrl = "https://api.github.com/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/dispatches";
 
-        // Redirect
-        window.location.href = finalUrl;
-      } catch (e) {
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("message").textContent = "Invalid destination URL.";
-        document.getElementById("message").classList.add("error");
+        return fetch(dispatchUrl, {
+          method: "POST",
+          headers: {
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            event_type: "bidme-click",
+            client_payload: payload
+          })
+        }).then(function (response) {
+          if (!response.ok) {
+            return fallbackTrack(payload);
+          }
+        }).catch(function () {
+          return fallbackTrack(payload);
+        });
       }
+
+      function fallbackTrack(payload) {
+        // Use shields.io hit counter as a tracking pixel fallback
+        var pixelEl = document.getElementById("tracking-pixel");
+        var counterId = encodeURIComponent((payload.banner_id || "bidme") + "-clicks");
+        pixelEl.src = "https://img.shields.io/badge/click-" + counterId + "-brightgreen?style=flat-square&cacheSeconds=0";
+        pixelEl.style.display = "block";
+      }
+
+      // Fire tracking, then redirect after interstitial delay
+      var trackPromise;
+      try {
+        trackPromise = trackClick();
+      } catch (e) {
+        trackPromise = Promise.resolve();
+      }
+
+      // Redirect after 1.5s interstitial (branded "Redirecting via BidMe...")
+      var redirectTimeout = setTimeout(function () {
+        window.location.href = finalUrl;
+      }, 1500);
+
+      // Show fallback link after 2s in case redirect doesn't fire
+      setTimeout(function () {
+        fallbackEl.style.display = "inline";
+      }, 2000);
     })();
   </script>
 </body>

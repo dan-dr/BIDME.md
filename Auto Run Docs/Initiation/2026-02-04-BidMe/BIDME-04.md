@@ -32,7 +32,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Pass `GITHUB_TOKEN` for Traffic API access
   - ✅ Completed: Created workflow following existing project conventions (matches close-bidding.yml pattern). Commits both `data/analytics.json` and `README.md` badge updates.
 
-- [ ] Enhance the redirect page with proper click tracking:
+- [x] Enhance the redirect page with proper click tracking:
   - Update `pages/redirect.html` to:
     - Parse `id`, `dest`, and optional `ref` query parameters
     - Send a GitHub Actions `repository_dispatch` event via the GitHub API to log the click (event type: `bidme-click`, payload: `{ banner_id, timestamp, referrer }`)
@@ -40,6 +40,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Append `?ref={owner}/{repo}` to the destination URL
     - Show a brief branded interstitial ("Redirecting via BidMe...") for 1-2 seconds before redirect
     - Handle edge cases: missing `dest` parameter (show error), malformed URLs (show error)
+  - ✅ Completed: Updated redirect.html with full click tracking. Created `scripts/handle-click.ts` to process `bidme-click` dispatch events. Updated `update-analytics.yml` with `repository_dispatch` trigger and `track-click` job. Tests: 311 pass / 0 fail.
 
 - [ ] Build the GitHub Pages dashboard:
   - Create `pages/dashboard.html` — a responsive single-page dashboard that:

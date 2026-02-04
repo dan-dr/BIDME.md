@@ -59,25 +59,39 @@ describe("pages/redirect.html", () => {
     expect(redirectHtml).toContain("</html>");
   });
 
-  test("reads id and dest query parameters", () => {
+  test("reads id, dest, and ref query parameters", () => {
     expect(redirectHtml).toContain('params.get("id")');
     expect(redirectHtml).toContain('params.get("dest")');
+    expect(redirectHtml).toContain('params.get("ref")');
   });
 
-  test("appends ref=bidme to destination URL", () => {
+  test("appends ref parameter to destination URL", () => {
     expect(redirectHtml).toContain('"ref"');
     expect(redirectHtml).toContain('"bidme"');
   });
 
-  test("logs click to localStorage with timestamp", () => {
-    expect(redirectHtml).toContain("localStorage");
-    expect(redirectHtml).toContain("bidme_clicks");
-    expect(redirectHtml).toContain("timestamp");
-    expect(redirectHtml).toContain("toISOString");
+  test("fires bidme-click event via GitHub API dispatch", () => {
+    expect(redirectHtml).toContain("bidme-click");
+    expect(redirectHtml).toContain("/dispatches");
+    expect(redirectHtml).toContain("event_type");
+    expect(redirectHtml).toContain("client_payload");
   });
 
-  test("redirects via window.location.href", () => {
+  test("falls back to tracking pixel when API fails", () => {
+    expect(redirectHtml).toContain("tracking-pixel");
+    expect(redirectHtml).toContain("shields.io");
+    expect(redirectHtml).toContain("fallbackTrack");
+  });
+
+  test("shows branded interstitial message", () => {
+    expect(redirectHtml).toContain("Redirecting via BidMe...");
+    expect(redirectHtml).toContain("BidMe");
+  });
+
+  test("redirects via window.location.href after delay", () => {
     expect(redirectHtml).toContain("window.location.href");
+    expect(redirectHtml).toContain("setTimeout");
+    expect(redirectHtml).toContain("1500");
   });
 
   test("shows fallback link for manual redirect", () => {
@@ -91,6 +105,12 @@ describe("pages/redirect.html", () => {
 
   test("handles invalid dest URL gracefully", () => {
     expect(redirectHtml).toContain("Invalid destination URL");
+  });
+
+  test("extracts owner/repo from GitHub Pages hostname", () => {
+    expect(redirectHtml).toContain(".github.io");
+    expect(redirectHtml).toContain("owner");
+    expect(redirectHtml).toContain("repo");
   });
 });
 

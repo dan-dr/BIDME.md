@@ -4,12 +4,43 @@ on:
   schedule:
     - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
+  repository_dispatch:
+    types: [bidme-click]
 
 permissions:
   contents: write
 
 jobs:
+  track-click:
+    if: github.event_type == 'repository_dispatch' && github.event.action == 'bidme-click'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Record click
+        run: bun run scripts/handle-click.ts
+        env:
+          CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/analytics.json
+          git diff --staged --quiet || git commit -m "BidMe: Record banner click"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   update-analytics:
+    if: github.event_type != 'repository_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
