@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BidMe — Analytics Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .page-header {
+      padding: 2rem 0 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .page-header h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .page-header p { color: var(--text-muted); font-size: 0.9rem; }
+    .brand-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Metric cards */
+    .metric-icon {
+      width: 36px; height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      background: var(--accent-subtle);
+      color: var(--accent);
+    }
+
+    /* Bar chart */
+    .chart { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding-top: 1rem; }
+    .chart-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar {
+      width: 100%;
+      max-width: 32px;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: height 0.3s;
+      position: relative;
+    }
+    .chart-bar:hover { opacity: 0.8; }
+    .chart-bar[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .chart-label {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      max-height: 48px;
+      overflow: hidden;
+    }
+
+    /* Banner preview */
+    .banner-preview { text-align: center; }
+    .banner-preview img {
+      max-width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .banner-preview a { display: inline-block; margin-top: 0.75rem; }
+
+    /* Country list */
+    .country-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .country-row:last-child { border-bottom: none; }
+    .country-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 0 1rem;
+      overflow: hidden;
+    }
+    .country-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .country-count {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* Bidding status */
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .status-row:last-child { border-bottom: none; }
+    .status-label { color: var(--text-muted); }
+    .status-value { font-family: var(--font-mono); font-weight: 600; }
+
+    /* Loading & error states */
+    .loading-msg, .error-msg {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+    .loading-msg { color: var(--text-muted); }
+    .error-msg { color: var(--danger); }
+
+    .spinner-sm {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Section spacing */
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .chart { height: 120px; }
+      .chart-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="padding-top:1rem; padding-bottom:3rem;">
+    <header class="page-header">
+      <span class="brand-tag">BidMe</span>
+      <h1>Analytics Dashboard</h1>
+      <p id="subtitle">Loading repository data...</p>
+    </header>
+
+    <div id="loading" class="loading-msg">
+      <span class="spinner-sm"></span> Fetching analytics data...
+    </div>
+
+    <div id="error" class="error-msg" style="display:none;"></div>
+
+    <div id="dashboard" style="display:none;">
+
+      <!-- Metric cards -->
+      <div class="grid grid-4 mb-3">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Views</span>
+            <span class="metric-icon">&#x1f441;</span>
+          </div>
+          <div class="card-value" id="total-views">0</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Unique Visitors</span>
+            <span class="metric-icon">&#x1f464;</span>
+          </div>
+          <div class="card-value" id="unique-visitors">0</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Clicks</span>
+            <span class="metric-icon">&#x1f517;</span>
+          </div>
+          <div class="card-value" id="total-clicks">0</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">CTR</span>
+            <span class="metric-icon">%</span>
+          </div>
+          <div class="card-value" id="ctr-value">0%</div>
+        </div>
+      </div>
+
+      <!-- View chart + Country distribution -->
+      <div class="grid grid-2 mb-3">
+        <div class="card">
+          <h3 class="section-title">Daily Views</h3>
+          <div class="chart" id="views-chart">
+            <span class="text-muted" style="font-size:0.85rem;">No view data yet.</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="section-title">Traffic Sources</h3>
+          <div id="countries-list">
+            <span class="text-muted" style="font-size:0.85rem;">No referrer data yet.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current banner + Bidding status -->
+      <div class="grid grid-2 mb-3">
+        <div class="card">
+          <h3 class="section-title">Current Banner</h3>
+          <div class="banner-preview" id="banner-preview">
+            <span class="text-muted" style="font-size:0.85rem;">No active banner.</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="section-title">Bidding Status</h3>
+          <div id="bidding-status">
+            <span class="text-muted" style="font-size:0.85rem;">No period data available.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Period history table -->
+      <div class="card">
+        <h3 class="section-title">Bidding Period History</h3>
+        <div id="period-history">
+          <span class="text-muted" style="font-size:0.85rem;">No historical periods yet.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-muted);">
+    <p>BidMe Analytics — Data refreshes every 6 hours via GitHub Actions.</p>
+  </footer>
+
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

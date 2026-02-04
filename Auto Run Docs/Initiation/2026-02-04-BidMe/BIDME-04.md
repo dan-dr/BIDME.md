@@ -42,7 +42,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Handle edge cases: missing `dest` parameter (show error), malformed URLs (show error)
   - ✅ Completed: Updated redirect.html with full click tracking. Created `scripts/handle-click.ts` to process `bidme-click` dispatch events. Updated `update-analytics.yml` with `repository_dispatch` trigger and `track-click` job. Tests: 311 pass / 0 fail.
 
-- [ ] Build the GitHub Pages dashboard:
+- [x] Build the GitHub Pages dashboard:
   - Create `pages/dashboard.html` — a responsive single-page dashboard that:
     - Fetches `data/analytics.json` and `data/current-period.json` from the repo's raw GitHub content URL
     - Displays: current banner with click-through link, view count chart (simple bar chart using CSS, no JS charting library), country distribution list, CTR metric card, bidding period history table
@@ -54,6 +54,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - `renderAnalytics(data)` — populates the dashboard DOM
     - `renderBiddingStatus(period)` — shows current period info
     - `formatNumber(n)` — human-readable numbers (1.2k, 3.4M)
+  - ✅ Completed: Created responsive dashboard with 4 metric cards (views, unique visitors, clicks, CTR), CSS-only bar chart for daily views (last 30 days with hover tooltips), traffic sources list with progress bars, current banner preview, bidding status panel, and sortable period history table. Auto-detects owner/repo from GitHub Pages URL or accepts `?owner=X&repo=Y` query params. Uses shared style.css dark theme. Tests: 311 pass / 0 fail.
 
 - [ ] Build the admin page for repository owners:
   - Create `pages/admin.html` — an admin interface that:
