@@ -36,7 +36,7 @@ This phase builds the heart of BidMe — the TypeScript scripts that power the b
     - Updates the issue body to reflect current highest *approved* bid
     - Replies to the comment confirming the approval/rejection status
 
-- [ ] Create the bid closer script that finalizes a bidding period:
+- [x] Create the bid closer script that finalizes a bidding period: *(Completed: scripts/bid-closer.ts with period loading, approved-bid filtering, highest-bid winner selection, README banner replacement via GitHubAPI.updateReadme(), winner/no-winner comment posting, issue unpinning and closing, period archiving to data/archive/, and current-period clearing. Tests in tests/bid-closer.test.ts — 11 tests passing including local mode winner/no-winner, multi-bid winner selection, full GitHub API flow with winner, no-approved-bids flow, generateWinnerComment, generateNoWinnerComment, archivePeriod, and CLI.)*
   - Create `scripts/bid-closer.ts` that:
     - Loads `data/current-period.json` to get all bids for the current period
     - Filters to only "approved" bids
