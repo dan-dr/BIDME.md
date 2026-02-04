@@ -64,12 +64,13 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
   - This script should run successfully with `bun run scripts/demo.ts` and produce visible output proving the system works
   > Completed: scripts/demo.ts created — loads config, parses sample $100 bid from YAML comment, validates bid (passes), generates banner section with views (12.5k), countries (42), CTR (3.2%) badges. Outputs formatted results with ✓ markers. 4 new integration tests in tests/demo.test.ts, 80 total tests passing across project.
 
-- [ ] Create a project README.md with the BidMe banner placeholder:
+- [x] Create a project README.md with the BidMe banner placeholder:
   - Create `README.md` with:
     - A `<!-- BIDME:BANNER:START -->` / `<!-- BIDME:BANNER:END -->` comment block where the winning banner will be inserted
     - A placeholder banner image using shields.io: `![BidMe Banner](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge&logoColor=white)`
     - Project title, one-line description, "How It Works" section (3 steps), "Quick Start" installation instructions (`bun install`, add config, enable Actions), and a "Built With" section listing Bun, GitHub Actions, GitHub Pages, Polar.sh
     - Badge row at top: build status, license (MIT), version
+  > Completed: README.md created with BIDME:BANNER:START/END comment block, shields.io placeholder banner linked to repo, badge row (build status, MIT license, v0.1.0), one-line description, 3-step "How It Works" (Install/Bids Come In/Get Paid), Quick Start with bun install + config + Actions, Configuration section with YAML example, Built With listing all four technologies.
 
 - [ ] Verify the full build works end-to-end:
   - Run `bun install` to ensure all dependencies resolve
