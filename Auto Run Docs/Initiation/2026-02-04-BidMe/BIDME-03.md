@@ -12,7 +12,7 @@ This phase wires everything together with GitHub Actions workflows that automate
   - Use fetch with proper error handling and typed responses
   - Include a `PolarConfig` type and graceful fallback when `POLAR_ACCESS_TOKEN` is not set (log warning, skip payment step)
 
-- [ ] Create the scheduled bid opening workflow:
+- [x] Create the scheduled bid opening workflow:
   - Create `.github/workflows/schedule-bidding.yml`:
     - Trigger: `schedule` with cron expression (default monthly: `0 0 1 * *`), plus `workflow_dispatch` for manual trigger
     - Permissions: `contents: write`, `issues: write`
