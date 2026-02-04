@@ -12,18 +12,20 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
   - Install dev dependencies: `@types/bun` (types only — Bun has built-in TypeScript support)
   > Completed: bun init with name "bidme", all directories created with .gitkeep files, tsconfig.json configured with ES2022/NodeNext/strict/path aliases, .gitignore covering all specified patterns, @types/bun@1.3.8 installed, git repo initialized.
 
-- [ ] Create the `bidme-config.yml` configuration file and its TypeScript loader:
+- [x] Create the `bidme-config.yml` configuration file and its TypeScript loader:
   - Create `bidme-config.yml` at the project root with the full schema from the plan: bidding (schedule, duration, minimum_bid, increment), banner (width, height, format, max_size, position), content_guidelines (prohibited, required), analytics (display, metrics)
   - Create `scripts/utils/config.ts` that reads and parses `bidme-config.yml` using Bun's file API and a YAML parser (`js-yaml` — install it)
   - Export a typed `BidMeConfig` interface and a `loadConfig()` function
   - Include sensible defaults that merge with user-provided values
+  > Completed: bidme-config.yml created with full schema, scripts/utils/config.ts implements typed BidMeConfig interface with loadConfig() using js-yaml, deepMerge for sensible defaults, 5 tests passing. No git remote configured — push skipped.
 
-- [ ] Build the validation utility module:
+- [x] Build the validation utility module:
   - Create `scripts/utils/validation.ts` with functions:
     - `parseBidComment(body: string): ParsedBid | null` — extracts bid amount, banner_url, destination_url, contact from the YAML frontmatter format defined in the plan
     - `validateBid(bid: ParsedBid, config: BidMeConfig): ValidationResult` — checks minimum bid, increment rules, URL format, and contact format
     - `validateBannerUrl(url: string, config: BidMeConfig): Promise<ValidationResult>` — checks URL accessibility and format constraints
   - Export all types: `ParsedBid`, `ValidationResult`, `ValidationError`
+  > Completed: validation.ts created with parseBidComment (YAML frontmatter extraction), validateBid (minimum/increment/URL/contact validation), validateBannerUrl (format + accessibility checks). All types exported. 19 new tests passing, 24 total across project.
 
 - [ ] Build the GitHub API utility module:
   - Create `scripts/utils/github-api.ts` with a `GitHubAPI` class that wraps the GitHub REST API using fetch (no external SDK):
