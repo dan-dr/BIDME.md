@@ -41,7 +41,7 @@ This phase brings everything together with comprehensive end-to-end testing, a p
     - Print a clear checklist summary of what was configured and what the user still needs to do manually (e.g., "Add POLAR_ACCESS_TOKEN to repo secrets")
   - Add a `setup` script to `package.json`: `"setup": "bun run scripts/setup.ts"`
 
-- [ ] Add `package.json` scripts for all common operations:
+- [x] Add `package.json` scripts for all common operations: *(Completed: Added 6 new script entries to `package.json` — `demo`, `open-bidding`, `close-bidding`, `update-analytics`, `test`, `typecheck` — alongside existing `setup`. All scripts reference verified existing files. Created `scripts/__tests__/package-scripts.test.ts` with 14 tests validating script definitions, correct commands, and file existence. All 471 tests passing, 1293 assertions.)*
   - Add script entries:
     - `"setup": "bun run scripts/setup.ts"` — first-time setup
     - `"demo": "bun run scripts/demo.ts"` — run the demo

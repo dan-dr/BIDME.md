@@ -4,7 +4,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "setup": "bun run scripts/setup.ts"
+    "setup": "bun run scripts/setup.ts",
+    "demo": "bun run scripts/demo.ts",
+    "open-bidding": "bun run scripts/bid-opener.ts",
+    "close-bidding": "bun run scripts/bid-closer.ts",
+    "update-analytics": "bun run scripts/analytics-updater.ts",
+    "test": "bun test",
+    "typecheck": "bun x tsc --noEmit"
   },
   "devDependencies": {
     "@types/bun": "latest",
