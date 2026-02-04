@@ -4,15 +4,15 @@ This phase brings everything together with comprehensive end-to-end testing, a p
 
 ## Tasks
 
-- [ ] Create end-to-end test simulating a complete bidding lifecycle:
+- [x] Create end-to-end test simulating a complete bidding lifecycle: *(Completed: 7 tests in `scripts/__tests__/e2e-lifecycle.test.ts` — covers open, valid bid, invalid bid rejection, higher bid, owner approval, close with README/unpin/close/archive, and full sequential lifecycle with data integrity checks. 84 assertions, all passing.)*
   - Create `scripts/__tests__/e2e-lifecycle.test.ts` that tests the full flow with mocked GitHub API:
     - Mock `GitHubAPI` class methods to return predictable responses
-    - Step 1: Run bid-opener logic → verify PR creation call and `current-period.json` structure
-    - Step 2: Process a valid bid comment → verify bid added to period data, PR body updated
+    - Step 1: Run bid-opener logic → verify issue creation call, pin call, and `current-period.json` structure
+    - Step 2: Process a valid bid comment → verify bid added to period data, issue body updated
     - Step 3: Process an invalid bid (below minimum) → verify rejection comment
     - Step 4: Process a second higher bid → verify it becomes the new highest
     - Step 5: Approve the highest bid (mock emoji reaction) → verify status change
-    - Step 6: Run bid-closer → verify README updated with winner banner, PR closed, period archived
+    - Step 6: Run bid-closer → verify README updated with winner banner, issue unpinned, issue closed, period archived
     - Verify data integrity at each step: `current-period.json` and archive files
 
 - [ ] Create integration tests for the GitHub Actions workflow files:
@@ -25,9 +25,9 @@ This phase brings everything together with comprehensive end-to-end testing, a p
     - Verify all workflow files are syntactically valid YAML
 
 - [ ] Add error handling and resilience to all scripts:
-  - Update `scripts/bid-opener.ts`: handle branch already exists (skip), PR creation failure (retry once), config file missing (use defaults)
+  - Update `scripts/bid-opener.ts`: handle issue creation failure (retry once), config file missing (use defaults), pin failure (log warning, continue)
   - Update `scripts/bid-processor.ts`: handle deleted comments, rate limiting, concurrent bid processing (check latest data before writing)
-  - Update `scripts/bid-closer.ts`: handle missing period data (no-op), partial failures in README update (rollback), payment API timeout
+  - Update `scripts/bid-closer.ts`: handle missing period data (no-op), partial failures in README update (rollback), payment API timeout, unpin failure (log warning, continue)
   - Update `scripts/approval-processor.ts`: handle comment not found, multiple reactions from same user (latest wins)
   - Add a shared `scripts/utils/error-handler.ts` with: `withRetry(fn, maxAttempts)` for retryable operations, `BidMeError` custom error class with error codes, `logError(error, context)` for structured error logging
 
@@ -58,7 +58,7 @@ This phase brings everything together with comprehensive end-to-end testing, a p
     - One-line description: "Automated banner bidding for GitHub READMEs"
     - Feature list with emoji bullets
     - "Quick Start" section: 3 commands (`bun install`, `bun run setup`, enable GitHub Actions)
-    - "How It Works" section: visual flow diagram using ASCII art or markdown (Schedule → PR → Bids → Approval → Banner)
+    - "How It Works" section: visual flow diagram using ASCII art or markdown (Schedule → Pinned Issue → Bids → Approval → Banner)
     - "Configuration" section: documented `bidme-config.yml` with all options explained
     - "GitHub Pages Dashboard" section explaining the analytics dashboard
     - "Payment Setup" section: how to configure Polar.sh integration
