@@ -42,7 +42,7 @@ This phase transforms BidMe from a private GitHub-Actions-only tool into a publi
   - All prompts must have sensible defaults matching current config values
   - If `--defaults` flag is set, skip all prompts entirely and use defaults
 
-- [ ] Create the TOML config generator and `.bidme/` scaffolding:
+- [x] Create the TOML config generator and `.bidme/` scaffolding: *(Completed: src/lib/config.ts with BidMeConfig interface, DEFAULT_CONFIG, generateToml(), parseToml(); src/lib/scaffold.ts with scaffold() creating .bidme/ directory structure, TOML config, data files, git repo detection, workflow template copying, README.md banner placeholder insertion; init.ts updated to use direct imports instead of dynamic import; 470 tests pass, typecheck clean)*
   - `src/lib/config.ts` — config types and TOML serialization:
     - Define `BidMeConfig` interface (same fields as current but restructured):
       - `bidding`: schedule, duration, minimum_bid, increment

@@ -1,73 +1,15 @@
 import * as clack from "@clack/prompts";
+import { scaffold } from "../lib/scaffold.js";
+import { DEFAULT_CONFIG, type BidMeConfig } from "../lib/config.js";
 
 export interface InitOptions {
   target: string;
   useDefaults: boolean;
 }
 
-export interface WizardConfig {
-  bidding: {
-    schedule: "weekly" | "monthly";
-    duration: number;
-    minimum_bid: number;
-    increment: number;
-  };
-  banner: {
-    width: number;
-    height: number;
-    formats: string[];
-    max_size: number;
-  };
-  approval: {
-    mode: "auto" | "emoji";
-    allowed_reactions: string[];
-  };
-  payment: {
-    provider: "polar-own" | "bidme-managed";
-    allow_unlinked_bids: boolean;
-    unlinked_grace_hours: number;
-  };
-  enforcement: {
-    require_payment_before_bid: boolean;
-    strikethrough_unlinked: boolean;
-  };
-  content_guidelines: {
-    prohibited: string[];
-    required: string[];
-  };
-}
+export type WizardConfig = BidMeConfig;
 
-export const DEFAULT_WIZARD_CONFIG: WizardConfig = {
-  bidding: {
-    schedule: "monthly",
-    duration: 7,
-    minimum_bid: 50,
-    increment: 5,
-  },
-  banner: {
-    width: 800,
-    height: 100,
-    formats: ["png", "jpg", "svg"],
-    max_size: 200,
-  },
-  approval: {
-    mode: "auto",
-    allowed_reactions: ["👍"],
-  },
-  payment: {
-    provider: "polar-own",
-    allow_unlinked_bids: false,
-    unlinked_grace_hours: 24,
-  },
-  enforcement: {
-    require_payment_before_bid: false,
-    strikethrough_unlinked: true,
-  },
-  content_guidelines: {
-    prohibited: ["adult content", "gambling", "misleading claims"],
-    required: ["alt text", "clear branding"],
-  },
-};
+export const DEFAULT_WIZARD_CONFIG: WizardConfig = { ...DEFAULT_CONFIG };
 
 function validatePositiveInt(value: string): string | undefined {
   const n = parseInt(value, 10);
@@ -238,27 +180,19 @@ export async function runInit(options: InitOptions): Promise<void> {
   s.start("Scaffolding .bidme/ directory...");
 
   try {
-    const scaffoldPath = "../lib/scaffold.js";
-    const mod = await import(scaffoldPath).catch(() => null);
-    if (mod?.scaffold) {
-      await mod.scaffold(options.target, config);
-      s.stop("Scaffolding complete.");
-    } else {
-      s.stop("Config collected successfully.");
-      clack.log.warn(
-        "The scaffold module (src/lib/scaffold.ts) is not yet available. " +
-        "It will be implemented in the next phase."
-      );
-    }
-  } catch {
-    s.stop("Config collected successfully.");
-    clack.log.warn("Scaffolding failed. Check src/lib/scaffold.ts.");
+    await scaffold(options.target, config);
+    s.stop("Scaffolding complete.");
+  } catch (err) {
+    s.stop("Scaffolding failed.");
+    clack.log.error(
+      `Failed to scaffold .bidme/ directory: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 
   clack.outro(
     "BidMe setup complete! Next steps:\n" +
     "  1. Review .bidme/config.toml\n" +
     "  2. Commit the .bidme/ folder and workflow files\n" +
-    "  3. Push to GitHub to activate bidding"
+    "  3. Push to GitHub to activate bidding",
   );
 }
