@@ -31,7 +31,7 @@ This phase brings everything together with comprehensive end-to-end testing, a p
   - Update `scripts/approval-processor.ts`: handle comment not found, multiple reactions from same user (latest wins)
   - Add a shared `scripts/utils/error-handler.ts` with: `withRetry(fn, maxAttempts)` for retryable operations, `BidMeError` custom error class with error codes, `logError(error, context)` for structured error logging
 
-- [ ] Create the quick-start installation experience:
+- [x] Create the quick-start installation experience: *(Completed: Updated `scripts/setup.ts` with git repo detection (`.git/HEAD` check + `git remote get-url origin`), workflow file copying (all 5 `.yml` files from source to `.github/workflows/`), empty `analytics.json` and placeholder `current-period.json` creation in `data/`, enhanced summary with git/workflow/data file status and context-aware next steps. Added `"setup": "bun run scripts/setup.ts"` to `package.json`. Extended test suite from 11 to 22 tests covering git detection, origin remote detection, workflow copying/idempotency, data file creation/preservation, and summary output. All 457 tests passing, 1267 assertions.)*
   - Update `scripts/setup.ts` to be a complete interactive-free setup:
     - Detect if running inside a GitHub repo (check `.git/` and `origin` remote)
     - Copy workflow files to `.github/workflows/` if not present
