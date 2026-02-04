@@ -56,7 +56,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - `formatNumber(n)` — human-readable numbers (1.2k, 3.4M)
   - ✅ Completed: Created responsive dashboard with 4 metric cards (views, unique visitors, clicks, CTR), CSS-only bar chart for daily views (last 30 days with hover tooltips), traffic sources list with progress bars, current banner preview, bidding status panel, and sortable period history table. Auto-detects owner/repo from GitHub Pages URL or accepts `?owner=X&repo=Y` query params. Uses shared style.css dark theme. Tests: 311 pass / 0 fail.
 
-- [ ] Build the admin page for repository owners:
+- [x] Build the admin page for repository owners:
   - Create `pages/admin.html` — an admin interface that:
     - Shows all current bids with approve/reject buttons (these generate the correct emoji reaction URL for the owner to click)
     - Displays configuration summary from `bidme-config.yml`
@@ -64,6 +64,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Links to the current bidding issue directly
     - Includes a "Manual Actions" section with buttons to trigger workflows via `workflow_dispatch` (links to the GitHub Actions run URL)
   - Create `pages/assets/js/admin.js` with the admin page logic
+  - ✅ Completed: Created admin.html with 5 sections: Current Bids (approve/reject linking to GitHub issue comments), Configuration (parsed from bidme-config.yml via simple YAML parser), Current Bidding Issue (links to GitHub issue with status badge), Payment History (table with period/winner/amount/status), Manual Actions (workflow_dispatch links for update-analytics, schedule-bidding, close-bidding). admin.js follows dashboard.js conventions: IIFE, owner/repo auto-detection, parallel data fetching with tryRender pattern, escapeHtml/escapeAttr, formatNumber. Tests: 342 pass / 0 fail.
 
 - [ ] Write tests for the analytics store module:
   - Create `scripts/__tests__/analytics-store.test.ts`:

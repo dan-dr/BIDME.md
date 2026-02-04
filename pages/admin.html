@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BidMe — Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .page-header {
+      padding: 2rem 0 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .page-header h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .page-header p { color: var(--text-muted); font-size: 0.9rem; }
+    .brand-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Section spacing */
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Config summary */
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .config-row:last-child { border-bottom: none; }
+    .config-label { color: var(--text-muted); }
+    .config-value { font-family: var(--font-mono); font-weight: 600; }
+
+    /* Bid actions */
+    .bid-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      gap: 1rem;
+    }
+    .bid-row:last-child { border-bottom: none; }
+    .bid-info { flex: 1; min-width: 0; }
+    .bid-user { font-weight: 600; }
+    .bid-amount { font-family: var(--font-mono); color: var(--accent); font-weight: 700; }
+    .bid-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .bid-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+    }
+    .btn-approve {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .btn-approve:hover { background: var(--accent); color: #000; }
+    .btn-reject {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .btn-reject:hover { background: var(--danger); color: #fff; }
+
+    /* Manual actions */
+    .action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .action-row:last-child { border-bottom: none; }
+    .action-desc { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+    /* Payment status */
+    .payment-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .payment-row:last-child { border-bottom: none; }
+
+    /* Loading & error states */
+    .loading-msg, .error-msg {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+    .loading-msg { color: var(--text-muted); }
+    .error-msg { color: var(--danger); }
+
+    .spinner-sm {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .bid-row { flex-direction: column; align-items: flex-start; }
+      .bid-actions { margin-top: 0.5rem; }
+      .action-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="padding-top:1rem; padding-bottom:3rem;">
+    <header class="page-header">
+      <span class="brand-tag">BidMe</span>
+      <h1>Admin Panel</h1>
+      <p id="subtitle">Loading repository data...</p>
+    </header>
+
+    <div id="loading" class="loading-msg">
+      <span class="spinner-sm"></span> Fetching admin data...
+    </div>
+
+    <div id="error" class="error-msg" style="display:none;"></div>
+
+    <div id="admin" style="display:none;">
+
+      <!-- Current Bids -->
+      <div class="card mb-3">
+        <h3 class="section-title">Current Bids</h3>
+        <div id="bids-list">
+          <span class="text-muted" style="font-size:0.85rem;">No bids found for the current period.</span>
+        </div>
+      </div>
+
+      <!-- Config Summary + Bidding Issue -->
+      <div class="grid grid-2 mb-3">
+        <div class="card">
+          <h3 class="section-title">Configuration</h3>
+          <div id="config-summary">
+            <span class="text-muted" style="font-size:0.85rem;">No configuration loaded.</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="section-title">Current Bidding Issue</h3>
+          <div id="bidding-issue">
+            <span class="text-muted" style="font-size:0.85rem;">No active bidding issue.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment History -->
+      <div class="card mb-3">
+        <h3 class="section-title">Payment History</h3>
+        <div id="payment-history">
+          <span class="text-muted" style="font-size:0.85rem;">No completed periods found.</span>
+        </div>
+      </div>
+
+      <!-- Manual Actions -->
+      <div class="card">
+        <h3 class="section-title">Manual Actions</h3>
+        <div id="manual-actions">
+          <span class="text-muted" style="font-size:0.85rem;">Actions unavailable — repository not detected.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-muted);">
+    <p>BidMe Admin — Manage your repository's banner bidding.</p>
+  </footer>
+
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
