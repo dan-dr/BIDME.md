@@ -65,7 +65,7 @@ This phase transforms BidMe from a private GitHub-Actions-only tool into a publi
       - Placeholder content: a markdown image linking to the first bid issue URL (use `https://github.com/{owner}/{repo}/issues?q=label%3Abidme` as placeholder href)
       - Also include a small "Sponsored via BidMe" text link
 
-- [ ] Create workflow template files in `templates/workflows/`:
+- [x] Create workflow template files in `templates/workflows/`: *(Completed: 4 workflow templates created — bidme-schedule.yml (monthly cron + manual, opens bidding), bidme-process-bid.yml (issue_comment created, bidme label filter), bidme-process-approval.yml (issue_comment edited, bidme label filter), bidme-close-bidding.yml (daily cron + manual, POLAR_ACCESS_TOKEN); all use oven-sh/setup-bun@v2 and bun x bidme commands; scaffold.ts copyWorkflowTemplates() verified to correctly resolve templates/workflows/ path; 470 tests pass)*
   - `templates/workflows/bidme-schedule.yml` — opens bidding period on cron (monthly or weekly based on config). Uses `oven-sh/setup-bun@v2`, runs `bun x bidme open-bidding`. Permissions: contents write, issues write.
   - `templates/workflows/bidme-process-bid.yml` — triggers on issue_comment created, filters for bidme label, runs `bun x bidme process-bid`. Permissions: contents write, issues write.
   - `templates/workflows/bidme-process-approval.yml` — triggers on issue_comment edited, runs `bun x bidme process-approval`. Permissions: contents write, issues write.

@@ -1,0 +1,28 @@
+name: "BidMe: Process Bid"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process-bid:
+    runs-on: ubuntu-latest
+    if: |
+      !github.event.issue.pull_request &&
+      contains(github.event.comment.body, '---') &&
+      contains(toJSON(github.event.issue.labels.*.name), 'bidme')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Process bid comment
+        run: bun x bidme process-bid
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,27 @@
+name: "BidMe: Process Approval"
+
+on:
+  issue_comment:
+    types: [edited]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process-approval:
+    runs-on: ubuntu-latest
+    if: |
+      !github.event.issue.pull_request &&
+      contains(toJSON(github.event.issue.labels.*.name), 'bidme')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Process approval
+        run: bun x bidme process-approval
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
