@@ -85,7 +85,7 @@ This phase transforms BidMe from a private GitHub-Actions-only tool into a publi
     - Use `Bun.spawn` or direct function calls for testing
     - Use temp directories for isolation
 
-- [ ] Run the init test suite and fix any failures until all tests pass. Then do a manual smoke test by running `bun run cli init --defaults --target /tmp/bidme-test` and verify:
+- [x] Run the init test suite and fix any failures until all tests pass. Then do a manual smoke test by running `bun run cli init --defaults --target /tmp/bidme-test` and verify: *(Completed: All 6 init tests pass, full suite 476/476 pass; manual smoke test confirmed .bidme/config.toml (valid TOML, 6 sections, correct defaults), .bidme/data/current-period.json, .bidme/data/analytics.json, .bidme/data/archive/, and README.md with BIDME banner markers and "Sponsored via BidMe" text)*
   - The `.bidme/` folder was created with all expected files
   - `config.toml` is valid TOML with correct default values
   - `README.md` has the banner placeholder
