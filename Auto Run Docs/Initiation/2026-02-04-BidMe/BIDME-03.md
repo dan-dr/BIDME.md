@@ -27,12 +27,13 @@ This phase wires everything together with GitHub Actions workflows that automate
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-processor.ts -- --issue=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
     - Pass `GITHUB_TOKEN`
 
-- [ ] Create the bid approval workflow:
+- [x] Create the bid approval workflow:
   - Create `.github/workflows/process-approval.yml`:
     - Trigger: `issue_comment` with types `[edited]` (reaction events), plus workflow dispatch with issue number and comment ID inputs for manual processing
     - Condition: only process if the reactor is the repository owner, and the issue has the `bidme` label
     - Permissions: `contents: write`, `issues: write`
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/approval-processor.ts -- --issue=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
+  - ✅ Completed: Workflow created with `issue_comment[edited]` trigger + `workflow_dispatch` with inputs. Uses positional args matching approval-processor.ts CLI interface. Tests: 24 pass in `tests/workflows/process-approval.test.ts`.
 
 - [ ] Create the bid closing workflow:
   - Create `.github/workflows/close-bidding.yml`:

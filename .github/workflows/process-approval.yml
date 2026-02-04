@@ -1,0 +1,48 @@
+name: "BidMe: Process Approval"
+
+on:
+  issue_comment:
+    types: [edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to process"
+        required: true
+        type: string
+      comment_id:
+        description: "Comment ID to process"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process-approval:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        !github.event.issue.pull_request &&
+        contains(toJSON(github.event.issue.labels.*.name), 'bidme')
+      )
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Process approval
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            bun run scripts/approval-processor.ts ${{ github.event.inputs.issue_number }} ${{ github.event.inputs.comment_id }}
+          else
+            bun run scripts/approval-processor.ts ${{ github.event.issue.number }} ${{ github.event.comment.id }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
