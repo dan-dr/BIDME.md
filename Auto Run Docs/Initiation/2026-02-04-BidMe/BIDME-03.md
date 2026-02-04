@@ -35,13 +35,14 @@ This phase wires everything together with GitHub Actions workflows that automate
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/approval-processor.ts -- --issue=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
   - ✅ Completed: Workflow created with `issue_comment[edited]` trigger + `workflow_dispatch` with inputs. Uses positional args matching approval-processor.ts CLI interface. Tests: 24 pass in `tests/workflows/process-approval.test.ts`.
 
-- [ ] Create the bid closing workflow:
+- [x] Create the bid closing workflow:
   - Create `.github/workflows/close-bidding.yml`:
     - Trigger: `schedule` (runs daily, checks if current period has ended), plus `workflow_dispatch` for manual close
     - Permissions: `contents: write`, `issues: write`
     - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-closer.ts`
     - Pass both `GITHUB_TOKEN` and `POLAR_ACCESS_TOKEN`
     - After bid-closer runs, commit any data file changes and push
+  - ✅ Completed: Workflow created with daily cron schedule (`0 0 * * *`) + `workflow_dispatch`. Includes commit-and-push step that only commits when data files change (`git diff --staged --quiet ||`). Tests: 18 pass in `tests/workflows/close-bidding.test.ts`. Full suite: 240/240 pass.
 
 - [ ] Update the bid closer script to integrate Polar.sh payment flow:
   - Modify `scripts/bid-closer.ts` to add payment processing after selecting winner:
