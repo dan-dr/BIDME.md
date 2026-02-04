@@ -1,0 +1,74 @@
+# Phase 05: End-to-End Testing, Polish & Documentation
+
+This phase brings everything together with comprehensive end-to-end testing, a polished installation experience, and documentation that makes BidMe easy for any GitHub repo owner to adopt. It validates the entire bidding lifecycle works correctly, adds error resilience, and creates the "copy-paste installation" experience that makes adoption frictionless.
+
+## Tasks
+
+- [ ] Create end-to-end test simulating a complete bidding lifecycle:
+  - Create `scripts/__tests__/e2e-lifecycle.test.ts` that tests the full flow with mocked GitHub API:
+    - Mock `GitHubAPI` class methods to return predictable responses
+    - Step 1: Run bid-opener logic → verify PR creation call and `current-period.json` structure
+    - Step 2: Process a valid bid comment → verify bid added to period data, PR body updated
+    - Step 3: Process an invalid bid (below minimum) → verify rejection comment
+    - Step 4: Process a second higher bid → verify it becomes the new highest
+    - Step 5: Approve the highest bid (mock emoji reaction) → verify status change
+    - Step 6: Run bid-closer → verify README updated with winner banner, PR closed, period archived
+    - Verify data integrity at each step: `current-period.json` and archive files
+
+- [ ] Create integration tests for the GitHub Actions workflow files:
+  - Create `scripts/__tests__/workflows.test.ts` that validates workflow YAML:
+    - Parse each `.github/workflows/*.yml` file
+    - Verify required fields: `on` triggers, `permissions`, `jobs`, `steps`
+    - Verify each workflow references the correct Bun script
+    - Verify environment variables are passed correctly (`GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`)
+    - Verify schedule cron expressions are valid
+    - Verify all workflow files are syntactically valid YAML
+
+- [ ] Add error handling and resilience to all scripts:
+  - Update `scripts/bid-opener.ts`: handle branch already exists (skip), PR creation failure (retry once), config file missing (use defaults)
+  - Update `scripts/bid-processor.ts`: handle deleted comments, rate limiting, concurrent bid processing (check latest data before writing)
+  - Update `scripts/bid-closer.ts`: handle missing period data (no-op), partial failures in README update (rollback), payment API timeout
+  - Update `scripts/approval-processor.ts`: handle comment not found, multiple reactions from same user (latest wins)
+  - Add a shared `scripts/utils/error-handler.ts` with: `withRetry(fn, maxAttempts)` for retryable operations, `BidMeError` custom error class with error codes, `logError(error, context)` for structured error logging
+
+- [ ] Create the quick-start installation experience:
+  - Update `scripts/setup.ts` to be a complete interactive-free setup:
+    - Detect if running inside a GitHub repo (check `.git/` and `origin` remote)
+    - Copy workflow files to `.github/workflows/` if not present
+    - Create `bidme-config.yml` from defaults if not present
+    - Add `<!-- BIDME:BANNER:START -->` / `<!-- BIDME:BANNER:END -->` markers to README if not present
+    - Create `data/` directory with empty `analytics.json` and placeholder `current-period.json`
+    - Print a clear checklist summary of what was configured and what the user still needs to do manually (e.g., "Add POLAR_ACCESS_TOKEN to repo secrets")
+  - Add a `setup` script to `package.json`: `"setup": "bun run scripts/setup.ts"`
+
+- [ ] Add `package.json` scripts for all common operations:
+  - Add script entries:
+    - `"setup": "bun run scripts/setup.ts"` — first-time setup
+    - `"demo": "bun run scripts/demo.ts"` — run the demo
+    - `"open-bidding": "bun run scripts/bid-opener.ts"` — manually open bidding
+    - `"close-bidding": "bun run scripts/bid-closer.ts"` — manually close bidding
+    - `"update-analytics": "bun run scripts/analytics-updater.ts"` — manually update analytics
+    - `"test": "bun test"` — run all tests
+    - `"typecheck": "bun x tsc --noEmit"` — type checking
+  - Verify all scripts are correctly referenced and runnable
+
+- [ ] Polish the README with complete documentation:
+  - Update `README.md` to include:
+    - Eye-catching header with BidMe logo (shields.io badge-based)
+    - One-line description: "Automated banner bidding for GitHub READMEs"
+    - Feature list with emoji bullets
+    - "Quick Start" section: 3 commands (`bun install`, `bun run setup`, enable GitHub Actions)
+    - "How It Works" section: visual flow diagram using ASCII art or markdown (Schedule → PR → Bids → Approval → Banner)
+    - "Configuration" section: documented `bidme-config.yml` with all options explained
+    - "GitHub Pages Dashboard" section explaining the analytics dashboard
+    - "Payment Setup" section: how to configure Polar.sh integration
+    - "For Advertisers" section: how to submit a bid (format template)
+    - "Architecture" section: brief system overview
+    - MIT License badge and link
+
+- [ ] Run the full test suite and verify everything works:
+  - Run `bun test` to execute all unit, integration, and e2e tests
+  - Run `bun run demo` to verify the demo script still works after all changes
+  - Run `bun run typecheck` to verify TypeScript types are correct
+  - Fix any failures or type errors
+  - Ensure all tests pass and the project is in a clean, shippable state

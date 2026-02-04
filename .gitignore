@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# output
+dist/
+out/
+*.tgz
+
+# logs
+*.log
+
+# dotenv
+.env
+.env.*.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# OS
+.DS_Store
+
+# IDE
+.idea

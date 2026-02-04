@@ -1,0 +1,68 @@
+# Phase 03: GitHub Actions Workflows & Payment Integration
+
+This phase wires everything together with GitHub Actions workflows that automate the full bidding lifecycle, and integrates Polar.sh for payment processing. After this phase, BidMe is a fully deployable GitHub Action that any repo owner can install — bids open on schedule, get processed automatically, owners approve via emoji, winners get their banner placed, and payments flow through Polar.sh.
+
+## Tasks
+
+- [ ] Create the Polar.sh payment integration utility:
+  - Create `scripts/utils/polar-integration.ts` with a `PolarAPI` class:
+    - `createCheckoutSession(amount, bidderEmail, periodId)` — creates a Polar.sh checkout link for the winning bid amount. Uses the Polar.sh API (`https://api.polar.sh/v1/`) with `POLAR_ACCESS_TOKEN` from environment
+    - `getPaymentStatus(checkoutId)` — checks if a checkout session has been paid
+    - `createProduct(name, price, description)` — creates a one-time product on Polar.sh for the bidding period (e.g., "Banner Space: Jan 15-22, 2026 - $100")
+  - Use fetch with proper error handling and typed responses
+  - Include a `PolarConfig` type and graceful fallback when `POLAR_ACCESS_TOKEN` is not set (log warning, skip payment step)
+
+- [ ] Create the scheduled bid opening workflow:
+  - Create `.github/workflows/schedule-bidding.yml`:
+    - Trigger: `schedule` with cron expression (default monthly: `0 0 1 * *`), plus `workflow_dispatch` for manual trigger
+    - Permissions: `contents: write`, `pull-requests: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-opener.ts`
+    - Pass `GITHUB_TOKEN` as environment variable
+
+- [ ] Create the bid processing workflow:
+  - Create `.github/workflows/process-bid.yml`:
+    - Trigger: `issue_comment` with types `[created]`, filtered to PRs only (check `github.event.issue.pull_request`)
+    - Condition: only run if comment body contains the bid YAML frontmatter markers (`---`)
+    - Permissions: `contents: write`, `pull-requests: write`, `issues: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-processor.ts -- --pr=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
+    - Pass `GITHUB_TOKEN`
+
+- [ ] Create the bid approval workflow:
+  - Create `.github/workflows/process-approval.yml`:
+    - Trigger: `issue_comment` with types `[edited]` (reaction events), plus `pull_request_review` for alternative approval
+    - Also trigger on: workflow dispatch with PR number and comment ID inputs for manual processing
+    - Condition: only process if the reactor is the repository owner
+    - Permissions: `contents: write`, `pull-requests: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/approval-processor.ts -- --pr=${{ github.event.issue.number }} --comment=${{ github.event.comment.id }}`
+
+- [ ] Create the bid closing workflow:
+  - Create `.github/workflows/close-bidding.yml`:
+    - Trigger: `schedule` (runs daily, checks if current period has ended), plus `workflow_dispatch` for manual close
+    - Permissions: `contents: write`, `pull-requests: write`
+    - Steps: checkout repo, setup Bun, install dependencies, run `bun run scripts/bid-closer.ts`
+    - Pass both `GITHUB_TOKEN` and `POLAR_ACCESS_TOKEN`
+    - After bid-closer runs, commit any data file changes and push
+
+- [ ] Update the bid closer script to integrate Polar.sh payment flow:
+  - Modify `scripts/bid-closer.ts` to add payment processing after selecting winner:
+    - Call `PolarAPI.createProduct()` to create a product for this bidding period
+    - Call `PolarAPI.createCheckoutSession()` with the winning bid amount and bidder email
+    - Include the Polar.sh checkout link in the winner announcement comment on the PR
+    - Store the checkout URL and payment status in the archived period data
+    - If Polar.sh is not configured (no token), skip payment and note it in the closing comment
+
+- [ ] Create a setup/installation script for new adopters:
+  - Create `scripts/setup.ts` that:
+    - Checks if `bidme-config.yml` exists, creates one from defaults if not
+    - Checks if README has the `<!-- BIDME:BANNER:START -->` markers, adds them if not
+    - Validates that required GitHub secrets are mentioned (prints checklist of: `POLAR_ACCESS_TOKEN` — optional but recommended)
+    - Creates the `data/` directory if it doesn't exist
+    - Prints a summary of what was set up and next steps
+  - This enables the "copy-paste installation" goal from the plan
+
+- [ ] Write tests for the Polar.sh integration module:
+  - Create `scripts/__tests__/polar-integration.test.ts`:
+    - Test `createCheckoutSession()` with mocked fetch responses
+    - Test `getPaymentStatus()` with paid and unpaid states
+    - Test graceful fallback when POLAR_ACCESS_TOKEN is not set
+  - Run `bun test` and fix any failures
