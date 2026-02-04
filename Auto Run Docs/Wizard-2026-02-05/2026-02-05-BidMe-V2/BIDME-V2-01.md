@@ -74,7 +74,7 @@ This phase transforms BidMe from a private GitHub-Actions-only tool into a publi
   - Use Bun setup action in all workflows
   - All workflows should install via `bun x bidme` (the published package) rather than local script paths
 
-- [ ] Create a test script that validates the full init flow end-to-end:
+- [x] Create a test script that validates the full init flow end-to-end: *(Completed: src/commands/__tests__/init.test.ts with 6 tests covering scaffold output, TOML validity, README creation/prepend, idempotency, and workflow copying; fixed detectGitRepo bug where Bun.file().exists() failed on directories — switched to fs.stat(); 476 tests pass, typecheck clean)*
   - `src/commands/__tests__/init.test.ts`:
     - Test 1: Running init with `--defaults` against a temp directory creates `.bidme/config.toml`, `.bidme/data/current-period.json`, `.bidme/data/analytics.json`, `.bidme/data/archive/`
     - Test 2: Config TOML is valid and parseable, contains all expected sections

@@ -31,14 +31,14 @@ async function detectGitRepo(
   target: string,
 ): Promise<{ isGit: boolean; owner: string; repo: string }> {
   const gitDir = join(target, ".git");
-  const exists = await Bun.file(gitDir).exists().catch(() => false);
-  const isDir = exists
-    ? (
-        await import("fs/promises").then((fs) =>
-          fs.stat(gitDir).then((s) => s.isDirectory()),
-        )
-      ).valueOf()
-    : false;
+  const fs = await import("fs/promises");
+  let isDir = false;
+  try {
+    const s = await fs.stat(gitDir);
+    isDir = s.isDirectory();
+  } catch {
+    isDir = false;
+  }
 
   if (!isDir) return { isGit: false, owner: "OWNER", repo: "REPO" };
 
