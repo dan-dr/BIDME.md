@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { PeriodData } from "../bid-opener";
+import type { PeriodData } from "../bid-opener.ts";
 
 const OWNER = "test-owner";
 const REPO = "test-repo";
@@ -118,9 +118,9 @@ describe("bid-opener resilience", () => {
       }
 
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { openBiddingPeriod } = await import("../bid-opener");
+    const { openBiddingPeriod } = await import("../bid-opener.ts");
     await openBiddingPeriod(configPath);
 
     expect(createCalls).toBe(2);
@@ -155,9 +155,9 @@ describe("bid-opener resilience", () => {
       }
 
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { openBiddingPeriod } = await import("../bid-opener");
+    const { openBiddingPeriod } = await import("../bid-opener.ts");
     await openBiddingPeriod(configPath);
 
     expect(pinCalled).toBe(true);
@@ -182,9 +182,9 @@ describe("bid-processor resilience", () => {
         return new Response(JSON.stringify({ message: "Not Found", status: 404 }), { status: 404 });
       }
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
     const result = await processBid(42, 999, configPath);
     expect(result.success).toBe(false);
     expect(result.message).toContain("Comment not found");
@@ -199,7 +199,7 @@ describe("bid-processor resilience", () => {
     delete process.env["GITHUB_REPOSITORY_OWNER"];
     delete process.env["GITHUB_REPOSITORY"];
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
 
     // processBid will fail at parsing since local mode has empty comment body
     // but what we're testing is that the code reaches the fresh read path
@@ -215,7 +215,7 @@ describe("bid-closer resilience", () => {
     delete process.env["GITHUB_REPOSITORY"];
 
     // Don't create periodDataPath — file doesn't exist
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const result = await closeBiddingPeriod();
     expect(result.success).toBe(true);
     expect(result.message).toContain("nothing to close");
@@ -227,7 +227,7 @@ describe("bid-closer resilience", () => {
 
     await Bun.write(periodDataPath, "");
 
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const result = await closeBiddingPeriod();
     expect(result.success).toBe(true);
     expect(result.message).toContain("empty");
@@ -239,7 +239,7 @@ describe("bid-closer resilience", () => {
 
     await Bun.write(periodDataPath, "{ not valid json");
 
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const result = await closeBiddingPeriod();
     expect(result.success).toBe(false);
     expect(result.message).toContain("corrupted");
@@ -304,9 +304,9 @@ describe("bid-closer resilience", () => {
       }
 
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const result = await closeBiddingPeriod();
 
     expect(result.success).toBe(true);
@@ -342,9 +342,9 @@ describe("approval-processor resilience", () => {
         return new Response(JSON.stringify({ message: "Not Found", status: 404 }), { status: 404 });
       }
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { processApproval } = await import("../approval-processor");
+    const { processApproval } = await import("../approval-processor.ts");
     const result = await processApproval(42, 555);
     expect(result.success).toBe(false);
     expect(result.message).toContain("Comment not found");
@@ -400,9 +400,9 @@ describe("approval-processor resilience", () => {
       }
 
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { processApproval } = await import("../approval-processor");
+    const { processApproval } = await import("../approval-processor.ts");
     const result = await processApproval(42, 777);
 
     expect(result.success).toBe(true);
@@ -452,9 +452,9 @@ describe("approval-processor resilience", () => {
       }
 
       return new Response(JSON.stringify({}), { status: 200 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
-    const { processApproval } = await import("../approval-processor");
+    const { processApproval } = await import("../approval-processor.ts");
     const result = await processApproval(42, 888);
 
     // Should still succeed — the bid status was updated in the file

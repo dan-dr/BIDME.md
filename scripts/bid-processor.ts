@@ -1,10 +1,10 @@
-import { loadConfig } from "./utils/config";
-import { GitHubAPI } from "./utils/github-api";
-import { GitHubAPIError } from "./utils/github-api";
-import { generateBidTable } from "./utils/issue-template";
-import { parseBidComment, validateBid } from "./utils/validation";
-import { BidMeError, logError, withRetry, isRateLimited } from "./utils/error-handler";
-import type { PeriodData, BidRecord } from "./bid-opener";
+import { loadConfig } from "./utils/config.ts";
+import { GitHubAPI } from "./utils/github-api.ts";
+import { GitHubAPIError } from "./utils/github-api.ts";
+import { generateBidTable } from "./utils/issue-template.ts";
+import { parseBidComment, validateBid } from "./utils/validation.ts";
+import { BidMeError, logError, withRetry, isRateLimited } from "./utils/error-handler.ts";
+import type { PeriodData, BidRecord } from "./bid-opener.ts";
 import { resolve } from "path";
 
 function updateIssueBodyWithBids(

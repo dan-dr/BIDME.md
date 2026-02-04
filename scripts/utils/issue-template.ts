@@ -1,5 +1,5 @@
-import type { PeriodData, BidRecord } from "../bid-opener";
-import type { BidMeConfig } from "./config";
+import type { PeriodData, BidRecord } from "../bid-opener.ts";
+import type { BidMeConfig } from "./config.ts";
 
 export function generateBidTable(bids: BidRecord[]): string {
   if (bids.length === 0) {

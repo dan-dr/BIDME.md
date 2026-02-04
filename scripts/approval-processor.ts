@@ -1,8 +1,8 @@
-import { GitHubAPI } from "./utils/github-api";
-import { GitHubAPIError } from "./utils/github-api";
-import { generateBidTable, updateIssueBodyWithBids } from "./bid-processor";
-import { logError, withRetry } from "./utils/error-handler";
-import type { PeriodData, BidRecord } from "./bid-opener";
+import { GitHubAPI } from "./utils/github-api.ts";
+import { GitHubAPIError } from "./utils/github-api.ts";
+import { generateBidTable, updateIssueBodyWithBids } from "./bid-processor.ts";
+import { logError, withRetry } from "./utils/error-handler.ts";
+import type { PeriodData, BidRecord } from "./bid-opener.ts";
 import { resolve } from "path";
 
 export async function processApproval(
@@ -108,14 +108,15 @@ export async function processApproval(
     logError(err, "approval-processor:updateIssueBody");
   }
 
-  const highestApproved = periodData.bids
-    .filter((b) => b.status === "approved")
-    .reduce((max, b) => (b.amount > max.amount ? b : max), { amount: 0 } as Partial<BidRecord>);
+  const approvedBids = periodData.bids.filter((b) => b.status === "approved");
+  const highestApproved = approvedBids.length > 0
+    ? approvedBids.reduce((max, b) => (b.amount > max.amount ? b : max))
+    : null;
 
   let replyBody: string;
   if (newStatus === "approved") {
     replyBody = `✅ **Bid approved!**\n\n@${bid.bidder}'s bid of **$${bid.amount}** has been approved by the repository owner.`;
-    if (highestApproved.amount && highestApproved.bidder) {
+    if (highestApproved) {
       replyBody += `\n\nCurrent highest approved bid: **$${highestApproved.amount}** by @${highestApproved.bidder}`;
     }
   } else {

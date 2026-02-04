@@ -1,6 +1,6 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
-import { BidMeError, logError, withRetry, isRateLimited } from "../utils/error-handler";
-import type { BidMeErrorCode } from "../utils/error-handler";
+import { BidMeError, logError, withRetry, isRateLimited } from "../utils/error-handler.ts";
+import type { BidMeErrorCode } from "../utils/error-handler.ts";
 
 describe("BidMeError", () => {
   test("creates error with code and message", () => {

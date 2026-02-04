@@ -217,6 +217,29 @@ export class GitHubAPI {
     });
   }
 
+  async createPR(
+    title: string,
+    body: string,
+    head: string,
+    base: string,
+  ): Promise<{ number: number; html_url: string; title: string; body: string; state: string }> {
+    return this.request("POST", "/pulls", {
+      title,
+      body,
+      head,
+      base,
+    });
+  }
+
+  async updatePRBody(
+    prNumber: number,
+    body: string,
+  ): Promise<{ number: number; html_url: string; title: string; body: string; state: string }> {
+    return this.request("PATCH", `/pulls/${prNumber}`, {
+      body,
+    });
+  }
+
   async updateReadme(
     content: string,
     message: string,

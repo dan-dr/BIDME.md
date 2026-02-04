@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { loadConfig } from "../../scripts/utils/config";
+import { loadConfig } from "../../scripts/utils/config.ts";
 import { resolve } from "path";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";

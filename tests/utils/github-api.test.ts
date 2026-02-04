@@ -1,5 +1,5 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
-import { GitHubAPI, GitHubAPIError } from "../../scripts/utils/github-api";
+import { GitHubAPI, GitHubAPIError } from "../../scripts/utils/github-api.ts";
 
 const MOCK_TOKEN = "ghp_test123";
 const OWNER = "test-owner";
@@ -11,7 +11,7 @@ let originalFetch: typeof globalThis.fetch;
 function mockFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ) {
-  globalThis.fetch = mock(handler) as typeof fetch;
+  globalThis.fetch = mock(handler) as unknown as typeof fetch;
 }
 
 beforeEach(() => {

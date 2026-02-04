@@ -1,9 +1,9 @@
-import { GitHubAPI } from "./utils/github-api";
+import { GitHubAPI } from "./utils/github-api.ts";
 import {
   generateViewsBadge,
   generateCountriesBadge,
   generateCTRBadge,
-} from "./utils/badge-generator";
+} from "./utils/badge-generator.ts";
 import { resolve } from "path";
 import { mkdir } from "fs/promises";
 

@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach, moc
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { PeriodData } from "../bid-opener";
+import type { PeriodData } from "../bid-opener.ts";
 
 const OWNER = "test-owner";
 const REPO = "test-repo";
@@ -18,7 +18,8 @@ let originalCwd: string;
 let originalFetch: typeof globalThis.fetch;
 let originalEnv: Record<string, string | undefined>;
 
-const fetchCalls: Array<{ url: string; method: string; body?: unknown }> = [];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fetchCalls: Array<{ url: string; method: string; body?: any }> = [];
 
 const issueState = {
   number: 42,
@@ -127,7 +128,7 @@ function setupMockFetch() {
     }
 
     return new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
-  }) as typeof fetch;
+  }) as unknown as typeof fetch;
 }
 
 beforeAll(async () => {
@@ -194,7 +195,7 @@ afterEach(() => {
 
 describe("E2E: Full Bidding Lifecycle", () => {
   test("Step 1: Open bidding period → creates issue, pins it, saves period data", async () => {
-    const { openBiddingPeriod } = await import("../bid-opener");
+    const { openBiddingPeriod } = await import("../bid-opener.ts");
     await openBiddingPeriod(configPath);
 
     const periodFile = Bun.file(periodDataPath);
@@ -246,7 +247,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     };
     comments.push(bidComment);
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
     const result = await processBid(issueState.number, 2001, configPath);
 
     expect(result.success).toBe(true);
@@ -304,7 +305,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     };
     comments.push(lowBidComment);
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
     const result = await processBid(issueState.number, 2002, configPath);
 
     expect(result.success).toBe(false);
@@ -352,7 +353,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     };
     comments.push(higherBidComment);
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
     const result = await processBid(issueState.number, 2003, configPath);
 
     expect(result.success).toBe(true);
@@ -410,7 +411,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     // Mock owner's +1 reaction on comment 2003 (bigspender's bid)
     reactions[2003] = [{ id: 1, content: "+1", user: { login: OWNER } }];
 
-    const { processApproval } = await import("../approval-processor");
+    const { processApproval } = await import("../approval-processor.ts");
     const result = await processApproval(issueState.number, 2003);
 
     expect(result.success).toBe(true);
@@ -478,7 +479,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     // Ensure README has markers
     readmeContent = "# Test Repo\n\n<!-- BIDME:BANNER:START -->\n<!-- BIDME:BANNER:END -->\n\nHello world!";
 
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const result = await closeBiddingPeriod();
 
     expect(result.success).toBe(true);
@@ -528,7 +529,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     readmeContent = "# Test Repo\n\n<!-- BIDME:BANNER:START -->\n<!-- BIDME:BANNER:END -->\n\nHello world!";
 
     // Step 1: Open
-    const { openBiddingPeriod } = await import("../bid-opener");
+    const { openBiddingPeriod } = await import("../bid-opener.ts");
     await openBiddingPeriod(configPath);
 
     let period: PeriodData = JSON.parse(await Bun.file(periodDataPath).text());
@@ -546,7 +547,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     };
     comments.push(bid1Comment);
 
-    const { processBid } = await import("../bid-processor");
+    const { processBid } = await import("../bid-processor.ts");
     let bidResult = await processBid(issueState.number, 3001, configPath);
     expect(bidResult.success).toBe(true);
 
@@ -590,7 +591,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     // Step 5: Approve highest bid
     reactions[3003] = [{ id: 10, content: "+1", user: { login: OWNER } }];
 
-    const { processApproval } = await import("../approval-processor");
+    const { processApproval } = await import("../approval-processor.ts");
     const approvalResult = await processApproval(issueState.number, 3003);
     expect(approvalResult.success).toBe(true);
 
@@ -599,7 +600,7 @@ describe("E2E: Full Bidding Lifecycle", () => {
     expect(approved!.status).toBe("approved");
 
     // Step 6: Close
-    const { closeBiddingPeriod } = await import("../bid-closer");
+    const { closeBiddingPeriod } = await import("../bid-closer.ts");
     const closeResult = await closeBiddingPeriod();
     expect(closeResult.success).toBe(true);
     expect(closeResult.message).toContain("bigbrand");

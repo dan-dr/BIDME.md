@@ -1,7 +1,7 @@
-import { loadConfig } from "./utils/config";
-import { GitHubAPI } from "./utils/github-api";
-import { generateBiddingIssueBody } from "./utils/issue-template";
-import { BidMeError, logError, withRetry } from "./utils/error-handler";
+import { loadConfig } from "./utils/config.ts";
+import { GitHubAPI } from "./utils/github-api.ts";
+import { generateBiddingIssueBody } from "./utils/issue-template.ts";
+import { BidMeError, logError, withRetry } from "./utils/error-handler.ts";
 import { resolve } from "path";
 
 export interface PeriodData {

@@ -1,4 +1,4 @@
-import type { BidMeConfig } from "./config";
+import type { BidMeConfig } from "./config.ts";
 
 export interface ParsedBid {
   amount: number;

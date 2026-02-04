@@ -4,7 +4,7 @@ import {
   PolarAPIError,
   type PolarProduct,
   type PolarCheckoutSession,
-} from "../utils/polar-integration";
+} from "../utils/polar-integration.ts";
 
 const MOCK_TOKEN = "polar_test_abc123";
 
@@ -14,7 +14,7 @@ let originalEnv: string | undefined;
 function mockFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ) {
-  globalThis.fetch = mock(handler) as typeof fetch;
+  globalThis.fetch = mock(handler) as unknown as typeof fetch;
 }
 
 beforeEach(() => {

@@ -1,12 +1,12 @@
-import { GitHubAPI } from "./utils/github-api";
-import { generateBannerSection } from "./utils/badge-generator";
+import { GitHubAPI } from "./utils/github-api.ts";
+import { generateBannerSection } from "./utils/badge-generator.ts";
 import {
   generateWinnerAnnouncement,
   generateNoBidsMessage,
-} from "./utils/issue-template";
-import { PolarAPI } from "./utils/polar-integration";
-import { logError, withRetry } from "./utils/error-handler";
-import type { PeriodData, BidRecord } from "./bid-opener";
+} from "./utils/issue-template.ts";
+import { PolarAPI } from "./utils/polar-integration.ts";
+import { logError, withRetry } from "./utils/error-handler.ts";
+import type { PeriodData, BidRecord } from "./bid-opener.ts";
 import { resolve } from "path";
 import { mkdir } from "fs/promises";
 

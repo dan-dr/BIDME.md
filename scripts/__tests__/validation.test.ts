@@ -3,8 +3,8 @@ import {
   parseBidComment,
   validateBid,
   type ParsedBid,
-} from "../utils/validation";
-import { loadConfig, type BidMeConfig } from "../utils/config";
+} from "../utils/validation.ts";
+import { loadConfig, type BidMeConfig } from "../utils/config.ts";
 import { resolve } from "path";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";

@@ -2,9 +2,9 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } fr
 import { resolve } from "path";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { handleClick } from "../scripts/handle-click";
-import { loadAnalytics, saveAnalytics } from "../scripts/utils/analytics-store";
-import type { AnalyticsData } from "../scripts/utils/analytics-store";
+import { handleClick } from "../scripts/handle-click.ts";
+import { loadAnalytics, saveAnalytics } from "../scripts/utils/analytics-store.ts";
+import type { AnalyticsData } from "../scripts/utils/analytics-store.ts";
 
 function makeAnalytics(overrides: Partial<AnalyticsData> = {}): AnalyticsData {
   return {

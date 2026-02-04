@@ -9,8 +9,8 @@ import {
   mergeCountries,
   generateBadges,
   updateReadmeBanner,
-} from "../scripts/analytics-updater";
-import type { AnalyticsData, DailyView } from "../scripts/analytics-updater";
+} from "../scripts/analytics-updater.ts";
+import type { AnalyticsData, DailyView } from "../scripts/analytics-updater.ts";
 
 describe("loadAnalyticsFile", () => {
   let tempDir: string;

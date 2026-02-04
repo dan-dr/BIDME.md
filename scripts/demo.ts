@@ -1,11 +1,11 @@
-import { loadConfig } from "./utils/config";
-import { parseBidComment, validateBid } from "./utils/validation";
+import { loadConfig } from "./utils/config.ts";
+import { parseBidComment, validateBid } from "./utils/validation.ts";
 import {
   generateViewsBadge,
   generateCountriesBadge,
   generateCTRBadge,
   generateBannerSection,
-} from "./utils/badge-generator";
+} from "./utils/badge-generator.ts";
 
 const SAMPLE_BID_COMMENT = `
 I'd like to bid on your banner space!

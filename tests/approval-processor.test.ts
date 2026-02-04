@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:tes
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { PeriodData, BidRecord } from "../scripts/bid-opener";
+import type { PeriodData, BidRecord } from "../scripts/bid-opener.ts";
 
 const makeBid = (overrides?: Partial<BidRecord>): BidRecord => ({
   bidder: "testbidder",
@@ -50,7 +50,7 @@ describe("approval-processor", () => {
 
   describe("processApproval", () => {
     test("returns error when no period file exists", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const emptyDir = resolve(tempDir, "empty");
       await mkdir(resolve(emptyDir, "data"), { recursive: true });
@@ -68,7 +68,7 @@ describe("approval-processor", () => {
     });
 
     test("returns error when period is closed", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const closedDir = resolve(tempDir, "closed");
       const closedDataDir = resolve(closedDir, "data");
@@ -91,7 +91,7 @@ describe("approval-processor", () => {
     });
 
     test("returns error when comment ID does not match any bid", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const originalCwd = process.cwd();
       process.chdir(tempDir);
@@ -106,7 +106,7 @@ describe("approval-processor", () => {
     });
 
     test("returns error in local mode without GitHub env", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const originalCwd = process.cwd();
       process.chdir(tempDir);
@@ -128,7 +128,7 @@ describe("approval-processor", () => {
     });
 
     test("approves bid on 👍 reaction from owner", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const approveDir = resolve(tempDir, "approve");
       const approveDataDir = resolve(approveDir, "data");
@@ -151,7 +151,7 @@ describe("approval-processor", () => {
       const origFetch = globalThis.fetch;
       const calls: { url: string; method: string; body?: string }[] = [];
 
-      globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+      globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         const method = init?.method ?? "GET";
         const body = init?.body ? String(init.body) : undefined;
@@ -193,7 +193,7 @@ describe("approval-processor", () => {
         }
 
         return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await processApproval(42, 555);
@@ -223,7 +223,7 @@ describe("approval-processor", () => {
     });
 
     test("rejects bid on 👎 reaction from owner", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const rejectDir = resolve(tempDir, "reject");
       const rejectDataDir = resolve(rejectDir, "data");
@@ -245,7 +245,7 @@ describe("approval-processor", () => {
 
       const origFetch = globalThis.fetch;
 
-      globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+      globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         const method = init?.method ?? "GET";
 
@@ -281,7 +281,7 @@ describe("approval-processor", () => {
         }
 
         return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await processApproval(42, 555);
@@ -306,7 +306,7 @@ describe("approval-processor", () => {
     });
 
     test("returns error when no owner reaction found", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const noReactDir = resolve(tempDir, "noreact");
       const noReactDataDir = resolve(noReactDir, "data");
@@ -328,12 +328,12 @@ describe("approval-processor", () => {
 
       const origFetch = globalThis.fetch;
 
-      globalThis.fetch = async () => {
+      globalThis.fetch = (async () => {
         return new Response(
           JSON.stringify([{ id: 1, content: "+1", user: { login: "someoneelse" } }]),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await processApproval(42, 555);
@@ -352,7 +352,7 @@ describe("approval-processor", () => {
     });
 
     test("returns error for unrecognized reaction", async () => {
-      const { processApproval } = await import("../scripts/approval-processor");
+      const { processApproval } = await import("../scripts/approval-processor.ts");
 
       const weirdDir = resolve(tempDir, "weird");
       const weirdDataDir = resolve(weirdDir, "data");
@@ -374,12 +374,12 @@ describe("approval-processor", () => {
 
       const origFetch = globalThis.fetch;
 
-      globalThis.fetch = async () => {
+      globalThis.fetch = (async () => {
         return new Response(
           JSON.stringify([{ id: 1, content: "heart", user: { login: "repoowner" } }]),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await processApproval(42, 555);

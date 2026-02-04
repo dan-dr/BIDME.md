@@ -5,7 +5,7 @@ import {
   generateCountriesBadge,
   generateCTRBadge,
   generateBannerSection,
-} from "../../scripts/utils/badge-generator";
+} from "../../scripts/utils/badge-generator.ts";
 
 describe("formatNumber", () => {
   test("returns plain number below 1000", () => {

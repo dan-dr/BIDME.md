@@ -57,7 +57,7 @@ const DEFAULT_CONFIG: BidMeConfig = {
   },
 };
 
-function deepMerge<T extends Record<string, unknown>>(
+function deepMerge<T extends object>(
   defaults: T,
   overrides: Partial<T>,
 ): T {

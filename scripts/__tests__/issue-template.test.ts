@@ -2,9 +2,9 @@ import { describe, test, expect } from "bun:test";
 import {
   generateBidTable,
   generateBiddingIssueBody,
-} from "../utils/issue-template";
-import type { PeriodData, BidRecord } from "../bid-opener";
-import type { BidMeConfig } from "../utils/config";
+} from "../utils/issue-template.ts";
+import type { PeriodData, BidRecord } from "../bid-opener.ts";
+import type { BidMeConfig } from "../utils/config.ts";
 
 const makeBid = (overrides?: Partial<BidRecord>): BidRecord => ({
   bidder: "testbidder",

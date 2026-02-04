@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:tes
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { PeriodData } from "../scripts/bid-opener";
+import type { PeriodData } from "../scripts/bid-opener.ts";
 
 describe("bid-processor", () => {
   let tempDir: string;
@@ -45,14 +45,14 @@ describe("bid-processor", () => {
 
   describe("generateBidTable", () => {
     test("returns empty table when no bids", async () => {
-      const { generateBidTable } = await import("../scripts/bid-processor");
+      const { generateBidTable } = await import("../scripts/bid-processor.ts");
       const table = generateBidTable([]);
       expect(table).toContain("No bids yet");
       expect(table).toContain("| Rank |");
     });
 
     test("generates table with single bid", async () => {
-      const { generateBidTable } = await import("../scripts/bid-processor");
+      const { generateBidTable } = await import("../scripts/bid-processor.ts");
       const table = generateBidTable([
         {
           bidder: "testuser",
@@ -72,7 +72,7 @@ describe("bid-processor", () => {
     });
 
     test("sorts bids by amount descending", async () => {
-      const { generateBidTable } = await import("../scripts/bid-processor");
+      const { generateBidTable } = await import("../scripts/bid-processor.ts");
       const table = generateBidTable([
         {
           bidder: "lowbidder",
@@ -104,7 +104,7 @@ describe("bid-processor", () => {
     });
 
     test("shows correct status emoji for each state", async () => {
-      const { generateBidTable } = await import("../scripts/bid-processor");
+      const { generateBidTable } = await import("../scripts/bid-processor.ts");
       const table = generateBidTable([
         {
           bidder: "approved-user",
@@ -145,9 +145,7 @@ describe("bid-processor", () => {
 
   describe("updateIssueBodyWithBids", () => {
     test("replaces bid table in issue body", async () => {
-      const { updateIssueBodyWithBids } = await import(
-        "../scripts/bid-processor"
-      );
+      const { updateIssueBodyWithBids } = await import("../scripts/bid-processor.ts");
       const body = `## 🎯 BidMe Banner Bidding
 
 ### Rules
@@ -185,7 +183,7 @@ Post a comment.`;
 
   describe("processBid", () => {
     test("returns error when no period file exists", async () => {
-      const { processBid } = await import("../scripts/bid-processor");
+      const { processBid } = await import("../scripts/bid-processor.ts");
 
       const emptyDir = resolve(tempDir, "empty");
       await mkdir(resolve(emptyDir, "data"), { recursive: true });
@@ -203,7 +201,7 @@ Post a comment.`;
     });
 
     test("returns error when period is closed", async () => {
-      const { processBid } = await import("../scripts/bid-processor");
+      const { processBid } = await import("../scripts/bid-processor.ts");
 
       const closedDir = resolve(tempDir, "closed");
       const closedDataDir = resolve(closedDir, "data");
@@ -226,7 +224,7 @@ Post a comment.`;
     });
 
     test("runs in local mode without GitHub env and fails parse for empty comment", async () => {
-      const { processBid } = await import("../scripts/bid-processor");
+      const { processBid } = await import("../scripts/bid-processor.ts");
 
       const originalCwd = process.cwd();
       process.chdir(tempDir);
@@ -310,7 +308,7 @@ Post a comment.`;
 
   describe("bid increment validation via processBid", () => {
     test("rejects bid lower than current highest", async () => {
-      const { processBid } = await import("../scripts/bid-processor");
+      const { processBid } = await import("../scripts/bid-processor.ts");
 
       const incrDir = resolve(tempDir, "incr");
       const incrDataDir = resolve(incrDir, "data");
@@ -361,7 +359,7 @@ describe("github-api getComment and getIssue", () => {
     const calls: { url: string; method: string }[] = [];
     const origFetch = globalThis.fetch;
 
-    globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       calls.push({ url, method: init?.method ?? "GET" });
       return new Response(
@@ -373,10 +371,10 @@ describe("github-api getComment and getIssue", () => {
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
-    };
+    }) as unknown as typeof fetch;
 
     try {
-      const { GitHubAPI } = await import("../scripts/utils/github-api");
+      const { GitHubAPI } = await import("../scripts/utils/github-api.ts");
       const api = new GitHubAPI("owner", "repo", "test-token");
       const comment = await api.getComment(999);
 
@@ -394,7 +392,7 @@ describe("github-api getComment and getIssue", () => {
     const calls: { url: string; method: string }[] = [];
     const origFetch = globalThis.fetch;
 
-    globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       calls.push({ url, method: init?.method ?? "GET" });
       return new Response(
@@ -408,10 +406,10 @@ describe("github-api getComment and getIssue", () => {
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
-    };
+    }) as unknown as typeof fetch;
 
     try {
-      const { GitHubAPI } = await import("../scripts/utils/github-api");
+      const { GitHubAPI } = await import("../scripts/utils/github-api.ts");
       const api = new GitHubAPI("owner", "repo", "test-token");
       const issue = await api.getIssue(42);
 

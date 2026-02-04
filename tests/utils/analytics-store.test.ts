@@ -8,8 +8,8 @@ import {
   recordClick,
   getClickThroughRate,
   aggregateByPeriod,
-} from "../../scripts/utils/analytics-store";
-import type { AnalyticsData } from "../../scripts/utils/analytics-store";
+} from "../../scripts/utils/analytics-store.ts";
+import type { AnalyticsData } from "../../scripts/utils/analytics-store.ts";
 
 function makeAnalytics(overrides: Partial<AnalyticsData> = {}): AnalyticsData {
   return {

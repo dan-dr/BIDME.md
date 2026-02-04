@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:tes
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir, readdir } from "fs/promises";
 import { tmpdir } from "os";
-import { setup, type SetupResult } from "../scripts/setup";
+import { setup, type SetupResult } from "../scripts/setup.ts";
 
 describe("setup", () => {
   let tempDir: string;

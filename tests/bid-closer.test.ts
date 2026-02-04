@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:tes
 import { resolve } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { PeriodData, BidRecord } from "../scripts/bid-opener";
+import type { PeriodData, BidRecord } from "../scripts/bid-opener.ts";
 
 const makeBid = (overrides?: Partial<BidRecord>): BidRecord => ({
   bidder: "testbidder",
@@ -61,7 +61,7 @@ describe("bid-closer", () => {
 
   describe("closeBiddingPeriod", () => {
     test("returns success (no-op) when no period file exists", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const emptyDir = resolve(tempDir, "empty");
       await mkdir(resolve(emptyDir, "data"), { recursive: true });
@@ -79,7 +79,7 @@ describe("bid-closer", () => {
     });
 
     test("returns error when period is already closed", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const closedDir = resolve(tempDir, "closed");
       const closedDataDir = resolve(closedDir, "data");
@@ -102,7 +102,7 @@ describe("bid-closer", () => {
     });
 
     test("closes with winner in local mode (no GitHub env)", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const localDir = resolve(tempDir, "local-winner");
       const localDataDir = resolve(localDir, "data");
@@ -144,7 +144,7 @@ describe("bid-closer", () => {
     });
 
     test("closes with no winner in local mode", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const localDir = resolve(tempDir, "local-nowinner");
       const localDataDir = resolve(localDir, "data");
@@ -174,7 +174,7 @@ describe("bid-closer", () => {
     });
 
     test("selects highest approved bid as winner (ignoring pending/rejected)", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const localDir = resolve(tempDir, "local-multi");
       const localDataDir = resolve(localDir, "data");
@@ -213,7 +213,7 @@ describe("bid-closer", () => {
     });
 
     test("closes with winner via GitHub API — updates README, comments, unpins, closes", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const ghDir = resolve(tempDir, "gh-winner");
       const ghDataDir = resolve(ghDir, "data");
@@ -237,7 +237,7 @@ describe("bid-closer", () => {
       const origFetch = globalThis.fetch;
       const calls: { url: string; method: string; body?: string }[] = [];
 
-      globalThis.fetch = async (
+      globalThis.fetch = (async (
         input: string | URL | Request,
         init?: RequestInit,
       ) => {
@@ -311,7 +311,7 @@ describe("bid-closer", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await closeBiddingPeriod();
@@ -372,7 +372,7 @@ describe("bid-closer", () => {
     });
 
     test("closes with no approved bids via GitHub API — comments, unpins, closes", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const ghDir = resolve(tempDir, "gh-nowinner");
       const ghDataDir = resolve(ghDir, "data");
@@ -401,7 +401,7 @@ describe("bid-closer", () => {
       const origFetch = globalThis.fetch;
       const calls: { url: string; method: string; body?: string }[] = [];
 
-      globalThis.fetch = async (
+      globalThis.fetch = (async (
         input: string | URL | Request,
         init?: RequestInit,
       ) => {
@@ -452,7 +452,7 @@ describe("bid-closer", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await closeBiddingPeriod();
@@ -496,7 +496,7 @@ describe("bid-closer", () => {
 
   describe("generateWinnerComment", () => {
     test("produces markdown with winner details", async () => {
-      const { generateWinnerComment } = await import("../scripts/bid-closer");
+      const { generateWinnerComment } = await import("../scripts/bid-closer.ts");
 
       const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
       const period = makePeriodData();
@@ -514,7 +514,7 @@ describe("bid-closer", () => {
 
   describe("generateNoWinnerComment", () => {
     test("produces markdown with period dates", async () => {
-      const { generateNoWinnerComment } = await import("../scripts/bid-closer");
+      const { generateNoWinnerComment } = await import("../scripts/bid-closer.ts");
 
       const period = makePeriodData();
       const comment = generateNoWinnerComment(period);
@@ -528,7 +528,7 @@ describe("bid-closer", () => {
 
   describe("archivePeriod", () => {
     test("creates archive directory and writes period file", async () => {
-      const { archivePeriod } = await import("../scripts/bid-closer");
+      const { archivePeriod } = await import("../scripts/bid-closer.ts");
 
       const archDir = resolve(tempDir, "archtest");
       const archDataDir = resolve(archDir, "data");
@@ -557,7 +557,7 @@ describe("bid-closer", () => {
 
   describe("processPayment", () => {
     test("returns null when POLAR_ACCESS_TOKEN is not set", async () => {
-      const { processPayment } = await import("../scripts/bid-closer");
+      const { processPayment } = await import("../scripts/bid-closer.ts");
 
       const origToken = process.env["POLAR_ACCESS_TOKEN"];
       delete process.env["POLAR_ACCESS_TOKEN"];
@@ -573,7 +573,7 @@ describe("bid-closer", () => {
     });
 
     test("creates product and checkout session when Polar is configured", async () => {
-      const { processPayment } = await import("../scripts/bid-closer");
+      const { processPayment } = await import("../scripts/bid-closer.ts");
 
       const origToken = process.env["POLAR_ACCESS_TOKEN"];
       process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
@@ -581,7 +581,7 @@ describe("bid-closer", () => {
       const origFetch = globalThis.fetch;
       const calls: { url: string; method: string; body?: string }[] = [];
 
-      globalThis.fetch = async (
+      globalThis.fetch = (async (
         input: string | URL | Request,
         init?: RequestInit,
       ) => {
@@ -628,7 +628,7 @@ describe("bid-closer", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const bid = makeBid({ status: "approved" });
@@ -664,19 +664,19 @@ describe("bid-closer", () => {
     });
 
     test("returns null when Polar API call fails", async () => {
-      const { processPayment } = await import("../scripts/bid-closer");
+      const { processPayment } = await import("../scripts/bid-closer.ts");
 
       const origToken = process.env["POLAR_ACCESS_TOKEN"];
       process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
 
       const origFetch = globalThis.fetch;
 
-      globalThis.fetch = async () => {
+      globalThis.fetch = (async () => {
         return new Response(
           JSON.stringify({ detail: "Internal Server Error", status: 500 }),
           { status: 500, headers: { "Content-Type": "application/json" } },
         );
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const bid = makeBid({ status: "approved" });
@@ -693,7 +693,7 @@ describe("bid-closer", () => {
 
   describe("Polar.sh integration in closeBiddingPeriod", () => {
     test("stores payment data in archived period when Polar is configured (local mode)", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const localDir = resolve(tempDir, "local-polar");
       const localDataDir = resolve(localDir, "data");
@@ -715,7 +715,7 @@ describe("bid-closer", () => {
 
       const origFetch = globalThis.fetch;
 
-      globalThis.fetch = async (
+      globalThis.fetch = (async (
         input: string | URL | Request,
         init?: RequestInit,
       ) => {
@@ -760,7 +760,7 @@ describe("bid-closer", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await closeBiddingPeriod();
@@ -789,7 +789,7 @@ describe("bid-closer", () => {
     });
 
     test("skips payment and still closes when Polar is not configured (local mode)", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const localDir = resolve(tempDir, "local-nopolar");
       const localDataDir = resolve(localDir, "data");
@@ -831,7 +831,7 @@ describe("bid-closer", () => {
     });
 
     test("includes checkout URL in winner comment via GitHub API", async () => {
-      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer.ts");
 
       const ghDir = resolve(tempDir, "gh-polar");
       const ghDataDir = resolve(ghDir, "data");
@@ -857,7 +857,7 @@ describe("bid-closer", () => {
       const origFetch = globalThis.fetch;
       const calls: { url: string; method: string; body?: string }[] = [];
 
-      globalThis.fetch = async (
+      globalThis.fetch = (async (
         input: string | URL | Request,
         init?: RequestInit,
       ) => {
@@ -945,7 +945,7 @@ describe("bid-closer", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      };
+      }) as unknown as typeof fetch;
 
       try {
         const result = await closeBiddingPeriod();
@@ -982,7 +982,7 @@ describe("bid-closer", () => {
 
   describe("generateWinnerComment with checkout URL", () => {
     test("includes checkout link when URL is provided", async () => {
-      const { generateWinnerComment } = await import("../scripts/bid-closer");
+      const { generateWinnerComment } = await import("../scripts/bid-closer.ts");
 
       const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
       const period = makePeriodData();
@@ -995,7 +995,7 @@ describe("bid-closer", () => {
     });
 
     test("shows payment not configured message when no URL", async () => {
-      const { generateWinnerComment } = await import("../scripts/bid-closer");
+      const { generateWinnerComment } = await import("../scripts/bid-closer.ts");
 
       const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
       const period = makePeriodData();

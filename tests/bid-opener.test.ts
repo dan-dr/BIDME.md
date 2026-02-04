@@ -28,7 +28,7 @@ describe("bid-opener", () => {
     process.chdir(tempDir);
 
     try {
-      const { openBiddingPeriod } = await import("../scripts/bid-opener");
+      const { openBiddingPeriod } = await import("../scripts/bid-opener.ts");
       await openBiddingPeriod(configPath);
 
       const periodFile = Bun.file(resolve(dataDir, "current-period.json"));
@@ -101,7 +101,7 @@ describe("bid-opener", () => {
     process.chdir(resolve(tempDir, "data3"));
 
     try {
-      const mod = await import("../scripts/bid-opener");
+      const mod = await import("../scripts/bid-opener.ts");
       await mod.openBiddingPeriod(configPath);
 
       const periodFile = Bun.file(resolve(dataDir3, "current-period.json"));
@@ -149,7 +149,7 @@ describe("bid-opener", () => {
     };
 
     try {
-      const mod = await import("../scripts/bid-opener");
+      const mod = await import("../scripts/bid-opener.ts");
       await mod.openBiddingPeriod(configPath);
 
       const output = logs.join("\n");

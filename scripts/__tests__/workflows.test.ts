@@ -36,6 +36,8 @@ function isValidCron(cron: string): boolean {
   ];
 
   return parts.every((part, i) => {
+    const range = ranges[i];
+    if (!range) return false;
     if (part === "*") return true;
     // Handle */N step values
     if (part.startsWith("*/")) {
@@ -44,18 +46,20 @@ function isValidCron(cron: string): boolean {
     }
     // Handle plain numbers
     const num = parseInt(part, 10);
-    if (!isNaN(num)) return num >= ranges[i].min && num <= ranges[i].max;
+    if (!isNaN(num)) return num >= range.min && num <= range.max;
     // Handle comma-separated values
     if (part.includes(",")) {
       return part.split(",").every((v) => {
         const n = parseInt(v, 10);
-        return !isNaN(n) && n >= ranges[i].min && n <= ranges[i].max;
+        return !isNaN(n) && n >= range.min && n <= range.max;
       });
     }
     // Handle ranges (e.g. 1-5)
     if (part.includes("-")) {
-      const [lo, hi] = part.split("-").map(Number);
-      return !isNaN(lo) && !isNaN(hi) && lo >= ranges[i].min && hi <= ranges[i].max && lo <= hi;
+      const parts2 = part.split("-").map(Number);
+      const lo = parts2[0]!;
+      const hi = parts2[1]!;
+      return !isNaN(lo) && !isNaN(hi) && lo >= range.min && hi <= range.max && lo <= hi;
     }
     return false;
   });
@@ -116,7 +120,7 @@ describe("GitHub Actions workflow validation", () => {
 
         test("has 'on' triggers defined", () => {
           const w = workflows[file];
-          expect(w.on || w[true]).toBeDefined();
+          expect(w.on || w["true"]).toBeDefined();
         });
 
         test("has permissions defined", () => {
@@ -146,7 +150,7 @@ describe("GitHub Actions workflow validation", () => {
       test(`${file} runs expected script(s)`, () => {
         const runCommands = getAllRunCommands(workflows[file]);
         const allRunText = runCommands.join("\n");
-        for (const script of EXPECTED_SCRIPTS[file]) {
+        for (const script of EXPECTED_SCRIPTS[file]!) {
           expect(allRunText).toContain(script);
         }
       });

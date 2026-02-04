@@ -1,4 +1,4 @@
-import { loadAnalytics, saveAnalytics, recordClick } from "./utils/analytics-store";
+import { loadAnalytics, saveAnalytics, recordClick } from "./utils/analytics-store.ts";
 import { resolve } from "path";
 
 export async function handleClick(): Promise<{

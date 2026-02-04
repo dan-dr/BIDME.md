@@ -4,8 +4,8 @@ import {
   validateBid,
   validateBannerUrl,
   type ParsedBid,
-} from "../../scripts/utils/validation";
-import { loadConfig, type BidMeConfig } from "../../scripts/utils/config";
+} from "../../scripts/utils/validation.ts";
+import { loadConfig, type BidMeConfig } from "../../scripts/utils/config.ts";
 import { resolve } from "path";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";

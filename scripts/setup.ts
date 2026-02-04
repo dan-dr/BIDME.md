@@ -1,7 +1,7 @@
 import yaml from "js-yaml";
 import { resolve, dirname } from "path";
 import { mkdir, readdir } from "fs/promises";
-import { loadConfig, type BidMeConfig } from "./utils/config";
+import { loadConfig, type BidMeConfig } from "./utils/config.ts";
 
 const DEFAULT_CONFIG_YAML = `bidding:
   schedule: "monthly"

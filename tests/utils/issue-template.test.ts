@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import type { PeriodData, BidRecord } from "../../scripts/bid-opener";
-import type { BidMeConfig } from "../../scripts/utils/config";
+import type { PeriodData, BidRecord } from "../../scripts/bid-opener.ts";
+import type { BidMeConfig } from "../../scripts/utils/config.ts";
 
 const makeBid = (overrides?: Partial<BidRecord>): BidRecord => ({
   bidder: "testbidder",
@@ -53,9 +53,7 @@ const makeConfig = (overrides?: Partial<BidMeConfig>): BidMeConfig => ({
 describe("issue-template", () => {
   describe("generateBidTable", () => {
     test("returns empty table with 0 bids", async () => {
-      const { generateBidTable } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBidTable } = await import("../../scripts/utils/issue-template.ts");
       const table = generateBidTable([]);
       expect(table).toContain("No bids yet");
       expect(table).toContain("| Rank |");
@@ -63,9 +61,7 @@ describe("issue-template", () => {
     });
 
     test("generates table with 1 bid", async () => {
-      const { generateBidTable } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBidTable } = await import("../../scripts/utils/issue-template.ts");
       const table = generateBidTable([makeBid()]);
       expect(table).toContain("@testbidder");
       expect(table).toContain("$100");
@@ -75,9 +71,7 @@ describe("issue-template", () => {
     });
 
     test("sorts multiple bids by amount descending", async () => {
-      const { generateBidTable } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBidTable } = await import("../../scripts/utils/issue-template.ts");
       const bids = [
         makeBid({ bidder: "low", amount: 50, comment_id: 1 }),
         makeBid({ bidder: "high", amount: 200, comment_id: 2, status: "approved" }),
@@ -95,9 +89,7 @@ describe("issue-template", () => {
     });
 
     test("shows correct status emoji for each state", async () => {
-      const { generateBidTable } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBidTable } = await import("../../scripts/utils/issue-template.ts");
       const bids = [
         makeBid({ bidder: "a", amount: 150, status: "approved", comment_id: 1 }),
         makeBid({ bidder: "p", amount: 100, status: "pending", comment_id: 2 }),
@@ -110,9 +102,7 @@ describe("issue-template", () => {
     });
 
     test("assigns rank numbers correctly", async () => {
-      const { generateBidTable } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBidTable } = await import("../../scripts/utils/issue-template.ts");
       const bids = [
         makeBid({ bidder: "first", amount: 200, comment_id: 1 }),
         makeBid({ bidder: "second", amount: 100, comment_id: 2 }),
@@ -125,9 +115,7 @@ describe("issue-template", () => {
 
   describe("generateBiddingIssueBody", () => {
     test("produces valid markdown with all sections", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const config = makeConfig();
       const body = generateBiddingIssueBody(period, config, []);
@@ -147,9 +135,7 @@ describe("issue-template", () => {
     });
 
     test("includes bid table when bids are present", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const config = makeConfig();
       const bids = [makeBid({ bidder: "alice", amount: 100 })];
@@ -161,9 +147,7 @@ describe("issue-template", () => {
     });
 
     test("shows empty table when no bids", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const config = makeConfig();
       const body = generateBiddingIssueBody(period, config, []);
@@ -172,9 +156,7 @@ describe("issue-template", () => {
     });
 
     test("shows deadline countdown", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const future = new Date();
       future.setDate(future.getDate() + 3);
       const period = makePeriodData({ end_date: future.toISOString() });
@@ -185,9 +167,7 @@ describe("issue-template", () => {
     });
 
     test("shows ended message for past deadline", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const past = new Date("2020-01-01T00:00:00.000Z");
       const period = makePeriodData({ end_date: past.toISOString() });
       const config = makeConfig();
@@ -197,9 +177,7 @@ describe("issue-template", () => {
     });
 
     test("uses config values for rules", async () => {
-      const { generateBiddingIssueBody } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateBiddingIssueBody } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const config = makeConfig({
         bidding: { schedule: "weekly", duration: 3, minimum_bid: 25, increment: 10 },
@@ -217,9 +195,7 @@ describe("issue-template", () => {
 
   describe("generateWinnerAnnouncement", () => {
     test("produces markdown with winner details", async () => {
-      const { generateWinnerAnnouncement } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateWinnerAnnouncement } = await import("../../scripts/utils/issue-template.ts");
       const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
       const period = makePeriodData();
       const comment = generateWinnerAnnouncement(bid, period);
@@ -235,9 +211,7 @@ describe("issue-template", () => {
     });
 
     test("includes congratulations and details table", async () => {
-      const { generateWinnerAnnouncement } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateWinnerAnnouncement } = await import("../../scripts/utils/issue-template.ts");
       const bid = makeBid({ bidder: "champion", amount: 500, status: "approved" });
       const period = makePeriodData();
       const comment = generateWinnerAnnouncement(bid, period);
@@ -251,9 +225,7 @@ describe("issue-template", () => {
 
   describe("generateNoBidsMessage", () => {
     test("produces markdown with period dates", async () => {
-      const { generateNoBidsMessage } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateNoBidsMessage } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const comment = generateNoBidsMessage(period);
 
@@ -265,9 +237,7 @@ describe("issue-template", () => {
     });
 
     test("mentions new cycle will open", async () => {
-      const { generateNoBidsMessage } = await import(
-        "../../scripts/utils/issue-template"
-      );
+      const { generateNoBidsMessage } = await import("../../scripts/utils/issue-template.ts");
       const period = makePeriodData();
       const comment = generateNoBidsMessage(period);
 
