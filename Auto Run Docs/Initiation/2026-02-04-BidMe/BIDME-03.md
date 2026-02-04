@@ -44,13 +44,14 @@ This phase wires everything together with GitHub Actions workflows that automate
     - After bid-closer runs, commit any data file changes and push
   - ✅ Completed: Workflow created with daily cron schedule (`0 0 * * *`) + `workflow_dispatch`. Includes commit-and-push step that only commits when data files change (`git diff --staged --quiet ||`). Tests: 18 pass in `tests/workflows/close-bidding.test.ts`. Full suite: 240/240 pass.
 
-- [ ] Update the bid closer script to integrate Polar.sh payment flow:
+- [x] Update the bid closer script to integrate Polar.sh payment flow:
   - Modify `scripts/bid-closer.ts` to add payment processing after selecting winner:
     - Call `PolarAPI.createProduct()` to create a product for this bidding period
     - Call `PolarAPI.createCheckoutSession()` with the winning bid amount and bidder email
     - Include the Polar.sh checkout link in the winner announcement comment on the issue
     - Store the checkout URL and payment status in the archived period data
     - If Polar.sh is not configured (no token), skip payment and note it in the closing comment
+  - ✅ Completed: Integrated PolarAPI into bid-closer.ts with `processPayment()` helper. Added `payment` field to PeriodData type. Updated `generateWinnerAnnouncement` to accept optional checkout URL. Tests: 248/248 pass (8 new Polar.sh integration tests in `tests/bid-closer.test.ts`).
 
 - [ ] Create a setup/installation script for new adopters:
   - Create `scripts/setup.ts` that:

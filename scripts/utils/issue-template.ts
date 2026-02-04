@@ -87,7 +87,12 @@ Bids must be submitted before the deadline. The highest approved bid wins the ba
 export function generateWinnerAnnouncement(
   bid: BidRecord,
   period: PeriodData,
+  checkoutUrl?: string,
 ): string {
+  const paymentSection = checkoutUrl
+    ? `\n### 💳 Payment\n\nPlease complete your payment to activate the banner:\n\n**[Complete Payment →](${checkoutUrl})**\n`
+    : `\n### 💳 Payment\n\n> Payment processing is not configured. Please contact the repository owner to arrange payment.\n`;
+
   return `## 🏆 Bidding Period Closed — Winner Announced!
 
 Congratulations **@${bid.bidder}**! 🎉
@@ -101,7 +106,7 @@ Your bid of **$${bid.amount}** has won the banner slot for this period.
 | Period | ${period.start_date.split("T")[0]} to ${period.end_date.split("T")[0]} |
 | Banner | [View](${bid.banner_url}) |
 | Destination | ${bid.destination_url} |
-
+${paymentSection}
 The README banner has been updated. Thank you to all bidders!
 
 ---

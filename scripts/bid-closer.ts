@@ -4,6 +4,7 @@ import {
   generateWinnerAnnouncement,
   generateNoBidsMessage,
 } from "./utils/issue-template";
+import { PolarAPI } from "./utils/polar-integration";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
 import { mkdir } from "fs/promises";
@@ -50,6 +51,11 @@ export async function closeBiddingPeriod(): Promise<{
       console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
       console.log(`  Banner: ${winner.banner_url}`);
       console.log(`  Destination: ${winner.destination_url}`);
+
+      const paymentResult = await processPayment(winner, periodData);
+      if (paymentResult) {
+        periodData.payment = paymentResult;
+      }
     } else {
       console.log("\n✗ No approved bids — no winner");
     }
@@ -70,6 +76,11 @@ export async function closeBiddingPeriod(): Promise<{
 
   if (winner) {
     console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
+
+    const paymentResult = await processPayment(winner, periodData);
+    if (paymentResult) {
+      periodData.payment = paymentResult;
+    }
 
     const readmePath = resolve(process.cwd(), "README.md");
     const readmeFile = Bun.file(readmePath);
@@ -92,7 +103,8 @@ export async function closeBiddingPeriod(): Promise<{
     );
     console.log("✓ README updated with winning banner");
 
-    const announcement = generateWinnerComment(winner, periodData);
+    const checkoutUrl = periodData.payment?.checkout_url;
+    const announcement = generateWinnerComment(winner, periodData, checkoutUrl);
     await api.addComment(periodData.issue_number, announcement);
     console.log("✓ Winner announcement posted");
   } else {
@@ -122,12 +134,50 @@ export async function closeBiddingPeriod(): Promise<{
   return { success: true, message: msg };
 }
 
-function generateWinnerComment(bid: BidRecord, period: PeriodData): string {
-  return generateWinnerAnnouncement(bid, period);
+function generateWinnerComment(bid: BidRecord, period: PeriodData, checkoutUrl?: string): string {
+  return generateWinnerAnnouncement(bid, period, checkoutUrl);
 }
 
 function generateNoWinnerComment(period: PeriodData): string {
   return generateNoBidsMessage(period);
+}
+
+async function processPayment(
+  winner: BidRecord,
+  periodData: PeriodData,
+): Promise<PeriodData["payment"] | null> {
+  const polar = new PolarAPI();
+  if (!polar.isConfigured) {
+    console.log("⚠ Polar.sh not configured — skipping payment processing");
+    return null;
+  }
+
+  try {
+    const periodLabel = `${periodData.start_date.split("T")[0]} to ${periodData.end_date.split("T")[0]}`;
+    const product = await polar.createProduct(
+      `Banner Space: ${periodLabel} - $${winner.amount}`,
+      winner.amount,
+      `BidMe banner slot for period ${periodData.period_id}`,
+    );
+    console.log(`✓ Polar.sh product created: ${product.id}`);
+
+    const checkout = await polar.createCheckoutSession(
+      winner.amount,
+      winner.contact,
+      periodData.period_id,
+    );
+    console.log(`✓ Polar.sh checkout session created: ${checkout.url}`);
+
+    return {
+      checkout_url: checkout.url,
+      payment_status: "pending",
+      product_id: product.id,
+      checkout_id: checkout.id,
+    };
+  } catch (err) {
+    console.error("⚠ Polar.sh payment processing failed:", err);
+    return null;
+  }
 }
 
 async function archivePeriod(periodData: PeriodData): Promise<void> {
@@ -140,7 +190,7 @@ async function archivePeriod(periodData: PeriodData): Promise<void> {
   console.log(`✓ Period archived to ${archivePath}`);
 }
 
-export { generateWinnerComment, generateNoWinnerComment, archivePeriod };
+export { generateWinnerComment, generateNoWinnerComment, archivePeriod, processPayment };
 
 if (import.meta.main) {
   closeBiddingPeriod().catch((err) => {

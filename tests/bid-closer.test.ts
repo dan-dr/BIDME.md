@@ -555,6 +555,458 @@ describe("bid-closer", () => {
     });
   });
 
+  describe("processPayment", () => {
+    test("returns null when POLAR_ACCESS_TOKEN is not set", async () => {
+      const { processPayment } = await import("../scripts/bid-closer");
+
+      const origToken = process.env["POLAR_ACCESS_TOKEN"];
+      delete process.env["POLAR_ACCESS_TOKEN"];
+
+      try {
+        const bid = makeBid({ status: "approved" });
+        const period = makePeriodData();
+        const result = await processPayment(bid, period);
+        expect(result).toBeNull();
+      } finally {
+        if (origToken) process.env["POLAR_ACCESS_TOKEN"] = origToken;
+      }
+    });
+
+    test("creates product and checkout session when Polar is configured", async () => {
+      const { processPayment } = await import("../scripts/bid-closer");
+
+      const origToken = process.env["POLAR_ACCESS_TOKEN"];
+      process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
+
+      const origFetch = globalThis.fetch;
+      const calls: { url: string; method: string; body?: string }[] = [];
+
+      globalThis.fetch = async (
+        input: string | URL | Request,
+        init?: RequestInit,
+      ) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const method = init?.method ?? "GET";
+        const body = init?.body ? String(init.body) : undefined;
+        calls.push({ url, method, body });
+
+        if (url.includes("/products") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "prod_123",
+              name: "Banner Space",
+              description: "test",
+              prices: [{ id: "price_1", amount: 10000, currency: "usd" }],
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/checkouts") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "chk_456",
+              url: "https://polar.sh/checkout/chk_456",
+              status: "open",
+              amount: 10000,
+              currency: "usd",
+              product_id: "prod_123",
+              customer_email: "test@example.com",
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      };
+
+      try {
+        const bid = makeBid({ status: "approved" });
+        const period = makePeriodData();
+        const result = await processPayment(bid, period);
+
+        expect(result).not.toBeNull();
+        expect(result!.checkout_url).toBe("https://polar.sh/checkout/chk_456");
+        expect(result!.payment_status).toBe("pending");
+        expect(result!.product_id).toBe("prod_123");
+        expect(result!.checkout_id).toBe("chk_456");
+
+        const productCall = calls.find(
+          (c) => c.url.includes("/products") && c.method === "POST",
+        );
+        expect(productCall).toBeDefined();
+        const productBody = JSON.parse(productCall!.body!);
+        expect(productBody.name).toContain("Banner Space");
+        expect(productBody.prices[0].amount).toBe(10000);
+
+        const checkoutCall = calls.find(
+          (c) => c.url.includes("/checkouts") && c.method === "POST",
+        );
+        expect(checkoutCall).toBeDefined();
+        const checkoutBody = JSON.parse(checkoutCall!.body!);
+        expect(checkoutBody.customer_email).toBe("test@example.com");
+        expect(checkoutBody.amount).toBe(10000);
+      } finally {
+        globalThis.fetch = origFetch;
+        if (origToken) process.env["POLAR_ACCESS_TOKEN"] = origToken;
+        else delete process.env["POLAR_ACCESS_TOKEN"];
+      }
+    });
+
+    test("returns null when Polar API call fails", async () => {
+      const { processPayment } = await import("../scripts/bid-closer");
+
+      const origToken = process.env["POLAR_ACCESS_TOKEN"];
+      process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
+
+      const origFetch = globalThis.fetch;
+
+      globalThis.fetch = async () => {
+        return new Response(
+          JSON.stringify({ detail: "Internal Server Error", status: 500 }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        );
+      };
+
+      try {
+        const bid = makeBid({ status: "approved" });
+        const period = makePeriodData();
+        const result = await processPayment(bid, period);
+        expect(result).toBeNull();
+      } finally {
+        globalThis.fetch = origFetch;
+        if (origToken) process.env["POLAR_ACCESS_TOKEN"] = origToken;
+        else delete process.env["POLAR_ACCESS_TOKEN"];
+      }
+    });
+  });
+
+  describe("Polar.sh integration in closeBiddingPeriod", () => {
+    test("stores payment data in archived period when Polar is configured (local mode)", async () => {
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+
+      const localDir = resolve(tempDir, "local-polar");
+      const localDataDir = resolve(localDir, "data");
+      await mkdir(localDataDir, { recursive: true });
+      await Bun.write(
+        resolve(localDataDir, "current-period.json"),
+        JSON.stringify(makePeriodData(), null, 2),
+      );
+
+      const originalCwd = process.cwd();
+      process.chdir(localDir);
+
+      const origOwner = process.env["GITHUB_REPOSITORY_OWNER"];
+      const origRepo = process.env["GITHUB_REPOSITORY"];
+      const origToken = process.env["POLAR_ACCESS_TOKEN"];
+      delete process.env["GITHUB_REPOSITORY_OWNER"];
+      delete process.env["GITHUB_REPOSITORY"];
+      process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
+
+      const origFetch = globalThis.fetch;
+
+      globalThis.fetch = async (
+        input: string | URL | Request,
+        init?: RequestInit,
+      ) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const method = init?.method ?? "GET";
+
+        if (url.includes("/products") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "prod_abc",
+              name: "Banner Space",
+              description: "test",
+              prices: [{ id: "price_1", amount: 10000, currency: "usd" }],
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/checkouts") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "chk_def",
+              url: "https://polar.sh/checkout/chk_def",
+              status: "open",
+              amount: 10000,
+              currency: "usd",
+              product_id: "prod_abc",
+              customer_email: "test@example.com",
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      };
+
+      try {
+        const result = await closeBiddingPeriod();
+        expect(result.success).toBe(true);
+
+        const archiveFile = Bun.file(
+          resolve(localDataDir, "archive/period-2026-02-04.json"),
+        );
+        expect(await archiveFile.exists()).toBe(true);
+        const archived: PeriodData = JSON.parse(await archiveFile.text());
+        expect(archived.payment).toBeDefined();
+        expect(archived.payment!.checkout_url).toBe("https://polar.sh/checkout/chk_def");
+        expect(archived.payment!.payment_status).toBe("pending");
+        expect(archived.payment!.product_id).toBe("prod_abc");
+        expect(archived.payment!.checkout_id).toBe("chk_def");
+      } finally {
+        globalThis.fetch = origFetch;
+        if (origOwner) process.env["GITHUB_REPOSITORY_OWNER"] = origOwner;
+        else delete process.env["GITHUB_REPOSITORY_OWNER"];
+        if (origRepo) process.env["GITHUB_REPOSITORY"] = origRepo;
+        else delete process.env["GITHUB_REPOSITORY"];
+        if (origToken) process.env["POLAR_ACCESS_TOKEN"] = origToken;
+        else delete process.env["POLAR_ACCESS_TOKEN"];
+        process.chdir(originalCwd);
+      }
+    });
+
+    test("skips payment and still closes when Polar is not configured (local mode)", async () => {
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+
+      const localDir = resolve(tempDir, "local-nopolar");
+      const localDataDir = resolve(localDir, "data");
+      await mkdir(localDataDir, { recursive: true });
+      await Bun.write(
+        resolve(localDataDir, "current-period.json"),
+        JSON.stringify(makePeriodData(), null, 2),
+      );
+
+      const originalCwd = process.cwd();
+      process.chdir(localDir);
+
+      const origOwner = process.env["GITHUB_REPOSITORY_OWNER"];
+      const origRepo = process.env["GITHUB_REPOSITORY"];
+      const origToken = process.env["POLAR_ACCESS_TOKEN"];
+      delete process.env["GITHUB_REPOSITORY_OWNER"];
+      delete process.env["GITHUB_REPOSITORY"];
+      delete process.env["POLAR_ACCESS_TOKEN"];
+
+      try {
+        const result = await closeBiddingPeriod();
+        expect(result.success).toBe(true);
+        expect(result.message).toContain("winner");
+
+        const archiveFile = Bun.file(
+          resolve(localDataDir, "archive/period-2026-02-04.json"),
+        );
+        const archived: PeriodData = JSON.parse(await archiveFile.text());
+        expect(archived.payment).toBeUndefined();
+      } finally {
+        if (origOwner) process.env["GITHUB_REPOSITORY_OWNER"] = origOwner;
+        else delete process.env["GITHUB_REPOSITORY_OWNER"];
+        if (origRepo) process.env["GITHUB_REPOSITORY"] = origRepo;
+        else delete process.env["GITHUB_REPOSITORY"];
+        if (origToken) process.env["POLAR_ACCESS_TOKEN"] = origToken;
+        else delete process.env["POLAR_ACCESS_TOKEN"];
+        process.chdir(originalCwd);
+      }
+    });
+
+    test("includes checkout URL in winner comment via GitHub API", async () => {
+      const { closeBiddingPeriod } = await import("../scripts/bid-closer");
+
+      const ghDir = resolve(tempDir, "gh-polar");
+      const ghDataDir = resolve(ghDir, "data");
+      await mkdir(ghDataDir, { recursive: true });
+      await Bun.write(
+        resolve(ghDataDir, "current-period.json"),
+        JSON.stringify(makePeriodData(), null, 2),
+      );
+      await Bun.write(resolve(ghDir, "README.md"), sampleReadme);
+
+      const originalCwd = process.cwd();
+      process.chdir(ghDir);
+
+      const origOwner = process.env["GITHUB_REPOSITORY_OWNER"];
+      const origRepo = process.env["GITHUB_REPOSITORY"];
+      const origGHToken = process.env["GITHUB_TOKEN"];
+      const origPolarToken = process.env["POLAR_ACCESS_TOKEN"];
+      process.env["GITHUB_REPOSITORY_OWNER"] = "repoowner";
+      process.env["GITHUB_REPOSITORY"] = "repoowner/testrepo";
+      process.env["GITHUB_TOKEN"] = "test-token";
+      process.env["POLAR_ACCESS_TOKEN"] = "test-polar-token";
+
+      const origFetch = globalThis.fetch;
+      const calls: { url: string; method: string; body?: string }[] = [];
+
+      globalThis.fetch = async (
+        input: string | URL | Request,
+        init?: RequestInit,
+      ) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const method = init?.method ?? "GET";
+        const body = init?.body ? String(init.body) : undefined;
+        calls.push({ url, method, body });
+
+        if (url.includes("/products") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "prod_gh1",
+              name: "Banner Space",
+              description: "test",
+              prices: [{ id: "price_1", amount: 10000, currency: "usd" }],
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/checkouts") && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              id: "chk_gh2",
+              url: "https://polar.sh/checkout/chk_gh2",
+              status: "open",
+              amount: 10000,
+              currency: "usd",
+              product_id: "prod_gh1",
+              customer_email: "test@example.com",
+              created_at: "2026-02-04T00:00:00Z",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/contents/README.md") && method === "GET") {
+          return new Response(
+            JSON.stringify({
+              sha: "abc123sha",
+              content: btoa(sampleReadme),
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/contents/README.md") && method === "PUT") {
+          return new Response(
+            JSON.stringify({
+              content: { sha: "newsha" },
+              commit: { sha: "commitsha", html_url: "https://github.com/repoowner/testrepo/commit/commitsha" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/comments") && method === "POST") {
+          return new Response(
+            JSON.stringify({ id: 300, body: "", user: { login: "bot" }, created_at: "" }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/issues/42") && method === "PATCH") {
+          return new Response(
+            JSON.stringify({ number: 42, html_url: "", title: "", body: "", state: "closed", node_id: "I_abc123" }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        if (url.includes("/graphql")) {
+          return new Response(
+            JSON.stringify({ data: { unpinIssue: { issue: { id: "I_abc123" } } } }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      };
+
+      try {
+        const result = await closeBiddingPeriod();
+        expect(result.success).toBe(true);
+
+        const commentCall = calls.find(
+          (c) => c.url.includes("/comments") && c.method === "POST",
+        );
+        expect(commentCall).toBeDefined();
+        const commentBody = JSON.parse(commentCall!.body!);
+        expect(commentBody.body).toContain("https://polar.sh/checkout/chk_gh2");
+        expect(commentBody.body).toContain("Complete Payment");
+
+        const archiveFile = Bun.file(
+          resolve(ghDataDir, "archive/period-2026-02-04.json"),
+        );
+        const archived: PeriodData = JSON.parse(await archiveFile.text());
+        expect(archived.payment).toBeDefined();
+        expect(archived.payment!.checkout_url).toBe("https://polar.sh/checkout/chk_gh2");
+      } finally {
+        globalThis.fetch = origFetch;
+        if (origOwner) process.env["GITHUB_REPOSITORY_OWNER"] = origOwner;
+        else delete process.env["GITHUB_REPOSITORY_OWNER"];
+        if (origRepo) process.env["GITHUB_REPOSITORY"] = origRepo;
+        else delete process.env["GITHUB_REPOSITORY"];
+        if (origGHToken) process.env["GITHUB_TOKEN"] = origGHToken;
+        else delete process.env["GITHUB_TOKEN"];
+        if (origPolarToken) process.env["POLAR_ACCESS_TOKEN"] = origPolarToken;
+        else delete process.env["POLAR_ACCESS_TOKEN"];
+        process.chdir(originalCwd);
+      }
+    });
+  });
+
+  describe("generateWinnerComment with checkout URL", () => {
+    test("includes checkout link when URL is provided", async () => {
+      const { generateWinnerComment } = await import("../scripts/bid-closer");
+
+      const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
+      const period = makePeriodData();
+      const comment = generateWinnerComment(bid, period, "https://polar.sh/checkout/chk_test");
+
+      expect(comment).toContain("https://polar.sh/checkout/chk_test");
+      expect(comment).toContain("Complete Payment");
+      expect(comment).toContain("@winner");
+      expect(comment).toContain("$150");
+    });
+
+    test("shows payment not configured message when no URL", async () => {
+      const { generateWinnerComment } = await import("../scripts/bid-closer");
+
+      const bid = makeBid({ bidder: "winner", amount: 150, status: "approved" });
+      const period = makePeriodData();
+      const comment = generateWinnerComment(bid, period);
+
+      expect(comment).toContain("not configured");
+      expect(comment).toContain("@winner");
+      expect(comment).toContain("$150");
+    });
+  });
+
   describe("CLI", () => {
     test("shows error when run without GitHub environment", async () => {
       const proc = Bun.spawn(

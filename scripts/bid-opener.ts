@@ -11,6 +11,12 @@ export interface PeriodData {
   issue_node_id: string;
   status: "open" | "closed";
   bids: BidRecord[];
+  payment?: {
+    checkout_url: string;
+    payment_status: "pending" | "paid" | "expired";
+    product_id?: string;
+    checkout_id?: string;
+  };
 }
 
 export interface BidRecord {
