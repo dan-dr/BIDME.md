@@ -54,7 +54,7 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
   - Create `pages/assets/css/style.css` with shared styles for dashboard and admin pages (CSS custom properties for theming, responsive grid, card components)
   > Completed: pages/index.html created with dark theme (#0a0a0a bg), monospace headings, green accent (#22c55e), 3-step flow (Install/Bids Come In/Get Paid), GitHub CTA. pages/redirect.html reads id/dest query params, appends ref=bidme, logs clicks to localStorage with timestamps, shows fallback link after 2s, handles missing/invalid dest gracefully. pages/assets/css/style.css provides CSS custom properties, responsive grid, card/badge/button/table/input components, layout utilities. 25 new tests passing, 76 total across project.
 
-- [ ] Create a demo script that exercises the core modules end-to-end:
+- [x] Create a demo script that exercises the core modules end-to-end:
   - Create `scripts/demo.ts` that:
     - Loads the config from `bidme-config.yml` using `loadConfig()`
     - Parses a sample bid comment string using `parseBidComment()`
@@ -62,6 +62,7 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
     - Generates a sample banner section with badges using `generateBannerSection()`
     - Prints all results to stdout in a formatted way showing: config loaded ✓, bid parsed ✓, validation result, generated markdown output
   - This script should run successfully with `bun run scripts/demo.ts` and produce visible output proving the system works
+  > Completed: scripts/demo.ts created — loads config, parses sample $100 bid from YAML comment, validates bid (passes), generates banner section with views (12.5k), countries (42), CTR (3.2%) badges. Outputs formatted results with ✓ markers. 4 new integration tests in tests/demo.test.ts, 80 total tests passing across project.
 
 - [ ] Create a project README.md with the BidMe banner placeholder:
   - Create `README.md` with:
