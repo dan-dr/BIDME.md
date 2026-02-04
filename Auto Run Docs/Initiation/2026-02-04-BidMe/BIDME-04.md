@@ -14,7 +14,7 @@ This phase builds the analytics pipeline and user-facing dashboard. It implement
     - Writes updated analytics back to `data/analytics.json`
     - Generates updated badge URLs using `badge-generator.ts` and updates the README banner section between the `<!-- BIDME:BANNER:START/END -->` markers
 
-- [ ] Create the analytics data schema and storage module:
+- [x] Create the analytics data schema and storage module:
   - Create `scripts/utils/analytics-store.ts` with:
     - `AnalyticsData` type: `{ totalViews, uniqueVisitors, dailyViews[], clicks[], countries: Record<string, number>, periods: PeriodAnalytics[] }`
     - `loadAnalytics(): AnalyticsData` — reads from `data/analytics.json` with defaults
