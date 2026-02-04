@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+import { Command } from "commander";
+import { readFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+function getVersion(): string {
+  const pkgPath = resolve(__dirname, "..", "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+  return pkg.version;
+}
+
+const program = new Command();
+
+program
+  .name("bidme")
+  .description("BidMe — sponsor banner bidding for GitHub READMEs")
+  .version(getVersion(), "-v, --version", "Print the current version");
+
+program
+  .command("init")
+  .description("Interactive setup wizard to scaffold .bidme/ config")
+  .option("--target <path>", "Target directory to scaffold into", process.cwd())
+  .option("--defaults", "Skip interactive prompts and use all defaults", false)
+  .action(async (options: { target: string; defaults: boolean }) => {
+    const { runInit } = await import("./commands/init.js");
+    await runInit({
+      target: resolve(options.target),
+      useDefaults: options.defaults,
+    });
+  });
+
+program
+  .command("update")
+  .description("Update BidMe configuration and workflows")
+  .action(() => {
+    console.log("Update command coming soon");
+  });
+
+program.parse();
