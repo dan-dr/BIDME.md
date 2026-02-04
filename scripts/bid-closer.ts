@@ -5,6 +5,7 @@ import {
   generateNoBidsMessage,
 } from "./utils/issue-template";
 import { PolarAPI } from "./utils/polar-integration";
+import { logError, withRetry } from "./utils/error-handler";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
 import { mkdir } from "fs/promises";
@@ -18,12 +19,27 @@ export async function closeBiddingPeriod(): Promise<{
   const dataPath = resolve(process.cwd(), "data/current-period.json");
   const periodFile = Bun.file(dataPath);
   if (!(await periodFile.exists())) {
-    const msg = "No active bidding period found";
+    const msg = "No active bidding period found — nothing to close";
+    console.log(`⚠ ${msg}`);
+    return { success: true, message: msg };
+  }
+
+  let periodData: PeriodData;
+  try {
+    const text = await periodFile.text();
+    if (!text.trim()) {
+      const msg = "Period data file is empty — nothing to close";
+      console.log(`⚠ ${msg}`);
+      return { success: true, message: msg };
+    }
+    periodData = JSON.parse(text);
+  } catch (err) {
+    const msg = "Period data file is corrupted — cannot close";
     console.log(`✗ ${msg}`);
+    logError(err, "bid-closer:parsePeriodData");
     return { success: false, message: msg };
   }
 
-  const periodData: PeriodData = JSON.parse(await periodFile.text());
   if (periodData.status !== "open") {
     const msg = "Bidding period is not open";
     console.log(`✗ ${msg}`);
@@ -84,40 +100,85 @@ export async function closeBiddingPeriod(): Promise<{
 
     const readmePath = resolve(process.cwd(), "README.md");
     const readmeFile = Bun.file(readmePath);
-    let readmeContent = await readmeFile.text();
+    let readmeContent: string;
 
-    const bannerMarkdown = generateBannerSection(
-      winner.banner_url,
-      winner.destination_url,
-      [],
-    );
+    try {
+      readmeContent = await readmeFile.text();
+    } catch (err) {
+      console.warn("⚠ Could not read README.md — skipping banner update");
+      logError(err, "bid-closer:readReadme");
+      readmeContent = "";
+    }
 
-    readmeContent = readmeContent.replace(
-      /<!-- BIDME:BANNER:START -->[\s\S]*?<!-- BIDME:BANNER:END -->/,
-      `<!-- BIDME:BANNER:START -->\n${bannerMarkdown}\n<!-- BIDME:BANNER:END -->`,
-    );
+    if (readmeContent) {
+      const bannerMarkdown = generateBannerSection(
+        winner.banner_url,
+        winner.destination_url,
+        [],
+      );
 
-    await api.updateReadme(
-      readmeContent,
-      `BidMe: Update banner — winner @${winner.bidder} ($${winner.amount})`,
-    );
-    console.log("✓ README updated with winning banner");
+      const updatedReadme = readmeContent.replace(
+        /<!-- BIDME:BANNER:START -->[\s\S]*?<!-- BIDME:BANNER:END -->/,
+        `<!-- BIDME:BANNER:START -->\n${bannerMarkdown}\n<!-- BIDME:BANNER:END -->`,
+      );
+
+      try {
+        await withRetry(
+          () =>
+            api.updateReadme(
+              updatedReadme,
+              `BidMe: Update banner — winner @${winner.bidder} ($${winner.amount})`,
+            ),
+          2,
+          {
+            onRetry: (attempt, error) => {
+              console.warn(`⚠ README update failed (attempt ${attempt}), retrying...`);
+              logError(error, "bid-closer:updateReadme");
+            },
+          },
+        );
+        console.log("✓ README updated with winning banner");
+      } catch (err) {
+        console.warn("⚠ Failed to update README after retries — banner not updated");
+        logError(err, "bid-closer:updateReadme");
+      }
+    }
 
     const checkoutUrl = periodData.payment?.checkout_url;
     const announcement = generateWinnerComment(winner, periodData, checkoutUrl);
-    await api.addComment(periodData.issue_number, announcement);
-    console.log("✓ Winner announcement posted");
+    try {
+      await api.addComment(periodData.issue_number, announcement);
+      console.log("✓ Winner announcement posted");
+    } catch (err) {
+      console.warn("⚠ Failed to post winner announcement");
+      logError(err, "bid-closer:winnerComment");
+    }
   } else {
     const noWinnerMsg = generateNoWinnerComment(periodData);
-    await api.addComment(periodData.issue_number, noWinnerMsg);
-    console.log("✓ No-winner comment posted");
+    try {
+      await api.addComment(periodData.issue_number, noWinnerMsg);
+      console.log("✓ No-winner comment posted");
+    } catch (err) {
+      console.warn("⚠ Failed to post no-winner comment");
+      logError(err, "bid-closer:noWinnerComment");
+    }
   }
 
-  await api.unpinIssue(periodData.issue_node_id);
-  console.log("✓ Issue unpinned");
+  try {
+    await api.unpinIssue(periodData.issue_node_id);
+    console.log("✓ Issue unpinned");
+  } catch (err) {
+    console.warn("⚠ Failed to unpin issue — continuing");
+    logError(err, "bid-closer:unpinIssue");
+  }
 
-  await api.closeIssue(periodData.issue_number);
-  console.log("✓ Issue closed");
+  try {
+    await api.closeIssue(periodData.issue_number);
+    console.log("✓ Issue closed");
+  } catch (err) {
+    console.warn("⚠ Failed to close issue");
+    logError(err, "bid-closer:closeIssue");
+  }
 
   periodData.status = "closed";
   await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
@@ -154,17 +215,40 @@ async function processPayment(
 
   try {
     const periodLabel = `${periodData.start_date.split("T")[0]} to ${periodData.end_date.split("T")[0]}`;
-    const product = await polar.createProduct(
-      `Banner Space: ${periodLabel} - $${winner.amount}`,
-      winner.amount,
-      `BidMe banner slot for period ${periodData.period_id}`,
+
+    const product = await withRetry(
+      () =>
+        polar.createProduct(
+          `Banner Space: ${periodLabel} - $${winner.amount}`,
+          winner.amount,
+          `BidMe banner slot for period ${periodData.period_id}`,
+        ),
+      2,
+      {
+        delayMs: 2000,
+        onRetry: (attempt, error) => {
+          console.warn(`⚠ Polar product creation failed (attempt ${attempt}), retrying...`);
+          logError(error, "bid-closer:createProduct");
+        },
+      },
     );
     console.log(`✓ Polar.sh product created: ${product.id}`);
 
-    const checkout = await polar.createCheckoutSession(
-      winner.amount,
-      winner.contact,
-      periodData.period_id,
+    const checkout = await withRetry(
+      () =>
+        polar.createCheckoutSession(
+          winner.amount,
+          winner.contact,
+          periodData.period_id,
+        ),
+      2,
+      {
+        delayMs: 2000,
+        onRetry: (attempt, error) => {
+          console.warn(`⚠ Polar checkout creation failed (attempt ${attempt}), retrying...`);
+          logError(error, "bid-closer:createCheckout");
+        },
+      },
     );
     console.log(`✓ Polar.sh checkout session created: ${checkout.url}`);
 
@@ -176,6 +260,7 @@ async function processPayment(
     };
   } catch (err) {
     console.error("⚠ Polar.sh payment processing failed:", err);
+    logError(err, "bid-closer:processPayment");
     return null;
   }
 }
@@ -194,7 +279,7 @@ export { generateWinnerComment, generateNoWinnerComment, archivePeriod, processP
 
 if (import.meta.main) {
   closeBiddingPeriod().catch((err) => {
-    console.error("Error closing bidding period:", err);
+    logError(err, "bid-closer:main");
     process.exit(1);
   });
 }

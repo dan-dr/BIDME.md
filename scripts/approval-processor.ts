@@ -1,5 +1,7 @@
 import { GitHubAPI } from "./utils/github-api";
+import { GitHubAPIError } from "./utils/github-api";
 import { generateBidTable, updateIssueBodyWithBids } from "./bid-processor";
+import { logError, withRetry } from "./utils/error-handler";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
 
@@ -43,14 +45,39 @@ export async function processApproval(
 
   const api = new GitHubAPI(owner, repo);
 
-  const reactions = await api.getReactions(commentId);
+  let reactions;
+  try {
+    reactions = await withRetry(() => api.getReactions(commentId), 2, {
+      onRetry: (attempt, error) => {
+        console.warn(`⚠ Failed to fetch reactions (attempt ${attempt}), retrying...`);
+        logError(error, "approval-processor:getReactions");
+      },
+    });
+  } catch (err) {
+    if (err instanceof GitHubAPIError && err.status === 404) {
+      const msg = "Comment not found — it may have been deleted";
+      console.log(`✗ ${msg}`);
+      logError(err, "approval-processor:getReactions");
+      return { success: false, message: msg };
+    }
+    throw err;
+  }
   console.log(`✓ Fetched ${reactions.length} reaction(s)`);
 
-  const ownerReaction = reactions.find((r) => r.user.login === owner);
-  if (!ownerReaction) {
+  // Filter to only owner reactions, then take the latest one (highest id wins)
+  const ownerReactions = reactions.filter((r) => r.user.login === owner);
+  if (ownerReactions.length === 0) {
     const msg = "No reaction from repository owner found";
     console.log(`✗ ${msg}`);
     return { success: false, message: msg };
+  }
+
+  const ownerReaction = ownerReactions.reduce((latest, r) =>
+    r.id > latest.id ? r : latest,
+  );
+
+  if (ownerReactions.length > 1) {
+    console.log(`  Multiple owner reactions found (${ownerReactions.length}), using latest: ${ownerReaction.content}`);
   }
 
   let newStatus: BidRecord["status"];
@@ -72,9 +99,14 @@ export async function processApproval(
   await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
   console.log(`✓ Bid status updated to "${newStatus}"`);
 
-  const issue = await api.getIssue(issueNumber);
-  const updatedBody = updateIssueBodyWithBids(issue.body, periodData.bids);
-  await api.updateIssueBody(issueNumber, updatedBody);
+  try {
+    const issue = await api.getIssue(issueNumber);
+    const updatedBody = updateIssueBodyWithBids(issue.body, periodData.bids);
+    await api.updateIssueBody(issueNumber, updatedBody);
+  } catch (err) {
+    console.warn("⚠ Failed to update issue body — approval is still recorded");
+    logError(err, "approval-processor:updateIssueBody");
+  }
 
   const highestApproved = periodData.bids
     .filter((b) => b.status === "approved")
@@ -90,8 +122,13 @@ export async function processApproval(
     replyBody = `❌ **Bid rejected**\n\n@${bid.bidder}'s bid of **$${bid.amount}** has been rejected by the repository owner.`;
   }
 
-  await api.addComment(issueNumber, replyBody);
-  console.log("✓ Confirmation comment posted");
+  try {
+    await api.addComment(issueNumber, replyBody);
+    console.log("✓ Confirmation comment posted");
+  } catch (err) {
+    console.warn("⚠ Failed to post confirmation comment — approval is still recorded");
+    logError(err, "approval-processor:addComment");
+  }
 
   const msg = `Bid by @${bid.bidder} for $${bid.amount} ${statusLabel}`;
   console.log(`\n✓ ${msg}`);
@@ -109,7 +146,7 @@ if (import.meta.main) {
   }
 
   processApproval(issueNumber, commentId).catch((err) => {
-    console.error("Error processing approval:", err);
+    logError(err, "approval-processor:main");
     process.exit(1);
   });
 }

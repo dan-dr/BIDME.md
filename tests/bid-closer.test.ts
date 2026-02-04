@@ -60,7 +60,7 @@ describe("bid-closer", () => {
   });
 
   describe("closeBiddingPeriod", () => {
-    test("returns error when no period file exists", async () => {
+    test("returns success (no-op) when no period file exists", async () => {
       const { closeBiddingPeriod } = await import("../scripts/bid-closer");
 
       const emptyDir = resolve(tempDir, "empty");
@@ -71,8 +71,8 @@ describe("bid-closer", () => {
 
       try {
         const result = await closeBiddingPeriod();
-        expect(result.success).toBe(false);
-        expect(result.message).toContain("No active bidding period");
+        expect(result.success).toBe(true);
+        expect(result.message).toContain("nothing to close");
       } finally {
         process.chdir(originalCwd);
       }

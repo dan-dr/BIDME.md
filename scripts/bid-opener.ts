@@ -1,6 +1,7 @@
 import { loadConfig } from "./utils/config";
 import { GitHubAPI } from "./utils/github-api";
 import { generateBiddingIssueBody } from "./utils/issue-template";
+import { BidMeError, logError, withRetry } from "./utils/error-handler";
 import { resolve } from "path";
 
 export interface PeriodData {
@@ -57,7 +58,14 @@ function generateIssueBody(
 export async function openBiddingPeriod(configPath?: string): Promise<void> {
   console.log("=== BidMe: Opening New Bidding Period ===\n");
 
-  const config = await loadConfig(configPath);
+  let config;
+  try {
+    config = await loadConfig(configPath);
+  } catch (err) {
+    console.warn("⚠ Config file missing or invalid — using defaults");
+    logError(err, "bid-opener:loadConfig");
+    config = await loadConfig(undefined);
+  }
   console.log("✓ Config loaded");
   console.log(`  Schedule: ${config.bidding.schedule}`);
   console.log(`  Duration: ${config.bidding.duration} days`);
@@ -99,11 +107,25 @@ export async function openBiddingPeriod(configPath?: string): Promise<void> {
 
   const api = new GitHubAPI(owner, repo);
 
-  const issue = await api.createIssue(title, body, ["bidme"]);
+  const issue = await withRetry(
+    () => api.createIssue(title, body, ["bidme"]),
+    2,
+    {
+      onRetry: (attempt, error) => {
+        console.warn(`⚠ Issue creation failed (attempt ${attempt}), retrying...`);
+        logError(error, "bid-opener:createIssue");
+      },
+    },
+  );
   console.log(`\n✓ Issue created: #${issue.number} — ${issue.html_url}`);
 
-  await api.pinIssue(issue.node_id);
-  console.log("✓ Issue pinned");
+  try {
+    await api.pinIssue(issue.node_id);
+    console.log("✓ Issue pinned");
+  } catch (err) {
+    console.warn("⚠ Failed to pin issue — continuing without pin");
+    logError(err, "bid-opener:pinIssue");
+  }
 
   const periodData: PeriodData = {
     period_id: `period-${startDate.toISOString().split("T")[0]}`,
@@ -124,7 +146,7 @@ export async function openBiddingPeriod(configPath?: string): Promise<void> {
 
 if (import.meta.main) {
   openBiddingPeriod().catch((err) => {
-    console.error("Error opening bidding period:", err);
+    logError(err, "bid-opener:main");
     process.exit(1);
   });
 }

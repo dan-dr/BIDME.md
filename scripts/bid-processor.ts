@@ -1,7 +1,9 @@
 import { loadConfig } from "./utils/config";
 import { GitHubAPI } from "./utils/github-api";
+import { GitHubAPIError } from "./utils/github-api";
 import { generateBidTable } from "./utils/issue-template";
 import { parseBidComment, validateBid } from "./utils/validation";
+import { BidMeError, logError, withRetry, isRateLimited } from "./utils/error-handler";
 import type { PeriodData, BidRecord } from "./bid-opener";
 import { resolve } from "path";
 
@@ -55,10 +57,29 @@ export async function processBid(
     bidder = "local-user";
   } else {
     const api = new GitHubAPI(owner, repo);
-    const comment = await api.getComment(commentId);
-    commentBody = comment.body;
-    bidder = comment.user.login;
-    console.log(`✓ Fetched comment from @${bidder}`);
+
+    try {
+      const comment = await withRetry(() => api.getComment(commentId), 2, {
+        onRetry: (attempt, error) => {
+          if (isRateLimited(error)) {
+            console.warn(`⚠ Rate limited fetching comment (attempt ${attempt}), retrying...`);
+          } else {
+            console.warn(`⚠ Failed to fetch comment (attempt ${attempt}), retrying...`);
+          }
+        },
+      });
+      commentBody = comment.body;
+      bidder = comment.user.login;
+      console.log(`✓ Fetched comment from @${bidder}`);
+    } catch (err) {
+      if (err instanceof GitHubAPIError && err.status === 404) {
+        const msg = "Comment not found — it may have been deleted";
+        console.log(`✗ ${msg}`);
+        logError(err, "bid-processor:getComment");
+        return { success: false, message: msg };
+      }
+      throw err;
+    }
   }
 
   const parsed = parseBidComment(commentBody);
@@ -94,7 +115,11 @@ export async function processBid(
     return { success: false, message: msg };
   }
 
-  const currentHighest = periodData.bids
+  // Re-read period data before writing to handle concurrent bids
+  const freshPeriodFile = Bun.file(dataPath);
+  const freshPeriodData: PeriodData = JSON.parse(await freshPeriodFile.text());
+
+  const currentHighest = freshPeriodData.bids
     .filter((b) => b.status !== "rejected")
     .reduce((max, b) => Math.max(max, b.amount), 0);
 
@@ -121,22 +146,32 @@ export async function processBid(
     timestamp: new Date().toISOString(),
   };
 
-  periodData.bids.push(bidRecord);
-  await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
+  freshPeriodData.bids.push(bidRecord);
+  await Bun.write(dataPath, JSON.stringify(freshPeriodData, null, 2));
   console.log("✓ Bid recorded in period data");
 
   if (owner && repo) {
     const api = new GitHubAPI(owner, repo);
 
-    const issue = await api.getIssue(issueNumber);
-    const updatedBody = updateIssueBodyWithBids(issue.body, periodData.bids);
-    await api.updateIssueBody(issueNumber, updatedBody);
+    try {
+      const issue = await api.getIssue(issueNumber);
+      const updatedBody = updateIssueBodyWithBids(issue.body, freshPeriodData.bids);
+      await api.updateIssueBody(issueNumber, updatedBody);
+    } catch (err) {
+      console.warn("⚠ Failed to update issue body — bid is still recorded");
+      logError(err, "bid-processor:updateIssueBody");
+    }
 
-    await api.addComment(
-      issueNumber,
-      `✅ **Bid accepted!**\n\n@${bidder} has placed a bid of **$${parsed.amount}**.\n\nStatus: ⏳ Pending owner approval.`,
-    );
-    console.log("✓ Issue updated and confirmation posted");
+    try {
+      await api.addComment(
+        issueNumber,
+        `✅ **Bid accepted!**\n\n@${bidder} has placed a bid of **$${parsed.amount}**.\n\nStatus: ⏳ Pending owner approval.`,
+      );
+      console.log("✓ Issue updated and confirmation posted");
+    } catch (err) {
+      console.warn("⚠ Failed to post confirmation comment — bid is still recorded");
+      logError(err, "bid-processor:addComment");
+    }
   }
 
   const msg = `Bid of $${parsed.amount} by @${bidder} accepted (pending approval)`;
@@ -157,7 +192,7 @@ if (import.meta.main) {
   }
 
   processBid(issueNumber, commentId).catch((err) => {
-    console.error("Error processing bid:", err);
+    logError(err, "bid-processor:main");
     process.exit(1);
   });
 }
