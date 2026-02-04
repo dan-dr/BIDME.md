@@ -15,7 +15,7 @@ This phase brings everything together with comprehensive end-to-end testing, a p
     - Step 6: Run bid-closer → verify README updated with winner banner, issue unpinned, issue closed, period archived
     - Verify data integrity at each step: `current-period.json` and archive files
 
-- [ ] Create integration tests for the GitHub Actions workflow files:
+- [x] Create integration tests for the GitHub Actions workflow files: *(Completed: 65 tests in `scripts/__tests__/workflows.test.ts` — parses all 5 workflow YAML files, validates required fields (name, on, permissions, jobs, steps), verifies correct Bun script references, validates env vars (GITHUB_TOKEN, POLAR_ACCESS_TOKEN, CLIENT_PAYLOAD), validates cron expressions, checks common setup patterns (checkout→bun→install ordering), and tests workflow-specific logic (conditions, manual triggers, commit/push steps, permission scoping). 150 assertions, all passing.)*
   - Create `scripts/__tests__/workflows.test.ts` that validates workflow YAML:
     - Parse each `.github/workflows/*.yml` file
     - Verify required fields: `on` triggers, `permissions`, `jobs`, `steps`
