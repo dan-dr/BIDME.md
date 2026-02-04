@@ -1,0 +1,29 @@
+bidding:
+  schedule: "monthly"
+  duration: 7
+  minimum_bid: 50
+  increment: 5
+
+banner:
+  width: 800
+  height: 100
+  format: "png,jpg,svg"
+  max_size: 200
+  position: "top"
+
+content_guidelines:
+  prohibited:
+    - "adult content"
+    - "gambling"
+    - "misleading claims"
+  required:
+    - "alt text"
+    - "clear branding"
+
+analytics:
+  display: true
+  metrics:
+    - views
+    - countries
+    - referrers
+    - clicks
