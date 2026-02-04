@@ -53,13 +53,14 @@ This phase wires everything together with GitHub Actions workflows that automate
     - If Polar.sh is not configured (no token), skip payment and note it in the closing comment
   - ✅ Completed: Integrated PolarAPI into bid-closer.ts with `processPayment()` helper. Added `payment` field to PeriodData type. Updated `generateWinnerAnnouncement` to accept optional checkout URL. Tests: 248/248 pass (8 new Polar.sh integration tests in `tests/bid-closer.test.ts`).
 
-- [ ] Create a setup/installation script for new adopters:
+- [x] Create a setup/installation script for new adopters:
   - Create `scripts/setup.ts` that:
     - Checks if `bidme-config.yml` exists, creates one from defaults if not
     - Checks if README has the `<!-- BIDME:BANNER:START -->` markers, adds them if not
     - Validates that required GitHub secrets are mentioned (prints checklist of: `POLAR_ACCESS_TOKEN` — optional but recommended)
     - Creates the `data/` directory if it doesn't exist
     - Prints a summary of what was set up and next steps
+  - ✅ Completed: Created `scripts/setup.ts` with exported `setup()` function and CLI entry point. Creates config from defaults, adds banner markers to README (or creates README), ensures `data/` and `data/archive/` dirs, prints secrets checklist and next steps summary. Tests: 259/259 pass (11 new in `tests/setup.test.ts`).
 
 - [ ] Write tests for the Polar.sh integration module:
   - Create `scripts/__tests__/polar-integration.test.ts`:
