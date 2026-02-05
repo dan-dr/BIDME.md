@@ -1598,7 +1598,8 @@ Exports that should be documented together for consistency:
 ## PENDING - Ready for Auto-Fix
 
 ### README-001: Bid `url` vs `destination_url` field name
-- **Status:** `PENDING`
+- **Status:** `IMPLEMENTED`
+- **Implemented In:** Loop 00001
 - **Gap ID:** GAP-010
 - **Type:** INACCURATE
 - **User Importance:** CRITICAL
@@ -1606,13 +1607,9 @@ Exports that should be documented together for consistency:
 - **README Section:** For Advertisers (lines 84, 94)
 - **Fix Description:**
   Change `url` to `destination_url` in both the YAML example and the fields table. Bids following the current README will silently fail validation.
-- **Proposed Content:**
-  ```markdown
-  # In YAML example:
-    destination_url: "https://yourcompany.com"
-  # In table:
-  | `destination_url` | Yes | Click-through destination URL |
-  ```
+- **Changes Made:**
+  - [x] Changed `url` to `destination_url` in YAML bid example
+  - [x] Changed `url` to `destination_url` in fields table
 
 ### README-002: Remove stale `alt_text` field
 - **Status:** `PENDING`

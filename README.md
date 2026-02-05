@@ -81,7 +81,7 @@ Comment on the active bidding issue with this format:
 ---
 bid:
   amount: 100
-  url: "https://yourcompany.com"
+  destination_url: "https://yourcompany.com"
   banner_url: "https://yourcompany.com/banner.png"
   alt_text: "YourCompany - Build faster with our tools"
   contact: "sponsor@yourcompany.com"
@@ -91,7 +91,7 @@ bid:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `amount` | Yes | Bid amount in USD (must meet minimum) |
-| `url` | Yes | Click-through destination URL |
+| `destination_url` | Yes | Click-through destination URL |
 | `banner_url` | Yes | URL to your banner image (800×100, max 200KB) |
 | `alt_text` | Yes | Accessible description of your banner |
 | `contact` | Yes | Email for bid communications |
