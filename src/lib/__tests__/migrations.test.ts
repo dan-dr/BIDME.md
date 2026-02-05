@@ -6,6 +6,7 @@ import {
   migrateConfig,
   migrateData,
   migrateWorkflows,
+  migrateReadme,
   cleanupOldFiles,
 } from "../migrations/v0.2.0.js";
 import { migrations, getMigrationsAfter } from "../migrations/index.js";
@@ -133,11 +134,34 @@ describe("v1→v2 data migration", () => {
     expect(await Bun.file(join(tempDir, ".bidme", "data", "analytics.json")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json")).exists()).toBe(true);
 
-    const period = await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).text();
-    expect(period).toBe('{"period": null}');
-
     const archive = await Bun.file(join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json")).text();
     expect(archive).toBe('{"archived": true}');
+  });
+
+  test("adds missing bids and status fields to current-period.json during migration", async () => {
+    await mkdir(join(tempDir, "data"), { recursive: true });
+    await Bun.write(join(tempDir, "data", "current-period.json"), '{"period": null}');
+
+    await migrateData(tempDir);
+
+    const content = await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).text();
+    const data = JSON.parse(content);
+    expect(data.period).toBe(null);
+    expect(data.bids).toEqual([]);
+    expect(data.status).toBe("inactive");
+  });
+
+  test("adds missing total_revenue and total_bids to analytics.json during migration", async () => {
+    await mkdir(join(tempDir, "data"), { recursive: true });
+    await Bun.write(join(tempDir, "data", "analytics.json"), '{"periods": []}');
+
+    await migrateData(tempDir);
+
+    const content = await Bun.file(join(tempDir, ".bidme", "data", "analytics.json")).text();
+    const data = JSON.parse(content);
+    expect(data.periods).toEqual([]);
+    expect(data.total_revenue).toBe(0);
+    expect(data.total_bids).toBe(0);
   });
 
   test("returns false if no data/ directory exists", async () => {
@@ -204,6 +228,94 @@ describe("v1→v2 workflow migration", () => {
 
     const result = await migrateWorkflows(tempDir);
     expect(result).toEqual([]);
+  });
+});
+
+describe("v1→v2 readme migration", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(resolve(tmpdir(), "bidme-migrate-readme-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true });
+  });
+
+  test("updates old banner markers to v2 format", async () => {
+    const oldReadme = `# My Project
+
+<!-- BIDME:BANNER:START -->
+Old banner content for https://github.com/testowner/testrepo
+<!-- BIDME:BANNER:END -->
+
+Some content below.
+`;
+    await Bun.write(join(tempDir, "README.md"), oldReadme);
+
+    const result = await migrateReadme(tempDir);
+    expect(result).toBe(true);
+
+    const updated = await Bun.file(join(tempDir, "README.md")).text();
+    expect(updated).toContain("<!-- BIDME:BANNER:START -->");
+    expect(updated).toContain("<!-- BIDME:BANNER:END -->");
+    expect(updated).toContain("[![Sponsored via BidMe]");
+    expect(updated).toContain("testowner/testrepo");
+    expect(updated).toContain("Some content below.");
+    expect(updated).not.toContain("Old banner content");
+  });
+
+  test("returns false if no README.md exists", async () => {
+    const result = await migrateReadme(tempDir);
+    expect(result).toBe(false);
+  });
+
+  test("returns false if no banner markers exist", async () => {
+    await Bun.write(join(tempDir, "README.md"), "# No banner here\n");
+    const result = await migrateReadme(tempDir);
+    expect(result).toBe(false);
+  });
+
+  test("is idempotent - returns false when already in v2 format", async () => {
+    const issueUrl = "https://github.com/owner/repo/issues?q=label%3Abidme";
+    const v2Readme = `<!-- BIDME:BANNER:START -->
+[![Sponsored via BidMe](https://img.shields.io/badge/Sponsored%20via-BidMe-blue)](${issueUrl})
+
+[Sponsored via BidMe](${issueUrl})
+<!-- BIDME:BANNER:END -->
+`;
+    await Bun.write(join(tempDir, "README.md"), v2Readme);
+
+    const result = await migrateReadme(tempDir);
+    expect(result).toBe(false);
+
+    const content = await Bun.file(join(tempDir, "README.md")).text();
+    expect(content).toBe(v2Readme);
+  });
+
+  test("preserves content before and after banner markers", async () => {
+    const readme = `# Title
+
+Some intro text.
+
+<!-- BIDME:BANNER:START -->
+Legacy banner for https://github.com/myorg/myrepo
+<!-- BIDME:BANNER:END -->
+
+## More content
+
+Details here.
+`;
+    await Bun.write(join(tempDir, "README.md"), readme);
+
+    await migrateReadme(tempDir);
+
+    const updated = await Bun.file(join(tempDir, "README.md")).text();
+    expect(updated).toContain("# Title");
+    expect(updated).toContain("Some intro text.");
+    expect(updated).toContain("## More content");
+    expect(updated).toContain("Details here.");
+    expect(updated).toContain("myorg/myrepo");
   });
 });
 

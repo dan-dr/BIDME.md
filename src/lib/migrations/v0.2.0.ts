@@ -91,7 +91,23 @@ export async function migrateData(targetDir: string): Promise<boolean> {
     const src = join(oldDataDir, file);
     const dest = join(newDataDir, file);
     if ((await fileExists(src)) && !(await fileExists(dest))) {
-      const content = await Bun.file(src).text();
+      let content = await Bun.file(src).text();
+      if (file === "current-period.json") {
+        try {
+          const data = JSON.parse(content);
+          if (!("bids" in data)) data.bids = [];
+          if (!("status" in data)) data.status = "inactive";
+          content = JSON.stringify(data, null, 2);
+        } catch {}
+      }
+      if (file === "analytics.json") {
+        try {
+          const data = JSON.parse(content);
+          if (!("total_revenue" in data)) data.total_revenue = 0;
+          if (!("total_bids" in data)) data.total_bids = 0;
+          content = JSON.stringify(data, null, 2);
+        } catch {}
+      }
       await Bun.write(dest, content);
       migrated = true;
     }
@@ -183,10 +199,39 @@ export async function migrateReadme(targetDir: string): Promise<boolean> {
 
   const content = await Bun.file(readmePath).text();
   const BANNER_START = "<!-- BIDME:BANNER:START -->";
+  const BANNER_END = "<!-- BIDME:BANNER:END -->";
 
   if (!content.includes(BANNER_START)) return false;
 
-  return false;
+  const startIdx = content.indexOf(BANNER_START);
+  const endIdx = content.indexOf(BANNER_END);
+  if (endIdx === -1 || endIdx < startIdx) return false;
+
+  const afterEnd = endIdx + BANNER_END.length;
+  const existingBlock = content.slice(startIdx, afterEnd);
+
+  let owner = "OWNER";
+  let repo = "REPO";
+  const repoMatch = existingBlock.match(/github\.com\/([^/\s]+)\/([^/\s)]+)/);
+  if (repoMatch && repoMatch[1] && repoMatch[2]) {
+    owner = repoMatch[1];
+    repo = repoMatch[2].replace(/\?.*$/, "");
+  }
+
+  const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
+  const v2Block = [
+    BANNER_START,
+    `[![Sponsored via BidMe](https://img.shields.io/badge/Sponsored%20via-BidMe-blue)](${issueUrl})`,
+    "",
+    `[Sponsored via BidMe](${issueUrl})`,
+    BANNER_END,
+  ].join("\n");
+
+  if (existingBlock === v2Block) return false;
+
+  const updated = content.slice(0, startIdx) + v2Block + content.slice(afterEnd);
+  await Bun.write(readmePath, updated);
+  return true;
 }
 
 export async function cleanupOldFiles(targetDir: string): Promise<string[]> {

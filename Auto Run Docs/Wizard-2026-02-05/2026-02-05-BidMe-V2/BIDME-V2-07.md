@@ -24,7 +24,7 @@ This phase builds the `bidme update` command with migration support for upgradin
   - Register as CLI command: `bidme update` in `src/cli.ts`
   - Update `src/commands/init.ts` to create `.bidme/version.json` during fresh installs
 
-- [ ] Create the migration from v1 to v2:
+- [x] Create the migration from v1 to v2: *(Completed: implemented migrateReadme() with v2 banner format, added current-period.json and analytics.json schema normalization during data migration, added 7 new tests covering readme migration + data schema normalization. All 25 migration tests pass.)*
   - `src/lib/migrations/v0.2.0.ts`:
     - `migrateConfig()`: reads `bidme-config.yml`, parses YAML, maps to new TOML structure:
       - `bidding.*` maps directly
