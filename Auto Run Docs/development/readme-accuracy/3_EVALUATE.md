@@ -20,7 +20,7 @@ Evaluate each documentation gap from the discovery phase and assign importance a
 
 ## Evaluation Checklist
 
-- [x] **Evaluate gaps (or skip if empty)**: Read `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAPS.md`. If it contains no gaps OR all gaps have already been evaluated in `LOOP_00001_PLAN.md`, mark this task complete without changes. Otherwise, rate each gap by USER IMPORTANCE (CRITICAL/HIGH/MEDIUM/LOW) and FIX EFFORT (EASY/MEDIUM/HARD). Mark gaps with HIGH/CRITICAL importance and EASY/MEDIUM effort as PENDING for auto-fix. Output to `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md`.
+- [ ] **Evaluate gaps (or skip if empty)**: Read `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAPS.md`. If it contains no gaps OR all gaps have already been evaluated in `LOOP_00001_PLAN.md`, mark this task complete without changes. Otherwise, rate each gap by USER IMPORTANCE (CRITICAL/HIGH/MEDIUM/LOW) and FIX EFFORT (EASY/MEDIUM/HARD). Mark gaps with HIGH/CRITICAL importance and EASY/MEDIUM effort as PENDING for auto-fix. Output to `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md`.
   - **Completed 2026-02-05:** Evaluated all 12 README accuracy gaps → 10 PENDING for auto-fix, 2 WON'T DO. 1 CRITICAL (bid field name mismatch causes silent failures), 4 HIGH (stale/inaccurate docs, missing config), 3 MEDIUM (missing features/details), 2 LOW (niche/discoverable). Appended "README Accuracy Fix Plan" section to LOOP_00001_PLAN.md.
 
 ## Rating Criteria

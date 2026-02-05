@@ -20,7 +20,7 @@ Compare the feature inventory against the README to identify specific documentat
 
 ## Gap Discovery Checklist
 
-- [x] **Find documentation gaps (or skip if no discrepancies)**: Read LOOP_00001_FEATURE_INVENTORY.md and compare features in code vs README. If the feature inventory shows NO discrepancies (code and README are fully aligned), mark this task complete without creating LOOP_00001_GAPS.md. Otherwise, identify: (1) features in code but missing from README, (2) features in README but removed from code, (3) features documented inaccurately. Output findings to `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAPS.md`.
+- [ ] **Find documentation gaps (or skip if no discrepancies)**: Read LOOP_00001_FEATURE_INVENTORY.md and compare features in code vs README. If the feature inventory shows NO discrepancies (code and README are fully aligned), mark this task complete without creating LOOP_00001_GAPS.md. Otherwise, identify: (1) features in code but missing from README, (2) features in README but removed from code, (3) features documented inaccurately. Output findings to `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAPS.md`.
   > **Completed 2026-02-05:** Found 12 gaps (8 MISSING, 1 STALE, 2 INACCURATE, 1 INCOMPLETE). Critical finding: GAP-010 — README documents bid field as `url` but code expects `destination_url`, causing silent bid rejection. Verified all gaps against source code (`src/lib/validation.ts`, `src/lib/config.ts`, `src/cli.ts`). Output written to `LOOP_00001_GAPS.md`.
 
 ## How to Know You're Done

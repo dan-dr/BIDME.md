@@ -21,7 +21,7 @@ Implement ONE documentation fix from `/Users/dan/Projects/bidme/Auto Run Docs/LO
 
 ## Implementation Checklist
 
-- [x] **Fix one documentation gap (or skip if none)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING`, mark this task complete without changes. Otherwise, find an item with status exactly `PENDING`, implement the fix in the project's README.md, mark as IMPLEMENTED in the plan, and log to /Users/dan/Projects/bidme/Auto Run Docs/USAGE_LOG_BIDME_2026-02-05.md. Only fix ONE gap per task.
+- [ ] **Fix one documentation gap (or skip if none)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING`, mark this task complete without changes. Otherwise, find an item with status exactly `PENDING`, implement the fix in the project's README.md, mark as IMPLEMENTED in the plan, and log to /Users/dan/Projects/bidme/Auto Run Docs/USAGE_LOG_BIDME_2026-02-05.md. Only fix ONE gap per task.
   - **Implemented:** README-001 (CRITICAL) — Fixed `url` → `destination_url` in For Advertisers YAML example and fields table
 
 ## Fix Types
