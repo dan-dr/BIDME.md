@@ -120,9 +120,14 @@ program
 
 program
   .command("update")
-  .description("Update BidMe configuration and workflows")
-  .action(() => {
-    console.log("Update command coming soon");
+  .description("Update BidMe installation — run migrations and upgrade config")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runUpdate } = await import("./commands/update.js");
+    const result = await runUpdate({ target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 program.parse();

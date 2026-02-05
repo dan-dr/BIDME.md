@@ -199,6 +199,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   const lines: string[] = [];
 
   if (result.configCreated) lines.push("  .bidme/config.toml");
+  if (result.versionCreated) lines.push("  .bidme/version.json");
   for (const f of result.dataFilesCreated) lines.push(`  .bidme/data/${f}`);
   if (result.redirectCopied) lines.push("  .bidme/redirect.html");
   for (const f of result.workflowsCopied) lines.push(`  .github/workflows/${f}`);

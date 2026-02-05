@@ -1,4 +1,5 @@
 import { join, resolve } from "path";
+import { readFileSync } from "fs";
 import { type BidMeConfig, generateToml } from "./config.js";
 
 export interface ScaffoldResult {
@@ -8,6 +9,7 @@ export interface ScaffoldResult {
   workflowsSkipped: string[];
   redirectCopied: boolean;
   readmeUpdated: boolean;
+  versionCreated: boolean;
   owner: string;
   repo: string;
 }
@@ -184,6 +186,24 @@ export async function scaffold(
   if (await writeIfNotExists(join(dataDir, "bidders.json"), EMPTY_BIDDERS))
     dataFilesCreated.push("bidders.json");
 
+  let pkgVersion = "0.2.0";
+  try {
+    const pkgPath = resolve(import.meta.dir, "../../package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+    pkgVersion = pkg.version;
+  } catch {}
+
+  const versionJson = JSON.stringify(
+    {
+      version: pkgVersion,
+      installed_at: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+    },
+    null,
+    2,
+  );
+  const versionCreated = await writeIfNotExists(join(bidmeDir, "version.json"), versionJson);
+
   const { isGit, owner, repo } = await detectGitRepo(resolved);
 
   let workflowsCopied: string[] = [];
@@ -204,6 +224,7 @@ export async function scaffold(
     workflowsSkipped,
     redirectCopied,
     readmeUpdated,
+    versionCreated,
     owner,
     repo,
   };
