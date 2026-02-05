@@ -11,11 +11,7 @@
     "templates"
   ],
   "scripts": {
-    "setup": "bun run scripts/setup.ts",
-    "demo": "bun run scripts/demo.ts",
-    "open-bidding": "bun run scripts/bid-opener.ts",
-    "close-bidding": "bun run scripts/bid-closer.ts",
-    "update-analytics": "bun run scripts/analytics-updater.ts",
+    "dev": "bun run src/cli.ts",
     "build": "bun build src/cli.ts --outdir dist --target node",
     "cli": "bun run src/cli.ts",
     "test": "bun test",

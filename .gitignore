@@ -6,6 +6,9 @@ dist/
 out/
 *.tgz
 
+# bidme - allow .bidme/data/ to be tracked in target repos
+!.bidme/data/
+
 # logs
 *.log
 
