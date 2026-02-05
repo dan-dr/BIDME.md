@@ -22,10 +22,7 @@ Evaluate each refactoring candidate with **risk and benefit ratings** to determi
 
 ## Evaluation Checklist
 
-- [x] **Evaluate one candidate (or skip if empty)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_CANDIDATES.md. If it contains no findings OR all findings have already been evaluated in LOOP_00001_PLAN.md, mark this task complete without changes. Otherwise, pick one unevaluated candidate, assess risk/benefit, and append to /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md.
-  - **Evaluated:** Finding 1 — Identical 3-line env parsing block duplicated across 6 command files
-  - **Result:** Risk LOW / Benefit MEDIUM → Status PENDING (safe to auto-implement)
-  - **Plan written to:** `Auto Run Docs/LOOP_00001_PLAN.md`
+- [ ] **Evaluate one candidate (or skip if empty)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_CANDIDATES.md. If it contains no findings OR all findings have already been evaluated in LOOP_00001_PLAN.md, mark this task complete without changes. Otherwise, pick one unevaluated candidate, assess risk/benefit, and append to /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md.
 
 ## Risk Assessment Criteria
 

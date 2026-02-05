@@ -24,8 +24,7 @@ Analyze the codebase to identify **categories of refactoring opportunities** and
 
 ## Analysis Checklist
 
-- [x] **Survey codebase (if needed)**: First check if `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAME_PLAN.md` already exists with at least one tactic defined. If it does, skip the survey and mark this task complete—the game plan is already in place. If it doesn't exist, examine project structure, find largest files, identify patterns. Note file size distribution and any obvious organizational issues.
-  - **Completed 2026-02-05**: Full survey performed. Game plan created at `LOOP_00001_GAME_PLAN.md` with 10 investigation tactics covering duplication (6 files with GitHub env parsing, 5 files with period data loading), complexity (2 monster functions at 200+ LOC), dead code (4 modules with unused exports), and organizational issues. Priority-ordered by impact.
+- [ ] **Survey codebase (if needed)**: First check if `/Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_GAME_PLAN.md` already exists with at least one tactic defined. If it does, skip the survey and mark this task complete—the game plan is already in place. If it doesn't exist, examine project structure, find largest files, identify patterns. Note file size distribution and any obvious organizational issues.
 
 ## Output Format
 
