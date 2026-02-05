@@ -30,7 +30,7 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
     - **If bidder IS linked:** proceed with normal bid acceptance flow
     - The `{payment_link}` URL should be configurable in config or default to a BidMe-provided URL pattern
 
-- [ ] Create a grace period checker command:
+- [x] Create a grace period checker command:
   - `src/commands/check-grace.ts`:
     - Scans all bids with `"unlinked_pending"` status in current period
     - For each, checks if the bidder has since linked payment (re-check registry)
@@ -38,6 +38,7 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
     - If grace period expired and still unlinked: set bid status to `"expired"`, post "Your bid has been removed — grace period expired without payment linked."
     - Register as CLI command: `bidme check-grace` in `src/cli.ts`
   - This command will be called by a scheduled GitHub Action (created in Phase 05)
+  - *(Completed: 13 tests in `src/commands/__tests__/check-grace.test.ts` — all passing)*
 
 - [ ] Create the Polar.sh integration for two-mode payment:
   - Update `src/lib/polar-integration.ts`:

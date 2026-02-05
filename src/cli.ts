@@ -83,6 +83,18 @@ program
   });
 
 program
+  .command("check-grace")
+  .description("Check grace periods for unlinked bidders — restore or expire bids")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runCheckGrace } = await import("./commands/check-grace.js");
+    const result = await runCheckGrace({ target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {
