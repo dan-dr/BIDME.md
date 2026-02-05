@@ -1,5 +1,6 @@
-import type { PeriodData, BidRecord } from "@scripts/bid-opener.ts";
+import type { PeriodData, BidRecord } from "./types.ts";
 import type { BidMeConfig } from "./config.ts";
+import type { PeriodAnalytics } from "./analytics-store.ts";
 
 export function generateBidTable(bids: BidRecord[]): string {
   if (bids.length === 0) {
@@ -28,10 +29,30 @@ export function generateBidTable(bids: BidRecord[]): string {
 ${rows}`;
 }
 
+export function generateCurrentTopBid(bids: BidRecord[]): string {
+  const approved = bids
+    .filter((b) => b.status === "approved")
+    .sort((a, b) => b.amount - a.amount);
+
+  if (approved.length === 0) {
+    return "No bids yet";
+  }
+
+  const top = approved[0]!;
+  return `**$${top.amount}** by @${top.bidder} — [view bid](#issuecomment-${top.comment_id})`;
+}
+
+export function generatePreviousStatsSection(stats: PeriodAnalytics): string {
+  return `### 📊 Previous Period Stats
+
+Previous BidMe sponsorship garnered **${stats.views} views**, **${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR).`;
+}
+
 export function generateBiddingIssueBody(
   period: PeriodData,
   config: BidMeConfig,
   bids: BidRecord[],
+  previousStats?: PeriodAnalytics,
 ): string {
   const formats = config.banner.formats;
   const endDate = new Date(period.end_date);
@@ -49,21 +70,32 @@ export function generateBiddingIssueBody(
     daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining` : "Bidding has ended";
 
   const table = generateBidTable(bids);
+  const topBid = generateCurrentTopBid(bids);
 
-  return `## 🎯 BidMe Banner Bidding
+  const sections: string[] = [];
 
-### Rules
+  sections.push(`## 🏷️ Banner Sponsorship — ${config.bidding.schedule} Bidding Period`);
+
+  sections.push(`### 🔝 Current Top Bid
+
+${topBid}`);
+
+  if (previousStats) {
+    sections.push(generatePreviousStatsSection(previousStats));
+  }
+
+  sections.push(`### Rules
 - **Minimum bid:** $${config.bidding.minimum_bid}
 - **Bid increment:** $${config.bidding.increment}
 - **Accepted banner formats:** ${formats.join(", ")}
 - **Banner dimensions:** ${config.banner.width}x${config.banner.height}px
-- **Max file size:** ${config.banner.max_size}KB
+- **Max file size:** ${config.banner.max_size}KB`);
 
-### Current Status
+  sections.push(`### Bid Table
 
-${table}
+${table}`);
 
-### How to Bid
+  sections.push(`### How to Bid
 
 Post a comment with the following format:
 
@@ -72,16 +104,18 @@ amount: 100
 banner_url: https://example.com/banner.png
 destination_url: https://example.com
 contact: you@example.com
-\`\`\`
+\`\`\``);
 
-### Deadline
+  sections.push(`### Deadline
 
 **${deadline}** — ${countdown}
 
 Bids must be submitted before the deadline. The highest approved bid wins the banner slot.
 
 ---
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+*Powered by [BidMe](https://github.com/danarrib/bidme)*`);
+
+  return sections.join("\n\n");
 }
 
 export function generateWinnerAnnouncement(

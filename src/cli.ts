@@ -34,6 +34,15 @@ program
   });
 
 program
+  .command("open-bidding")
+  .description("Open a new bidding period — creates a pinned GitHub issue")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runOpenBidding } = await import("./commands/open-bidding.js");
+    await runOpenBidding({ target: resolve(options.target) });
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {
