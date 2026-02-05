@@ -68,7 +68,7 @@ This phase rewrites the bid processing pipeline — opener, processor, approval,
       - **Deadline**: end date with countdown
     - `updateBidIssueBody(existingBody, bids, stats?)` — surgically updates just the bid table and current top bid sections without touching other content
 
-- [ ] Write tests for the core bidding engine:
+- [x] Write tests for the core bidding engine: *(Completed: 36 tests across 7 describe blocks — bid parsing/validation, auto-approve mode, emoji mode, issue body generation with stats, live bid updates, close-bidding winner selection, tracking URL injection, and archive data structure. All tests pass using mocked GitHub API.)*
   - `src/commands/__tests__/bidding.test.ts`:
     - Test bid parsing and validation with new config structure
     - Test auto-approve mode sets bid status to "approved" immediately
