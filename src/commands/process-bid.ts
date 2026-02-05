@@ -6,6 +6,7 @@ import { updateBidIssueBody } from "../lib/issue-template.ts";
 import { loadAnalytics } from "../lib/analytics-store.ts";
 import { logError, withRetry, isRateLimited } from "../lib/error-handler.ts";
 import { loadBidders, registerBidder, isPaymentLinked, setWarnedAt, saveBidders } from "../lib/bidder-registry.ts";
+import { enforceContent } from "../lib/content-enforcer.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface ProcessBidOptions {
@@ -108,6 +109,25 @@ export async function runProcessBid(
 
     return { success: false, message: msg };
   }
+
+  const enforcement = await enforceContent(parsed, config);
+  if (!enforcement.passed) {
+    const errorList = enforcement.errors.map((e) => `- ${e}`).join("\n");
+    const msg = `Content enforcement failed:\n${errorList}`;
+    console.log(`✗ ${msg}`);
+
+    if (owner && repo) {
+      const api = new GitHubAPI(owner, repo);
+      await api.addComment(
+        issueNumber,
+        `❌ **Bid rejected — content requirements not met**\n\n${errorList}`,
+      );
+    }
+
+    return { success: false, message: msg };
+  }
+
+  console.log("✓ Content enforcement passed");
 
   const freshPeriodFile = Bun.file(dataPath);
   const freshPeriodData: PeriodData = JSON.parse(await freshPeriodFile.text());

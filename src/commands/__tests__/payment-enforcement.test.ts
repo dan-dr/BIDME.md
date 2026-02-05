@@ -157,6 +157,16 @@ function mockFetchForGitHub(overrides: Record<string, any> = {}) {
       );
     }
 
+    if (!url.includes("api.github.com") && (method === "HEAD" || method === "GET")) {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Length": "1024",
+        },
+      });
+    }
+
     return originalFetch(input, init);
   }) as typeof fetch;
 

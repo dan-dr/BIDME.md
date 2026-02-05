@@ -27,7 +27,7 @@ This phase implements inline analytics on bid issues (social proof for advertise
   - Update `src/commands/open-bidding.ts` to read analytics data and pass previous stats to the issue template
   - ✅ Completed: Added `generateStatsSection()` with no-data fallback ("First bidding period — no previous stats yet") and full stats display with "Stats based on the previous full week of sponsorship" note. Updated `generateBidIssueBody()` to always include stats section. Kept `generatePreviousStatsSection()` as backward-compat wrapper. `open-bidding.ts` already passed analytics data. All 228 tests pass.
 
-- [ ] Build the image and content enforcement system:
+- [x] Build the image and content enforcement system:
   - `src/lib/content-enforcer.ts`:
     - `validateBannerImage(url: string, config: BidMeConfig): Promise<ValidationResult>`:
       - Fetch the image via HEAD request to check Content-Length (must be under `config.banner.max_size` KB)
@@ -46,6 +46,7 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - After parsing the bid, run `enforceContent()` before accepting
     - If enforcement fails, reject the bid with specific error messages posted as a comment
     - Format rejection nicely: "❌ **Bid rejected — content requirements not met**\n\n- Image is too large (450KB > 200KB max)\n- Image dimensions exceed maximum (1200x300 > 800x100)"
+  - ✅ Completed: Created `src/lib/content-enforcer.ts` with `validateBannerImage()` (HEAD request for size/format, full fetch for pixel dimensions on raster images via binary header parsing for PNG/JPEG/GIF/WebP, SVG skipped), `validateCommentFormat()` (YAML block and required field checks), `checkProhibitedContent()` (substring match against config.content_guidelines.prohibited), and `enforceContent()` (aggregates image + content errors). Updated `src/commands/process-bid.ts` to run `enforceContent()` after bid validation — rejects with "❌ **Bid rejected — content requirements not met**" and specific error list. Updated existing test mocks in bidding.test.ts and payment-enforcement.test.ts to handle banner URL HEAD requests. All 228 tests pass.
 
 - [ ] Stub the daily recap email system (defer full implementation):
   - `src/commands/daily-recap.ts`:
