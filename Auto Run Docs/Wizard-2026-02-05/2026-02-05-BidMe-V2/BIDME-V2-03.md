@@ -56,7 +56,7 @@ This phase rewrites the bid processing pipeline — opener, processor, approval,
     - Resets `.bidme/data/current-period.json`
   - Register as CLI command: `bidme close-bidding` in `src/cli.ts`
 
-- [ ] Create the issue template generator with live-updating support:
+- [x] Create the issue template generator with live-updating support:
   - `src/lib/issue-template.ts` — rewrite to support v2 features:
     - `generateBidIssueBody(config, periodData, previousStats?)` — generates the full issue body markdown:
       - **Header**: "🏷️ Banner Sponsorship — {schedule} Bidding Period"

@@ -48,14 +48,14 @@ export function generatePreviousStatsSection(stats: PeriodAnalytics): string {
 Previous BidMe sponsorship garnered **${stats.views} views**, **${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR).`;
 }
 
-export function generateBiddingIssueBody(
-  period: PeriodData,
+export function generateBidIssueBody(
   config: BidMeConfig,
-  bids: BidRecord[],
+  periodData: PeriodData,
   previousStats?: PeriodAnalytics,
 ): string {
+  const bids = periodData.bids;
   const formats = config.banner.formats;
-  const endDate = new Date(period.end_date);
+  const endDate = new Date(periodData.end_date);
   const deadline = endDate.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -118,6 +118,16 @@ Bids must be submitted before the deadline. The highest approved bid wins the ba
   return sections.join("\n\n");
 }
 
+export function generateBiddingIssueBody(
+  period: PeriodData,
+  config: BidMeConfig,
+  bids: BidRecord[],
+  previousStats?: PeriodAnalytics,
+): string {
+  const periodWithBids: PeriodData = { ...period, bids };
+  return generateBidIssueBody(config, periodWithBids, previousStats);
+}
+
 export function generateWinnerAnnouncement(
   bid: BidRecord,
   period: PeriodData,
@@ -156,22 +166,22 @@ export function updateBidIssueBody(
 
   const topBid = generateCurrentTopBid(bids);
   body = body.replace(
-    /### 🔝 Current Top Bid\n\n[\s\S]*?(?=\n### )/,
-    `### 🔝 Current Top Bid\n\n${topBid}\n\n`,
+    /### 🔝 Current Top Bid\n\n[\s\S]*?(?=\n\n### )/,
+    `### 🔝 Current Top Bid\n\n${topBid}`,
   );
 
   const table = generateBidTable(bids);
   body = body.replace(
-    /### Bid Table\n\n[\s\S]*?(?=\n### )/,
-    `### Bid Table\n\n${table}\n\n`,
+    /### Bid Table\n\n[\s\S]*?(?=\n\n### )/,
+    `### Bid Table\n\n${table}`,
   );
 
   if (previousStats) {
     const statsSection = generatePreviousStatsSection(previousStats);
     if (body.includes("### 📊 Previous Period Stats")) {
       body = body.replace(
-        /### 📊 Previous Period Stats[\s\S]*?(?=\n### )/,
-        statsSection + "\n\n",
+        /### 📊 Previous Period Stats[\s\S]*?(?=\n\n### )/,
+        statsSection,
       );
     } else {
       body = body.replace(
