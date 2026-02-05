@@ -66,4 +66,5 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
   - Use mocked GitHub API
   - *(Completed: `bidder-registry.test.ts` already had 15 tests covering register, link, grace, persistence. Created `payment-enforcement.test.ts` with 10 tests covering strict mode (5), lenient mode (3), and grace period (2) — all passing)*
 
-- [ ] Run payment tests and fix any failures until all pass.
+- [x] Run payment tests and fix any failures until all pass.
+  - *(Completed: All 39 payment tests pass across 3 files — `bidder-registry.test.ts` (16 tests), `payment-enforcement.test.ts` (10 tests), `check-grace.test.ts` (13 tests). Full `src/` suite: 142 tests, 0 failures. Legacy `tests/` failures are pre-existing module path issues unrelated to payment system.)*
