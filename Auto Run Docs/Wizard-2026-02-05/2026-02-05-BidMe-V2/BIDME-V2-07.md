@@ -70,7 +70,7 @@ This phase builds the `bidme update` command with migration support for upgradin
     - Test update command reports "already up to date" when versions match
   - Use temp directories with pre-populated v1 file structures
 
-- [ ] Run the complete test suite and fix all failures:
+- [x] Run the complete test suite and fix all failures: *(Completed: Fixed 4 test failures caused by shallow-copy mutation of DEFAULT_CONFIG in migrateConfig() — replaced with JSON deep clone. Fixed 11 TypeScript errors: `as typeof fetch` → `as unknown as typeof fetch` in 4 test files, added `bidme_fee_percent` to init.ts payment config, fixed regex match indexing in workflows.test.ts. No obsolete v1 test files found. All 339 tests pass, 877 expect() calls, 0 TypeScript errors.)*
   - Run `bun test` from the project root
   - Fix any broken tests from earlier phases that reference old file paths
   - Delete any remaining test files under `tests/` and `scripts/__tests__/` that test old v1 code — these are obsolete since the modules they test have been deleted/replaced

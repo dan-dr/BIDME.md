@@ -180,7 +180,7 @@ function mockFetchForGitHub(overrides: Record<string, any> = {}) {
     }
 
     return originalFetch(input, init);
-  }) as typeof fetch;
+  }) as unknown as typeof fetch;
   return originalFetch;
 }
 

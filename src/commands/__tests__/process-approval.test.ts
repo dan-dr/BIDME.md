@@ -174,7 +174,7 @@ describe("process-approval", () => {
       }
 
       return originalFetch(input, init);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { runProcessApproval } = await import("../process-approval.js");
     const result = await runProcessApproval(42, 1001, { target: tempDir });
@@ -220,7 +220,7 @@ describe("process-approval", () => {
       }
 
       return originalFetch(input, init);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { runProcessApproval } = await import("../process-approval.js");
     const result = await runProcessApproval(42, 1001, { target: tempDir });
@@ -266,7 +266,7 @@ describe("process-approval", () => {
       }
 
       return originalFetch(input, init);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { runProcessApproval } = await import("../process-approval.js");
     const result = await runProcessApproval(42, 1001, { target: tempDir });
@@ -312,7 +312,7 @@ describe("process-approval", () => {
       }
 
       return originalFetch(input, init);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { runProcessApproval } = await import("../process-approval.js");
     const result = await runProcessApproval(42, 1001, { target: tempDir });
@@ -357,7 +357,7 @@ describe("process-approval", () => {
       }
 
       return originalFetch(input, init);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { runProcessApproval } = await import("../process-approval.js");
     await runProcessApproval(42, 1001, { target: tempDir });

@@ -28,7 +28,7 @@ export async function migrateConfig(targetDir: string): Promise<boolean> {
   const yamlContent = await Bun.file(oldConfigPath).text();
   const parsed = parseSimpleYaml(yamlContent);
 
-  const config: BidMeConfig = { ...DEFAULT_CONFIG };
+  const config: BidMeConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 
   if (parsed.bidding) {
     if (parsed.bidding.schedule) config.bidding.schedule = parsed.bidding.schedule;
