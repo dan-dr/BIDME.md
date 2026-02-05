@@ -1,6 +1,14 @@
+export type PaymentMode = "polar-own" | "bidme-managed";
+
 export interface PolarConfig {
   accessToken: string;
   baseUrl: string;
+}
+
+export interface PaymentLinkConfig {
+  mode: PaymentMode;
+  bidme_fee_percent: number;
+  payment_link: string;
 }
 
 export interface PolarProduct {
@@ -39,16 +47,30 @@ export class PolarAPIError extends Error {
 
 export class PolarAPI {
   private config: PolarConfig | null;
+  private _mode: PaymentMode;
 
-  constructor(accessToken?: string) {
+  constructor(accessToken?: string, mode: PaymentMode = "polar-own") {
     const token = accessToken ?? process.env["POLAR_ACCESS_TOKEN"];
     if (!token) {
       console.warn(
         "⚠ POLAR_ACCESS_TOKEN not set — payment features will be skipped",
       );
       this.config = null;
+      this._mode = mode;
       return;
     }
+
+    if (mode === "bidme-managed") {
+      // Mode 2 — "bidme-managed": BidMe's Polar.sh account (future Stripe Connect).
+      // Polar AUP prohibits marketplace use, so full bidme-managed mode
+      // will require Stripe Connect integration in a future release.
+      // For now, falls back to Mode 1 (polar-own) behavior.
+      console.warn(
+        "BidMe managed payments coming soon — using direct Polar for now",
+      );
+    }
+
+    this._mode = mode;
     this.config = {
       accessToken: token,
       baseUrl: "https://api.polar.sh/v1",
@@ -57,6 +79,10 @@ export class PolarAPI {
 
   get isConfigured(): boolean {
     return this.config !== null;
+  }
+
+  get mode(): PaymentMode {
+    return this._mode;
   }
 
   private async request<T>(
@@ -143,5 +169,24 @@ export class PolarAPI {
       paid: session.status === "succeeded",
       status: session.status,
     };
+  }
+
+  async createPaymentLink(
+    bid: { bidder: string; amount: number; contact: string },
+    config: PaymentLinkConfig,
+  ): Promise<string> {
+    if (!this.isConfigured) {
+      return config.payment_link;
+    }
+
+    // Both modes currently use the same Polar checkout flow.
+    // Mode 2 (bidme-managed) will use Stripe Connect in the future;
+    // for now it falls back to Mode 1 (polar-own) behavior.
+    const session = await this.createCheckoutSession(
+      bid.amount,
+      bid.contact,
+      `${bid.bidder}-${Date.now()}`,
+    );
+    return session.url;
   }
 }

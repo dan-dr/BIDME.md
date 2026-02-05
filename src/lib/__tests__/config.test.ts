@@ -115,6 +115,7 @@ increment = 10
           allow_unlinked_bids: true,
           unlinked_grace_hours: 48,
           payment_link: "https://custom.dev/pay",
+          bidme_fee_percent: 15,
         },
         enforcement: {
           require_payment_before_bid: false,

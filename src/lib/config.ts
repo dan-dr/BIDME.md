@@ -23,6 +23,7 @@ export interface BidMeConfig {
     allow_unlinked_bids: boolean;
     unlinked_grace_hours: number;
     payment_link: string;
+    bidme_fee_percent: number;
   };
   enforcement: {
     require_payment_before_bid: boolean;
@@ -60,6 +61,7 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     allow_unlinked_bids: false,
     unlinked_grace_hours: 24,
     payment_link: "https://bidme.dev/link-payment",
+    bidme_fee_percent: 10,
   },
   enforcement: {
     require_payment_before_bid: true,
@@ -167,6 +169,15 @@ export function validateConfig(config: unknown): BidMeConfig {
         "payment.unlinked_grace_hours must be a non-negative number",
       );
     }
+    if (
+      typeof merged.payment.bidme_fee_percent !== "number" ||
+      merged.payment.bidme_fee_percent < 0 ||
+      merged.payment.bidme_fee_percent > 100
+    ) {
+      throw new ConfigValidationError(
+        "payment.bidme_fee_percent must be a number between 0 and 100",
+      );
+    }
   }
 
   if (merged.tracking) {
@@ -244,6 +255,7 @@ provider = "${config.payment.provider}"
 allow_unlinked_bids = ${config.payment.allow_unlinked_bids}
 unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
 payment_link = "${config.payment.payment_link}"
+bidme_fee_percent = ${config.payment.bidme_fee_percent}
 `);
 
   sections.push(`# Enforcement rules

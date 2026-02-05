@@ -40,7 +40,7 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
   - This command will be called by a scheduled GitHub Action (created in Phase 05)
   - *(Completed: 13 tests in `src/commands/__tests__/check-grace.test.ts` — all passing)*
 
-- [ ] Create the Polar.sh integration for two-mode payment:
+- [x] Create the Polar.sh integration for two-mode payment:
   - Update `src/lib/polar-integration.ts`:
     - **Mode 1 — "polar-own"**: Repo owner's own Polar.sh account. Checkout sessions created under their token (existing behavior). Token from `POLAR_ACCESS_TOKEN` secret.
     - **Mode 2 — "bidme-managed"**: BidMe's Polar.sh account (future Stripe Connect). For now, implement as a stub that:
