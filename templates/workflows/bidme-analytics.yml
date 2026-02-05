@@ -1,16 +1,17 @@
-name: "BidMe: Close Bidding Period"
+name: "BidMe: Update Analytics"
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 */6 * * *"
+  repository_dispatch:
+    types: [bidme-click]
   workflow_dispatch:
 
 permissions:
   contents: write
-  issues: write
 
 jobs:
-  close-bidding:
+  update-analytics:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -19,11 +20,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Close bidding period
-        run: bun x bidme close-bidding
+      - name: Update analytics
+        run: bun x bidme update-analytics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
 
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5

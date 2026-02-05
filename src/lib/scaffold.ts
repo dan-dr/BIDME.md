@@ -79,7 +79,7 @@ async function writeIfNotExists(filePath: string, content: string): Promise<void
   await Bun.write(filePath, content);
 }
 
-async function copyWorkflowTemplates(target: string): Promise<void> {
+async function copyWorkflowTemplates(target: string): Promise<string[]> {
   const workflowDir = join(target, ".github", "workflows");
   await ensureDir(workflowDir);
 
@@ -90,15 +90,23 @@ async function copyWorkflowTemplates(target: string): Promise<void> {
   try {
     entries = (await fs.readdir(templatesDir)).filter((f) => f.endsWith(".yml"));
   } catch {
-    return;
+    return [];
   }
 
+  const copied: string[] = [];
   for (const entry of entries) {
     const src = join(templatesDir, entry);
     const dest = join(workflowDir, entry);
+    const destFile = Bun.file(dest);
+    if (await destFile.exists()) {
+      console.log(`  Skipped ${entry} (already exists)`);
+      continue;
+    }
     const content = await Bun.file(src).text();
     await Bun.write(dest, content);
+    copied.push(entry);
   }
+  return copied;
 }
 
 async function updateReadme(

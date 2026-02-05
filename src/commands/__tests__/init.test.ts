@@ -176,7 +176,9 @@ describe("init end-to-end", () => {
     expect(ymlFiles).toContain("bidme-process-bid.yml");
     expect(ymlFiles).toContain("bidme-process-approval.yml");
     expect(ymlFiles).toContain("bidme-close-bidding.yml");
-    expect(ymlFiles.length).toBe(4);
+    expect(ymlFiles).toContain("bidme-check-grace.yml");
+    expect(ymlFiles).toContain("bidme-analytics.yml");
+    expect(ymlFiles.length).toBe(6);
 
     const scheduleContent = await Bun.file(join(workflowDir, "bidme-schedule.yml")).text();
     expect(scheduleContent.length).toBeGreaterThan(0);

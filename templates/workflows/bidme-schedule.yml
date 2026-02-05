@@ -2,7 +2,7 @@ name: "BidMe: Open Bidding Period"
 
 on:
   schedule:
-    - cron: "0 0 1 * *" # Monthly on the 1st at midnight UTC
+    - cron: "0 0 1 * *"
   workflow_dispatch:
 
 permissions:
@@ -23,3 +23,8 @@ jobs:
         run: bun x bidme open-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit data changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(bidme): update data"

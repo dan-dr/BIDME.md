@@ -22,6 +22,11 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Process approval
-        run: bun x bidme process-approval
+        run: bun x bidme process-approval ${{ github.event.issue.number }} ${{ github.event.comment.id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit data changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(bidme): update data"
