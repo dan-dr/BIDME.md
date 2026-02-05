@@ -75,4 +75,5 @@ This phase creates the production GitHub Actions workflow templates that ship wi
     - Test init copies workflows to correct location
     - Test init doesn't overwrite existing workflows
 
-- [ ] Run workflow tests and fix any failures. Then do a full smoke test: run `bun run cli init --defaults --target /tmp/bidme-full-test` and verify all files are created in the right places — `.bidme/config.toml`, `.bidme/data/*`, `.bidme/redirect.html`, `.github/workflows/bidme-*.yml`, and README.md with placeholder.
+- [x] Run workflow tests and fix any failures. Then do a full smoke test: run `bun run cli init --defaults --target /tmp/bidme-full-test` and verify all files are created in the right places — `.bidme/config.toml`, `.bidme/data/*`, `.bidme/redirect.html`, `.github/workflows/bidme-*.yml`, and README.md with placeholder.
+  - **Completed:** All 78 workflow tests pass (YAML validation, required fields, bun x bidme commands, action versions, commit messages, init copy behavior). Full smoke test verified all 13 expected files/directories created correctly: `config.toml`, 3 data files + archive dir, `redirect.html`, 6 workflow YAMLs, and `README.md` with banner placeholder. Full suite: 224 tests pass, 0 failures.
