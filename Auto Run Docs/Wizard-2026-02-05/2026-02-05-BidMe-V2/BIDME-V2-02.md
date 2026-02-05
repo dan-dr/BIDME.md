@@ -38,7 +38,7 @@ This phase replaces the YAML-based configuration system with TOML throughout the
   - Update `generateToml()` to output all new sections with helpful inline comments
   - Update `DEFAULT_CONFIG` with all new defaults
 
-- [ ] Write tests for the TOML config system:
+- [x] Write tests for the TOML config system: *(Completed: created src/lib/__tests__/config.test.ts with 16 tests covering loadConfig, saveConfig round-trip, validateConfig rejection cases, generateToml comment preservation, and deep-merge with partial configs; all 22 src/ tests pass)*
   - `src/lib/__tests__/config.test.ts`:
     - Test loading a valid `.bidme/config.toml` file
     - Test deep-merge with partial config (missing sections filled from defaults)
