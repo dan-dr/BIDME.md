@@ -46,7 +46,7 @@ This phase builds the `bidme update` command with migration support for upgradin
     - `migrateReadme()`: update banner markers and placeholder format if needed
     - Each step should be idempotent (safe to run twice)
 
-- [ ] Rewrite README.md to document BidMe v2:
+- [x] Rewrite README.md to document BidMe v2: *(Completed: removed all badges, restructured with title/one-liner/Quick Start/How It Works 4-step flow/Configuration with config.toml example/Commands table (all 9 CLI commands)/Payment Setup/For Advertisers/License. Concise, no walls of text.)*
   - Remove all badges from the top of the README
   - New README structure:
     - **Title**: BidMe — Auction-Based README Sponsorships
