@@ -391,11 +391,12 @@ describe("issue body generation", () => {
     expect(body).toContain("5.0% CTR");
   });
 
-  test("omits previous stats when not available", () => {
+  test("shows first bidding period message when no previous stats", () => {
     const periodData = makePeriodData();
     const body = generateBidIssueBody(DEFAULT_CONFIG, periodData);
 
-    expect(body).not.toContain("Previous Period Stats");
+    expect(body).toContain("Previous Period Stats");
+    expect(body).toContain("First bidding period — no previous stats yet");
   });
 
   test("shows 'No bids yet' when there are no bids", () => {

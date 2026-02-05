@@ -16,7 +16,7 @@ This phase implements inline analytics on bid issues (social proof for advertise
   - Register as CLI command: `bidme update-analytics` in `src/cli.ts`
   - ✅ Completed: Created `src/commands/update-analytics.ts` with `mergeDailyViews()`, `computePreviousWeekStats()`, `computePeriodAggregates()`, and `runUpdateAnalytics()`. Registered as CLI command in `src/cli.ts`. All 224 existing tests pass.
 
-- [ ] Implement inline analytics display on bid issues:
+- [x] Implement inline analytics display on bid issues:
   - Update `src/lib/issue-template.ts`:
     - `generateStatsSection(analytics: AnalyticsData): string` — generates markdown for the "Previous Period Stats" section:
       - Format: "📊 **Previous BidMe sponsorship garnered {views} views, {clicks} clicks** ({ctr}% CTR)"
@@ -25,6 +25,7 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - Update `generateBidIssueBody()` to include this stats section prominently near the top
     - Update `updateBidIssueBody()` to refresh stats when issue body is updated (e.g., when new bids come in)
   - Update `src/commands/open-bidding.ts` to read analytics data and pass previous stats to the issue template
+  - ✅ Completed: Added `generateStatsSection()` with no-data fallback ("First bidding period — no previous stats yet") and full stats display with "Stats based on the previous full week of sponsorship" note. Updated `generateBidIssueBody()` to always include stats section. Kept `generatePreviousStatsSection()` as backward-compat wrapper. `open-bidding.ts` already passed analytics data. All 228 tests pass.
 
 - [ ] Build the image and content enforcement system:
   - `src/lib/content-enforcer.ts`:

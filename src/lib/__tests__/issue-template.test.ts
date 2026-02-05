@@ -4,6 +4,7 @@ import {
   generateBiddingIssueBody,
   generateBidTable,
   generateCurrentTopBid,
+  generateStatsSection,
   generatePreviousStatsSection,
   generateWinnerAnnouncement,
   generateNoBidsMessage,
@@ -126,14 +127,41 @@ describe("generateCurrentTopBid", () => {
   });
 });
 
-describe("generatePreviousStatsSection", () => {
-  test("includes views, clicks, and CTR", () => {
-    const stats = makeStats({ views: 2000, clicks: 60, ctr: 3.0 });
-    const section = generatePreviousStatsSection(stats);
+describe("generateStatsSection", () => {
+  test("shows first bidding period message when no stats provided", () => {
+    const section = generateStatsSection();
     expect(section).toContain("### 📊 Previous Period Stats");
-    expect(section).toContain("2000 views");
-    expect(section).toContain("60 clicks");
+    expect(section).toContain("First bidding period — no previous stats yet");
+  });
+
+  test("shows first bidding period message when undefined", () => {
+    const section = generateStatsSection(undefined);
+    expect(section).toContain("First bidding period");
+    expect(section).not.toContain("garnered");
+  });
+
+  test("includes views, clicks, CTR, and note when stats provided", () => {
+    const stats = makeStats({ views: 2000, clicks: 60, ctr: 3.0 });
+    const section = generateStatsSection(stats);
+    expect(section).toContain("### 📊 Previous Period Stats");
+    expect(section).toContain("garnered 2000 views, 60 clicks");
     expect(section).toContain("3.0% CTR");
+    expect(section).toContain("Stats based on the previous full week of sponsorship");
+  });
+
+  test("formats CTR to one decimal place", () => {
+    const stats = makeStats({ views: 1000, clicks: 33, ctr: 3.333 });
+    const section = generateStatsSection(stats);
+    expect(section).toContain("3.3% CTR");
+  });
+});
+
+describe("generatePreviousStatsSection (backward compat)", () => {
+  test("delegates to generateStatsSection", () => {
+    const stats = makeStats({ views: 2000, clicks: 60, ctr: 3.0 });
+    const fromOld = generatePreviousStatsSection(stats);
+    const fromNew = generateStatsSection(stats);
+    expect(fromOld).toBe(fromNew);
   });
 });
 
@@ -181,17 +209,18 @@ describe("generateBidIssueBody", () => {
     expect(body).toContain("highest approved bid wins");
   });
 
-  test("omits previous stats when not provided", () => {
+  test("shows first bidding period message when no previous stats", () => {
     const body = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
-    expect(body).not.toContain("### 📊 Previous Period Stats");
+    expect(body).toContain("### 📊 Previous Period Stats");
+    expect(body).toContain("First bidding period — no previous stats yet");
   });
 
   test("includes previous stats when provided", () => {
     const stats = makeStats({ views: 1200, clicks: 36, ctr: 3.0 });
     const body = generateBidIssueBody(DEFAULT_CONFIG, makePeriod(), stats);
     expect(body).toContain("### 📊 Previous Period Stats");
-    expect(body).toContain("1200 views");
-    expect(body).toContain("36 clicks");
+    expect(body).toContain("garnered 1200 views, 36 clicks");
+    expect(body).toContain("Stats based on the previous full week of sponsorship");
   });
 
   test("shows top bid when period has approved bids", () => {
@@ -278,20 +307,20 @@ describe("updateBidIssueBody", () => {
     expect(updated).toContain("## 🏷️ Banner Sponsorship");
   });
 
-  test("inserts previous stats section when not present", () => {
+  test("updates first bidding period placeholder with actual stats", () => {
     const initial = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
-    expect(initial).not.toContain("### 📊 Previous Period Stats");
+    expect(initial).toContain("First bidding period");
 
     const stats = makeStats({ views: 500, clicks: 25, ctr: 5.0 });
     const updated = updateBidIssueBody(initial, [], stats);
 
     expect(updated).toContain("### 📊 Previous Period Stats");
-    expect(updated).toContain("500 views");
-    expect(updated).toContain("25 clicks");
+    expect(updated).toContain("garnered 500 views, 25 clicks");
     expect(updated).toContain("### Rules");
+    expect(updated).not.toContain("First bidding period");
   });
 
-  test("updates existing previous stats section", () => {
+  test("updates existing previous stats section with new data", () => {
     const stats1 = makeStats({ views: 500, clicks: 25, ctr: 5.0 });
     const initial = generateBidIssueBody(DEFAULT_CONFIG, makePeriod(), stats1);
     expect(initial).toContain("500 views");

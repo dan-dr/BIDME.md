@@ -44,10 +44,22 @@ export function generateCurrentTopBid(bids: BidRecord[]): string {
   return `**$${top.amount}** by @${top.bidder} — [view bid](#issuecomment-${top.comment_id})`;
 }
 
-export function generatePreviousStatsSection(stats: PeriodAnalytics): string {
+export function generateStatsSection(stats?: PeriodAnalytics): string {
+  if (!stats) {
+    return `### 📊 Previous Period Stats
+
+📊 *First bidding period — no previous stats yet*`;
+  }
+
   return `### 📊 Previous Period Stats
 
-Previous BidMe sponsorship garnered **${stats.views} views**, **${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR).`;
+📊 **Previous BidMe sponsorship garnered ${stats.views} views, ${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR)
+
+Stats based on the previous full week of sponsorship`;
+}
+
+export function generatePreviousStatsSection(stats: PeriodAnalytics): string {
+  return generateStatsSection(stats);
 }
 
 export function generateBidIssueBody(
@@ -82,9 +94,7 @@ export function generateBidIssueBody(
 
 ${topBid}`);
 
-  if (previousStats) {
-    sections.push(generatePreviousStatsSection(previousStats));
-  }
+  sections.push(generateStatsSection(previousStats));
 
   sections.push(`### Rules
 - **Minimum bid:** $${config.bidding.minimum_bid}
@@ -179,18 +189,11 @@ export function updateBidIssueBody(
   );
 
   if (previousStats) {
-    const statsSection = generatePreviousStatsSection(previousStats);
-    if (body.includes("### 📊 Previous Period Stats")) {
-      body = body.replace(
-        /### 📊 Previous Period Stats[\s\S]*?(?=\n\n### )/,
-        statsSection,
-      );
-    } else {
-      body = body.replace(
-        /### Rules/,
-        statsSection + "\n\n### Rules",
-      );
-    }
+    const statsSection = generateStatsSection(previousStats);
+    body = body.replace(
+      /### 📊 Previous Period Stats[\s\S]*?(?=\n\n### )/,
+      statsSection,
+    );
   }
 
   return body;
