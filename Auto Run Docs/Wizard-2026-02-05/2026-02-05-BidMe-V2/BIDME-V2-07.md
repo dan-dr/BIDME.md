@@ -77,7 +77,7 @@ This phase builds the `bidme update` command with migration support for upgradin
   - Ensure all new tests under `src/` pass
   - Run `bun run typecheck` and fix any TypeScript errors
 
-- [ ] Full end-to-end smoke test:
+- [x] Full end-to-end smoke test: *(Completed: Created `src/__tests__/e2e-smoke.test.ts` with 9 tests covering: fresh init file creation (7 workflows + config + data + version + redirect + README), TOML parsing validation, version.json correctness, open-bidding graceful failure without GitHub env, period stub data saving, v1→v2 migration round-trip (config YAML→TOML + data move + cleanup), update "already up to date" detection, data JSON schema validation, and workflow content verification. All 9 tests pass with 86 expect() calls. Full suite: 348 tests, 963 expects, 0 failures, 0 TS errors.)*
   - Create a temp directory and initialize a git repo in it: `git init /tmp/bidme-e2e && cd /tmp/bidme-e2e && git commit --allow-empty -m "init"`
   - Run `bun run cli init --defaults --target /tmp/bidme-e2e`
   - Verify all files created: `.bidme/config.toml`, `.bidme/data/*`, `.bidme/version.json`, `.bidme/redirect.html`, `.github/workflows/bidme-*.yml`, README.md with banner placeholder
