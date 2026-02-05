@@ -3,7 +3,7 @@ import { resolve, join } from "path";
 import { mkdtemp, rm, readdir, stat, mkdir } from "fs/promises";
 import { tmpdir } from "os";
 import { scaffold } from "../../lib/scaffold.js";
-import { DEFAULT_CONFIG, parseToml } from "../../lib/config.js";
+import { DEFAULT_CONFIG, loadConfig, parseToml } from "../../lib/config.js";
 
 describe("init end-to-end", () => {
   let tempDir: string;
@@ -119,6 +119,44 @@ describe("init end-to-end", () => {
 
     const endCount = (secondReadme.match(/<!-- BIDME:BANNER:END -->/g) || []).length;
     expect(endCount).toBe(1);
+  });
+
+  test("scaffold + loadConfig round-trip: loadConfig() reads scaffolded config.toml correctly", async () => {
+    await scaffold(tempDir, DEFAULT_CONFIG);
+
+    const config = await loadConfig(tempDir);
+
+    expect(config.bidding.schedule).toBe(DEFAULT_CONFIG.bidding.schedule);
+    expect(config.bidding.duration).toBe(DEFAULT_CONFIG.bidding.duration);
+    expect(config.bidding.minimum_bid).toBe(DEFAULT_CONFIG.bidding.minimum_bid);
+    expect(config.bidding.increment).toBe(DEFAULT_CONFIG.bidding.increment);
+    expect(config.banner.width).toBe(DEFAULT_CONFIG.banner.width);
+    expect(config.banner.height).toBe(DEFAULT_CONFIG.banner.height);
+    expect(config.banner.formats).toEqual(DEFAULT_CONFIG.banner.formats);
+    expect(config.banner.max_size).toBe(DEFAULT_CONFIG.banner.max_size);
+    expect(config.approval.mode).toBe(DEFAULT_CONFIG.approval.mode);
+    expect(config.approval.allowed_reactions).toEqual(DEFAULT_CONFIG.approval.allowed_reactions);
+    expect(config.payment.provider).toBe(DEFAULT_CONFIG.payment.provider);
+    expect(config.payment.allow_unlinked_bids).toBe(DEFAULT_CONFIG.payment.allow_unlinked_bids);
+    expect(config.payment.unlinked_grace_hours).toBe(DEFAULT_CONFIG.payment.unlinked_grace_hours);
+    expect(config.enforcement.require_payment_before_bid).toBe(DEFAULT_CONFIG.enforcement.require_payment_before_bid);
+    expect(config.enforcement.strikethrough_unlinked).toBe(DEFAULT_CONFIG.enforcement.strikethrough_unlinked);
+    expect(config.tracking.append_utm).toBe(DEFAULT_CONFIG.tracking.append_utm);
+    expect(config.tracking.utm_params).toBe(DEFAULT_CONFIG.tracking.utm_params);
+    expect(config.content_guidelines.prohibited).toEqual(DEFAULT_CONFIG.content_guidelines.prohibited);
+    expect(config.content_guidelines.required).toEqual(DEFAULT_CONFIG.content_guidelines.required);
+  });
+
+  test("CLI init --defaults creates loadConfig()-compatible config.toml", async () => {
+    const proc = Bun.spawn(
+      ["bun", "run", "src/cli.ts", "init", "--defaults", "--target", tempDir],
+      { cwd: resolve(import.meta.dir, "../../.."), stdout: "pipe", stderr: "pipe" },
+    );
+    await proc.exited;
+
+    const config = await loadConfig(tempDir);
+
+    expect(config).toEqual(DEFAULT_CONFIG);
   });
 
   test("workflow files are copied to .github/workflows/ when target is a git repo", async () => {

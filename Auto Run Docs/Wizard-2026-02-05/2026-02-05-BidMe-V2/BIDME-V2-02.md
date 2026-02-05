@@ -48,4 +48,4 @@ This phase replaces the YAML-based configuration system with TOML throughout the
     - Test that TOML comments are preserved in output
   - Use temp directories for file operations
 
-- [ ] Run config tests and fix any failures. Then verify `bun run cli init --defaults --target /tmp/bidme-config-test` creates a valid `.bidme/config.toml` that can be loaded by the new `loadConfig()` function.
+- [x] Run config tests and fix any failures. Then verify `bun run cli init --defaults --target /tmp/bidme-config-test` creates a valid `.bidme/config.toml` that can be loaded by the new `loadConfig()` function. *(Completed: all 16 config tests + 6 init tests pass; CLI `init --defaults` creates valid config.toml; loadConfig() successfully loads and round-trips the CLI-generated config matching all DEFAULT_CONFIG values; added 2 integration tests — scaffold+loadConfig round-trip and CLI subprocess+loadConfig round-trip; 24 src/ tests total, 0 failures)*
