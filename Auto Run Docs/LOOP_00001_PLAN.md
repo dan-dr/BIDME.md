@@ -1578,3 +1578,219 @@ Exports that should be documented together for consistency:
 - **Group H:** DOC-065 — Content enforcement pipeline
 - **Group I:** DOC-063, DOC-064 — Issue template generation
 - **Group J:** DOC-067, DOC-068 — CLI command entry points (critical path only)
+
+---
+---
+
+# README Accuracy Fix Plan - Loop 00001
+
+## Summary
+- **Total Gaps:** 12
+- **Auto-Fix (PENDING):** 10
+- **Needs Review:** 0
+- **Won't Do:** 2
+
+## Current README Accuracy: 60%
+## Target README Accuracy: 95%
+
+---
+
+## PENDING - Ready for Auto-Fix
+
+### README-001: Bid `url` vs `destination_url` field name
+- **Status:** `PENDING`
+- **Gap ID:** GAP-010
+- **Type:** INACCURATE
+- **User Importance:** CRITICAL
+- **Fix Effort:** EASY
+- **README Section:** For Advertisers (lines 84, 94)
+- **Fix Description:**
+  Change `url` to `destination_url` in both the YAML example and the fields table. Bids following the current README will silently fail validation.
+- **Proposed Content:**
+  ```markdown
+  # In YAML example:
+    destination_url: "https://yourcompany.com"
+  # In table:
+  | `destination_url` | Yes | Click-through destination URL |
+  ```
+
+### README-002: Remove stale `alt_text` field
+- **Status:** `PENDING`
+- **Gap ID:** GAP-009
+- **Type:** STALE
+- **User Importance:** HIGH
+- **Fix Effort:** EASY
+- **README Section:** For Advertisers (lines 86, 96)
+- **Fix Description:**
+  Remove `alt_text` from YAML example and fields table. The code does not parse or use this field — advertisers are misled into providing it.
+- **Proposed Content:**
+  ```markdown
+  # Remove this line from YAML example:
+  #   alt_text: "YourCompany - Build faster with our tools"
+  # Remove this row from table:
+  #   | `alt_text` | Yes | Accessible description of your banner |
+  ```
+
+### README-003: Contact field accepts @username
+- **Status:** `PENDING`
+- **Gap ID:** GAP-011
+- **Type:** INACCURATE
+- **User Importance:** HIGH
+- **Fix Effort:** EASY
+- **README Section:** For Advertisers (line 97)
+- **Fix Description:**
+  Update contact field description to mention GitHub @username as a valid option.
+- **Proposed Content:**
+  ```markdown
+  | `contact` | Yes | Email or GitHub @username for bid communications |
+  ```
+
+### README-004: `approval.mode = "auto"` option
+- **Status:** `PENDING`
+- **Gap ID:** GAP-006
+- **Type:** MISSING
+- **User Importance:** HIGH
+- **Fix Effort:** EASY
+- **README Section:** Configuration — [approval] section (line 42)
+- **Fix Description:**
+  Update the approval mode comment to mention `"auto"` as an alternative to `"emoji"`.
+- **Proposed Content:**
+  ```markdown
+  [approval]
+  mode = "emoji"             # "emoji" (approve via reaction) or "auto" (auto-accept all valid bids)
+  allowed_reactions = ["👍"]
+  ```
+
+### README-005: `[enforcement]` config section
+- **Status:** `PENDING`
+- **Gap ID:** GAP-004
+- **Type:** MISSING
+- **User Importance:** HIGH
+- **Fix Effort:** MEDIUM
+- **README Section:** Configuration — after [content_guidelines] section
+- **Fix Description:**
+  Add the `[enforcement]` config section documenting payment enforcement controls.
+- **Proposed Content:**
+  ```markdown
+  [enforcement]
+  require_payment_before_bid = true    # Require linked payment to bid
+  strikethrough_unlinked = true        # Strike through bids from unlinked bidders
+  ```
+
+### README-006: Additional `[payment]` config options
+- **Status:** `PENDING`
+- **Gap ID:** GAP-007
+- **Type:** MISSING
+- **User Importance:** HIGH
+- **Fix Effort:** MEDIUM
+- **README Section:** Configuration — [payment] section (lines 46-47)
+- **Fix Description:**
+  Add `allow_unlinked_bids`, `unlinked_grace_hours`, and `payment_link` to the payment config section.
+- **Proposed Content:**
+  ```markdown
+  [payment]
+  provider = "polar-own"
+  bidme_fee_percent = 10               # Fee percentage (0-100)
+  allow_unlinked_bids = false          # Allow bids from users without linked payment
+  unlinked_grace_hours = 24            # Grace period to link payment after bidding
+  payment_link = "https://bidme.dev/link-payment"
+  ```
+
+### README-007: `[tracking]` config section
+- **Status:** `PENDING`
+- **Gap ID:** GAP-005
+- **Type:** MISSING
+- **User Importance:** MEDIUM
+- **Fix Effort:** MEDIUM
+- **README Section:** Configuration — after [enforcement] section
+- **Fix Description:**
+  Add the `[tracking]` config section so users know UTM tracking is on by default and can customize/disable it.
+- **Proposed Content:**
+  ```markdown
+  [tracking]
+  append_utm = true                    # Append UTM parameters to bid destination URLs
+  utm_params = "source=bidme&repo={owner}/{repo}"
+  ```
+
+### README-008: `--defaults` flag on `bidme init`
+- **Status:** `PENDING`
+- **Gap ID:** GAP-001
+- **Type:** MISSING
+- **User Importance:** MEDIUM
+- **Fix Effort:** EASY
+- **README Section:** Commands table — init row (line 58)
+- **Fix Description:**
+  Mention the `--defaults` flag for non-interactive init in the commands table.
+- **Proposed Content:**
+  ```markdown
+  | `bidme init` | Interactive setup wizard — scaffolds config, workflows, and README banner. Use `--defaults` to skip prompts. |
+  ```
+
+### README-009: `bidme_fee_percent` range
+- **Status:** `PENDING`
+- **Gap ID:** GAP-012
+- **Type:** INCOMPLETE
+- **User Importance:** MEDIUM
+- **Fix Effort:** EASY
+- **README Section:** Configuration — [payment] section (line 47)
+- **Fix Description:**
+  Add inline comment noting valid range. (Subsumed by README-006 which includes the range in the proposed content.)
+- **Note:** This fix is covered by README-006's proposed content.
+
+### README-010: `--target <path>` global flag
+- **Status:** `PENDING`
+- **Gap ID:** GAP-002
+- **Type:** MISSING
+- **User Importance:** LOW
+- **Fix Effort:** EASY
+- **README Section:** Commands section — add note after table
+- **Fix Description:**
+  Add a brief note that all commands accept `--target <path>` for monorepo/CI use.
+- **Proposed Content:**
+  ```markdown
+  All commands accept `--target <path>` to operate on a different project directory.
+  ```
+
+---
+
+## WON'T DO
+
+### README-W01: `--version` / `-v` flag
+- **Status:** `WON'T DO`
+- **Gap ID:** GAP-003
+- **Reason:** LOW impact — standard CLI convention, trivially discoverable by running `bidme --version`. Adding to commands table would add clutter for negligible user benefit.
+
+### README-W02: Click tracking via `redirect.html`
+- **Status:** `WON'T DO`
+- **Gap ID:** GAP-008
+- **Reason:** LOW importance + HARD effort — advanced analytics feature that requires comprehensive setup docs. Few users would enable this. Better suited for a dedicated "Advanced Features" page in future.
+
+---
+
+## Fix Order
+
+Recommended sequence based on importance and dependencies:
+
+1. **README-001** — Bid `url` → `destination_url` (CRITICAL — bids actively fail)
+2. **README-002** — Remove stale `alt_text` (HIGH — misleading advertiser docs)
+3. **README-003** — Contact accepts @username (HIGH — quick accuracy fix)
+4. **README-004** — Add `approval.mode = "auto"` (HIGH — easy one-liner)
+5. **README-005** — Add `[enforcement]` config section (HIGH — payment enforcement controls)
+6. **README-006** — Expand `[payment]` config options (HIGH — includes fee range fix from README-009)
+7. **README-007** — Add `[tracking]` config section (MEDIUM — users should know UTM is on)
+8. **README-008** — `--defaults` flag on init (MEDIUM — CI/automation use case)
+9. **README-010** — `--target <path>` global flag (LOW — monorepo/CI niche)
+
+*Note: README-009 is subsumed by README-006.*
+
+## README Section Updates Needed
+
+| Section | Gaps to Fix | Action Needed |
+|---------|-------------|---------------|
+| For Advertisers — YAML example | README-001, README-002 | Fix `url` → `destination_url`, remove `alt_text` |
+| For Advertisers — Fields table | README-001, README-002, README-003 | Fix field name, remove row, update contact description |
+| Configuration — [approval] | README-004 | Update comment to mention "auto" mode |
+| Configuration — [payment] | README-006 (includes README-009) | Add 3 missing options with range comment |
+| Configuration — new sections | README-005, README-007 | Add [enforcement] and [tracking] sections |
+| Commands — init row | README-008 | Add `--defaults` mention |
+| Commands — after table | README-010 | Add `--target` note |
