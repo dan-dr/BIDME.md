@@ -60,7 +60,7 @@ This phase builds the `bidme update` command with migration support for upgradin
     - **License**: MIT
   - Keep it concise — no walls of text. The CLI interactive wizard handles most setup questions.
 
-- [ ] Write migration tests:
+- [x] Write migration tests: *(Verified: all 25 tests in src/lib/__tests__/migrations.test.ts already cover every requirement — config YAML→TOML (5 tests), data migration (5 tests), workflow renaming (3 tests), readme migration (5 tests), cleanup (1 test), full idempotency (1 test), update command version detection (3 tests), migration framework sorting/filtering (2 tests). All pass with 84 expect() calls.)*
   - `src/lib/__tests__/migrations.test.ts`:
     - Test v1→v2 config migration: YAML input → TOML output with correct values
     - Test v1→v2 data migration: files moved from `data/` to `.bidme/data/`
