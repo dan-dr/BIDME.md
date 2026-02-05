@@ -95,6 +95,18 @@ program
   });
 
 program
+  .command("update-analytics")
+  .description("Fetch GitHub traffic data and update analytics")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runUpdateAnalytics } = await import("./commands/update-analytics.js");
+    const result = await runUpdateAnalytics({ target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {
