@@ -51,7 +51,7 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
     - Keep existing `createProduct()` and `createCheckoutSession()` methods
     - Document in code comments that Mode 2 will require Stripe Connect (Polar AUP prohibits marketplace use)
 
-- [ ] Write tests for the payment enforcement system:
+- [x] Write tests for the payment enforcement system:
   - `src/lib/__tests__/bidder-registry.test.ts`:
     - Test registering new bidder, checking unlinked status
     - Test marking payment as linked
@@ -64,5 +64,6 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
     - Test grace period expiry removes bid
     - Test grace period completion restores bid
   - Use mocked GitHub API
+  - *(Completed: `bidder-registry.test.ts` already had 15 tests covering register, link, grace, persistence. Created `payment-enforcement.test.ts` with 10 tests covering strict mode (5), lenient mode (3), and grace period (2) — all passing)*
 
 - [ ] Run payment tests and fix any failures until all pass.
