@@ -147,6 +147,43 @@ The README banner has been updated. Thank you to all bidders!
 *Powered by [BidMe](https://github.com/danarrib/bidme)*`;
 }
 
+export function updateBidIssueBody(
+  existingBody: string,
+  bids: BidRecord[],
+  previousStats?: PeriodAnalytics,
+): string {
+  let body = existingBody;
+
+  const topBid = generateCurrentTopBid(bids);
+  body = body.replace(
+    /### 🔝 Current Top Bid\n\n[\s\S]*?(?=\n### )/,
+    `### 🔝 Current Top Bid\n\n${topBid}\n\n`,
+  );
+
+  const table = generateBidTable(bids);
+  body = body.replace(
+    /### Bid Table\n\n[\s\S]*?(?=\n### )/,
+    `### Bid Table\n\n${table}\n\n`,
+  );
+
+  if (previousStats) {
+    const statsSection = generatePreviousStatsSection(previousStats);
+    if (body.includes("### 📊 Previous Period Stats")) {
+      body = body.replace(
+        /### 📊 Previous Period Stats[\s\S]*?(?=\n### )/,
+        statsSection + "\n\n",
+      );
+    } else {
+      body = body.replace(
+        /### Rules/,
+        statsSection + "\n\n### Rules",
+      );
+    }
+  }
+
+  return body;
+}
+
 export function generateNoBidsMessage(period: PeriodData): string {
   return `## 📭 Bidding Period Closed — No Winner
 

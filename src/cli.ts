@@ -43,6 +43,20 @@ program
   });
 
 program
+  .command("process-bid")
+  .description("Process a bid comment on the active bidding issue")
+  .argument("<issue>", "Issue number", (val: string) => parseInt(val, 10))
+  .argument("<comment>", "Comment ID", (val: string) => parseInt(val, 10))
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (issue: number, comment: number, options: { target: string }) => {
+    const { runProcessBid } = await import("./commands/process-bid.js");
+    const result = await runProcessBid(issue, comment, { target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {

@@ -14,7 +14,7 @@ This phase rewrites the bid processing pipeline — opener, processor, approval,
   - Register as CLI command: `bidme open-bidding` in `src/cli.ts`
   - Port logic from `scripts/bid-opener.ts` but adapt to new `.bidme/` paths and config format
 
-- [ ] Rewrite the bid processor with approval-per-bid logic:
+- [x] Rewrite the bid processor with approval-per-bid logic:
   - `src/commands/process-bid.ts`:
     - Loads config, reads period data from `.bidme/data/current-period.json`
     - Fetches comment via GitHub API, parses bid using `src/lib/validation.ts`
