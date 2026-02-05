@@ -29,7 +29,7 @@ This phase rewrites the bid processing pipeline — opener, processor, approval,
     - Posts confirmation or rejection comment
   - Register as CLI command: `bidme process-bid <issue> <comment>` in `src/cli.ts`
 
-- [ ] Rewrite the approval processor for individual bid approval:
+- [x] Rewrite the approval processor for individual bid approval:
   - `src/commands/process-approval.ts`:
     - Loads config, reads period data
     - Fetches reactions on the specific bid comment (not the issue)
