@@ -48,15 +48,18 @@ describe("init end-to-end", () => {
     expect(parsed.banner.formats).toEqual(["png", "jpg", "svg"]);
     expect(parsed.banner.max_size).toBe(200);
 
-    expect(parsed.approval.mode).toBe("auto");
+    expect(parsed.approval.mode).toBe("emoji");
     expect(parsed.approval.allowed_reactions).toEqual(["👍"]);
 
     expect(parsed.payment.provider).toBe("polar-own");
     expect(parsed.payment.allow_unlinked_bids).toBe(false);
     expect(parsed.payment.unlinked_grace_hours).toBe(24);
 
-    expect(parsed.enforcement.require_payment_before_bid).toBe(false);
+    expect(parsed.enforcement.require_payment_before_bid).toBe(true);
     expect(parsed.enforcement.strikethrough_unlinked).toBe(true);
+
+    expect(parsed.tracking.append_utm).toBe(true);
+    expect(parsed.tracking.utm_params).toBe("source=bidme&repo={owner}/{repo}");
 
     expect(parsed.content_guidelines.prohibited).toEqual([
       "adult content",

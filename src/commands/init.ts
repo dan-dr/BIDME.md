@@ -107,7 +107,7 @@ export async function collectConfig(): Promise<WizardConfig> {
       { value: "auto" as const, label: "Auto-accept all bids" },
       { value: "emoji" as const, label: "Emoji react to approve", hint: "you manually approve each bid" },
     ],
-    initialValue: "auto" as const,
+    initialValue: "emoji" as const,
   });
   if (clack.isCancel(approvalMode)) { clack.cancel("Setup cancelled."); process.exit(0); }
 
@@ -154,8 +154,12 @@ export async function collectConfig(): Promise<WizardConfig> {
       unlinked_grace_hours: 24,
     },
     enforcement: {
-      require_payment_before_bid: false,
+      require_payment_before_bid: true,
       strikethrough_unlinked: true,
+    },
+    tracking: {
+      append_utm: true,
+      utm_params: "source=bidme&repo={owner}/{repo}",
     },
     content_guidelines: {
       prohibited: ["adult content", "gambling", "misleading claims"],

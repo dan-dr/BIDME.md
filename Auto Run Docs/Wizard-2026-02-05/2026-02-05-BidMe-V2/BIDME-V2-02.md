@@ -24,7 +24,7 @@ This phase replaces the YAML-based configuration system with TOML throughout the
   - `src/lib/polar-integration.ts` — copy from `scripts/utils/polar-integration.ts` as-is
   - Ensure all file paths in migrated modules reference `.bidme/data/` instead of `data/`
 
-- [ ] Update the config type definitions to support new v2 features:
+- [x] Update the config type definitions to support new v2 features: *(Completed: added tracking section to BidMeConfig interface; updated DEFAULT_CONFIG defaults — approval.mode→"emoji", enforcement.require_payment_before_bid→true, tracking.append_utm→true, tracking.utm_params→"source=bidme&repo={owner}/{repo}"; updated generateToml() with tracking section and inline comments; added tracking validation in validateConfig(); updated init.ts collectConfig() and wizard defaults; updated existing tests to match new defaults; all 6 tests pass, 0 src/ type errors)*
   - Add to `BidMeConfig` interface in `src/lib/config.ts`:
     - `approval.mode`: `"auto" | "emoji"` (default: "emoji")
     - `approval.allowed_reactions`: `string[]` (default: ["👍"])

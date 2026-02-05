@@ -27,6 +27,10 @@ export interface BidMeConfig {
     require_payment_before_bid: boolean;
     strikethrough_unlinked: boolean;
   };
+  tracking: {
+    append_utm: boolean;
+    utm_params: string;
+  };
   content_guidelines: {
     prohibited: string[];
     required: string[];
@@ -47,7 +51,7 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     max_size: 200,
   },
   approval: {
-    mode: "auto",
+    mode: "emoji",
     allowed_reactions: ["👍"],
   },
   payment: {
@@ -56,8 +60,12 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     unlinked_grace_hours: 24,
   },
   enforcement: {
-    require_payment_before_bid: false,
+    require_payment_before_bid: true,
     strikethrough_unlinked: true,
+  },
+  tracking: {
+    append_utm: true,
+    utm_params: "source=bidme&repo={owner}/{repo}",
   },
   content_guidelines: {
     prohibited: ["adult content", "gambling", "misleading claims"],
@@ -159,6 +167,15 @@ export function validateConfig(config: unknown): BidMeConfig {
     }
   }
 
+  if (merged.tracking) {
+    if (typeof merged.tracking.append_utm !== "boolean") {
+      throw new ConfigValidationError("tracking.append_utm must be a boolean");
+    }
+    if (typeof merged.tracking.utm_params !== "string") {
+      throw new ConfigValidationError("tracking.utm_params must be a string");
+    }
+  }
+
   return merged;
 }
 
@@ -230,6 +247,12 @@ unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
 [enforcement]
 require_payment_before_bid = ${config.enforcement.require_payment_before_bid}
 strikethrough_unlinked = ${config.enforcement.strikethrough_unlinked}
+`);
+
+  sections.push(`# UTM tracking for bid links
+[tracking]
+append_utm = ${config.tracking.append_utm}
+utm_params = "${config.tracking.utm_params}"
 `);
 
   sections.push(`# Content guidelines for banner submissions
