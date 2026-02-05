@@ -14,7 +14,7 @@ This phase replaces the YAML-based configuration system with TOML throughout the
   - Delete `scripts/utils/config.ts` after confirming all references are updated
   - Delete `bidme-config.yml` from project root
 
-- [ ] Migrate core utility modules from `scripts/utils/` to `src/lib/`:
+- [x] Migrate core utility modules from `scripts/utils/` to `src/lib/`: *(Completed: migrated all 7 modules to src/lib/; fixed validation.ts and issue-template.ts to use config.banner.formats array instead of .format string split; updated issue-template.ts imports to use @scripts/ path alias; updated analytics-store.ts DEFAULT_PATH to .bidme/data/analytics.json; all src/ typechecks pass, 6/6 existing tests pass)*
   - `src/lib/github-api.ts` — copy from `scripts/utils/github-api.ts`, update imports to use `@src/lib/` paths
   - `src/lib/validation.ts` — copy from `scripts/utils/validation.ts`, update config import to new TOML-based config types
   - `src/lib/error-handler.ts` — copy from `scripts/utils/error-handler.ts` as-is
