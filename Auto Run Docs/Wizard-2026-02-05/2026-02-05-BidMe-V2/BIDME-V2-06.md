@@ -48,7 +48,7 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - Format rejection nicely: "❌ **Bid rejected — content requirements not met**\n\n- Image is too large (450KB > 200KB max)\n- Image dimensions exceed maximum (1200x300 > 800x100)"
   - ✅ Completed: Created `src/lib/content-enforcer.ts` with `validateBannerImage()` (HEAD request for size/format, full fetch for pixel dimensions on raster images via binary header parsing for PNG/JPEG/GIF/WebP, SVG skipped), `validateCommentFormat()` (YAML block and required field checks), `checkProhibitedContent()` (substring match against config.content_guidelines.prohibited), and `enforceContent()` (aggregates image + content errors). Updated `src/commands/process-bid.ts` to run `enforceContent()` after bid validation — rejects with "❌ **Bid rejected — content requirements not met**" and specific error list. Updated existing test mocks in bidding.test.ts and payment-enforcement.test.ts to handle banner URL HEAD requests. All 228 tests pass.
 
-- [ ] Stub the daily recap email system (defer full implementation):
+- [x] Stub the daily recap email system (defer full implementation):
   - `src/commands/daily-recap.ts`:
     - Reads analytics data from `.bidme/data/analytics.json`
     - Generates a summary: total views today, clicks today, active bids, current highest bid
@@ -59,8 +59,9 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - Triggers: `schedule` cron `0 8 * * *` (daily at 8am UTC)
     - Steps: checkout, setup-bun, `bun x bidme daily-recap`
     - Comment in workflow: "Currently outputs to Actions log. Future: email integration."
+  - ✅ Completed: Created `src/commands/daily-recap.ts` with `getTodayViews()`, `getTodayClicks()`, `formatRecap()`, and `runDailyRecap()`. Reads analytics.json for view/click data and current-period.json for active bids/highest bid. Outputs formatted summary to stdout with TODO comment for future email integration. Registered as `bidme daily-recap` in cli.ts. Added `templates/workflows/bidme-daily-recap.yml` with daily 8am UTC cron schedule. Added 15 tests in `daily-recap.test.ts`. Updated workflow test expectations from 6→7 templates. All 255 tests pass.
 
-- [ ] Write tests for analytics and content enforcement:
+- [x] Write tests for analytics and content enforcement:
   - `src/lib/__tests__/content-enforcer.test.ts`:
     - Test image size validation (pass and fail cases)
     - Test image format validation (allowed and disallowed)
@@ -72,5 +73,6 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - Test previousWeekStats computation
     - Test stats section markdown generation
     - Test empty/missing analytics data produces graceful output
+  - ✅ Completed: Created `src/lib/__tests__/content-enforcer.test.ts` (31 tests) covering image size/format/dimension validation (PNG, JPEG, GIF, WebP binary header parsing), URL accessibility errors, comment format validation (valid YAML, missing fields, malformed), prohibited content detection (case-insensitive, multi-keyword, per-field), and combined `enforceContent()` aggregation. Created `src/commands/__tests__/update-analytics.test.ts` (28 tests) covering `mergeDailyViews()` (dedup, keep highest, sort), `computePreviousWeekStats()` (date windowing, CTR), `computePeriodAggregates()` (multi-period, empty data), stats section markdown generation, and `runUpdateAnalytics()` integration (local mode, missing files, timestamp updates). All 314 tests pass (was 255).
 
 - [ ] Run all analytics and enforcement tests and fix any failures.
