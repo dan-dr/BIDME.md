@@ -354,7 +354,8 @@ related:
   - [ ] Returns: PeriodAnalytics | null
 
 ### DOC-021: BidRecord
-- **Status:** `PENDING`
+- **Status:** `IMPLEMENTED`
+- **Implemented In:** Loop 00001
 - **File:** `src/lib/types.ts`
 - **Gap ID:** GAP-026
 - **Type:** Interface
@@ -364,10 +365,11 @@ related:
   ```
   interface BidRecord { bidder; amount; banner_url; destination_url; contact; status; comment_id; timestamp }
   ```
-- **Documentation Plan:**
-  - [ ] Description: Core domain type — bid lifecycle record
-  - [ ] Properties: all properties, especially status values
-  - [ ] Examples: Yes
+- **Documentation Added:**
+  - [x] Description: Core domain type — bid lifecycle record
+  - [x] Properties: all 8 properties with types and descriptions
+  - [x] Status values: all 5 states documented (pending, approved, rejected, unlinked_pending, expired)
+  - [x] Examples: Yes — full construction example
 
 ### DOC-022: PeriodData
 - **Status:** `PENDING`
