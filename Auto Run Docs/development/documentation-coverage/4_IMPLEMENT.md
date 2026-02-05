@@ -21,8 +21,7 @@ Write documentation for `PENDING` gaps from the evaluation phase. Create high-qu
 
 ## Implementation Checklist
 
-- [x] **Write documentation (or skip if none)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING`, mark this task complete without changes. Otherwise, write documentation for ONE `PENDING` item with PUBLIC/INTERNAL visibility and HIGH/CRITICAL importance. Follow project documentation conventions. Update status to `IMPLEMENTED` in the plan. Log to DOC_LOG. Only document ONE export per task.
-  - **Completed:** DOC-021 (BidRecord) — Added JSDoc with description, all 8 properties, 5 status values, and usage example to `src/lib/types.ts`. Updated plan status to IMPLEMENTED. Logged to DOC_LOG.
+- [ ] **Write documentation (or skip if none)**: Read /Users/dan/Projects/bidme/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING`, mark this task complete without changes. Otherwise, write documentation for ONE `PENDING` item with PUBLIC/INTERNAL visibility and HIGH/CRITICAL importance. Follow project documentation conventions. Update status to `IMPLEMENTED` in the plan. Log to DOC_LOG. Only document ONE export per task.
 
 ## Documentation Structure
 
