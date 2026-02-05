@@ -178,7 +178,8 @@ describe("init end-to-end", () => {
     expect(ymlFiles).toContain("bidme-close-bidding.yml");
     expect(ymlFiles).toContain("bidme-check-grace.yml");
     expect(ymlFiles).toContain("bidme-analytics.yml");
-    expect(ymlFiles.length).toBe(6);
+    expect(ymlFiles).toContain("bidme-daily-recap.yml");
+    expect(ymlFiles.length).toBe(7);
 
     const scheduleContent = await Bun.file(join(workflowDir, "bidme-schedule.yml")).text();
     expect(scheduleContent.length).toBeGreaterThan(0);
@@ -210,9 +211,10 @@ describe("init end-to-end", () => {
 
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
 
-    expect(result.workflowsCopied.length).toBe(6);
+    expect(result.workflowsCopied.length).toBe(7);
     expect(result.workflowsCopied).toContain("bidme-schedule.yml");
     expect(result.workflowsCopied).toContain("bidme-analytics.yml");
+    expect(result.workflowsCopied).toContain("bidme-daily-recap.yml");
     expect(result.workflowsSkipped).toEqual([]);
     expect(result.owner).toBe("testowner");
     expect(result.repo).toBe("testrepo");
@@ -235,7 +237,7 @@ describe("init end-to-end", () => {
     expect(result.workflowsSkipped).toContain("bidme-schedule.yml");
     expect(result.workflowsSkipped).toContain("bidme-analytics.yml");
     expect(result.workflowsSkipped.length).toBe(2);
-    expect(result.workflowsCopied.length).toBe(4);
+    expect(result.workflowsCopied.length).toBe(5);
     expect(result.workflowsCopied).not.toContain("bidme-schedule.yml");
     expect(result.workflowsCopied).not.toContain("bidme-analytics.yml");
 

@@ -12,6 +12,7 @@ const WORKFLOW_FILES = [
   "bidme-close-bidding.yml",
   "bidme-check-grace.yml",
   "bidme-analytics.yml",
+  "bidme-daily-recap.yml",
 ];
 
 const TEMPLATES_DIR = resolve(import.meta.dir, "../../../templates/workflows");
@@ -32,10 +33,10 @@ function parseYamlLite(content: string): Record<string, unknown> {
 
 describe("workflow template validation", () => {
   describe("YAML syntax and structure", () => {
-    test("all 6 workflow template files exist", async () => {
+    test("all 7 workflow template files exist", async () => {
       const entries = await readdir(TEMPLATES_DIR);
       const ymlFiles = entries.filter((f) => f.endsWith(".yml")).sort();
-      expect(ymlFiles.length).toBe(6);
+      expect(ymlFiles.length).toBe(7);
       for (const file of WORKFLOW_FILES) {
         expect(ymlFiles).toContain(file);
       }
@@ -142,6 +143,11 @@ describe("workflow template validation", () => {
       const content = await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text();
       expect(content).toContain("bun x bidme update-analytics");
     });
+
+    test("daily-recap workflow runs 'bun x bidme daily-recap'", async () => {
+      const content = await Bun.file(join(TEMPLATES_DIR, "bidme-daily-recap.yml")).text();
+      expect(content).toContain("bun x bidme daily-recap");
+    });
   });
 
   describe("commit message convention", () => {
@@ -170,18 +176,18 @@ describe("init copies workflows correctly", () => {
     await rm(tempDir, { recursive: true });
   });
 
-  test("init copies all 6 workflow files to .github/workflows/", async () => {
+  test("init copies all 7 workflow files to .github/workflows/", async () => {
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
 
     const workflowDir = join(tempDir, ".github", "workflows");
     const files = await readdir(workflowDir);
     const ymlFiles = files.filter((f) => f.endsWith(".yml"));
 
-    expect(ymlFiles.length).toBe(6);
+    expect(ymlFiles.length).toBe(7);
     for (const file of WORKFLOW_FILES) {
       expect(ymlFiles).toContain(file);
     }
-    expect(result.workflowsCopied.length).toBe(6);
+    expect(result.workflowsCopied.length).toBe(7);
   });
 
   test("copied workflow content matches template source", async () => {
@@ -209,7 +215,7 @@ describe("init copies workflows correctly", () => {
     expect(result.workflowsSkipped).toContain("bidme-schedule.yml");
     expect(result.workflowsSkipped).toContain("bidme-analytics.yml");
     expect(result.workflowsSkipped.length).toBe(2);
-    expect(result.workflowsCopied.length).toBe(4);
+    expect(result.workflowsCopied.length).toBe(5);
 
     const preserved = await Bun.file(join(workflowDir, "bidme-schedule.yml")).text();
     expect(preserved).toBe(customContent);
@@ -234,7 +240,7 @@ describe("init copies workflows correctly", () => {
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
 
     expect(result.workflowsCopied).toEqual([]);
-    expect(result.workflowsSkipped.length).toBe(6);
+    expect(result.workflowsSkipped.length).toBe(7);
     for (const file of WORKFLOW_FILES) {
       expect(result.workflowsSkipped).toContain(file);
     }

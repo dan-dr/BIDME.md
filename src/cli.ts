@@ -107,6 +107,18 @@ program
   });
 
 program
+  .command("daily-recap")
+  .description("Generate a daily recap of analytics and bidding activity")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runDailyRecap } = await import("./commands/daily-recap.js");
+    const result = await runDailyRecap({ target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {
