@@ -79,6 +79,25 @@ async function writeIfNotExists(filePath: string, content: string): Promise<void
   await Bun.write(filePath, content);
 }
 
+async function copyRedirectPage(target: string): Promise<boolean> {
+  const bidmeDir = join(target, ".bidme");
+  await ensureDir(bidmeDir);
+
+  const templatePath = resolve(import.meta.dir, "../../templates/redirect.html");
+  const destPath = join(bidmeDir, "redirect.html");
+
+  const destFile = Bun.file(destPath);
+  if (await destFile.exists()) return false;
+
+  try {
+    const content = await Bun.file(templatePath).text();
+    await Bun.write(destPath, content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function copyWorkflowTemplates(target: string): Promise<string[]> {
   const workflowDir = join(target, ".github", "workflows");
   await ensureDir(workflowDir);
@@ -151,5 +170,6 @@ export async function scaffold(
     await copyWorkflowTemplates(resolved);
   }
 
+  await copyRedirectPage(resolved);
   await updateReadme(resolved, owner, repo);
 }

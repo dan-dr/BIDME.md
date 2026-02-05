@@ -36,7 +36,7 @@ This phase creates the production GitHub Actions workflow templates that ship wi
   - All workflows must use `oven-sh/setup-bun@v2` and `actions/checkout@v4`
   - All workflows commit data changes back to the repo using `stefanzweifel/git-auto-commit-action@v5` with message "chore(bidme): update data"
 
-- [ ] Build the click-tracking redirect page:
+- [x] Build the click-tracking redirect page:
   - `templates/redirect.html`:
     - A lightweight HTML page that extracts `dest`, `id`, and `ref` from URL query params
     - Appends `?source=bidme&repo={repo}` to the destination URL (or `&source=...` if dest already has query params)

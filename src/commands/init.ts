@@ -194,10 +194,16 @@ export async function runInit(options: InitOptions): Promise<void> {
     );
   }
 
+  clack.log.info(
+    "To enable click tracking, enable GitHub Pages on your repo\n" +
+    "  (Settings → Pages → Deploy from branch) so .bidme/redirect.html is served.",
+  );
+
   clack.outro(
     "BidMe setup complete! Next steps:\n" +
     "  1. Review .bidme/config.toml\n" +
     "  2. Commit the .bidme/ folder and workflow files\n" +
-    "  3. Push to GitHub to activate bidding",
+    "  3. Push to GitHub to activate bidding\n" +
+    "  4. (Optional) Enable GitHub Pages for click tracking",
   );
 }
