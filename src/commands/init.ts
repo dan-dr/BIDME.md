@@ -152,6 +152,7 @@ export async function collectConfig(): Promise<WizardConfig> {
       provider: paymentProvider,
       allow_unlinked_bids: allowUnlinked,
       unlinked_grace_hours: 24,
+      payment_link: "https://bidme.dev/link-payment",
     },
     enforcement: {
       require_payment_before_bid: true,

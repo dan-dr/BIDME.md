@@ -3,6 +3,7 @@ import { resolve, join } from "path";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { scaffold } from "../../lib/scaffold.js";
+import { resetRegistryCache } from "../../lib/bidder-registry.js";
 import { DEFAULT_CONFIG, generateToml } from "../../lib/config.js";
 import type { BidMeConfig } from "../../lib/config.js";
 import type { PeriodData, BidRecord } from "../../lib/types.js";
@@ -47,6 +48,7 @@ function makeAutoConfig(): BidMeConfig {
   return {
     ...DEFAULT_CONFIG,
     approval: { ...DEFAULT_CONFIG.approval, mode: "auto" as const },
+    enforcement: { ...DEFAULT_CONFIG.enforcement, require_payment_before_bid: false },
   };
 }
 
@@ -54,6 +56,7 @@ function makeEmojiConfig(): BidMeConfig {
   return {
     ...DEFAULT_CONFIG,
     approval: { ...DEFAULT_CONFIG.approval, mode: "emoji" as const },
+    enforcement: { ...DEFAULT_CONFIG.enforcement, require_payment_before_bid: false },
   };
 }
 
@@ -258,6 +261,7 @@ describe("process-bid: approval modes", () => {
   });
 
   afterEach(async () => {
+    resetRegistryCache();
     await rm(tempDir, { recursive: true });
     process.env = { ...originalEnv };
     mock.restore();

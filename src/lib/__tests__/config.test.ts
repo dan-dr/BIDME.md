@@ -114,6 +114,7 @@ increment = 10
           provider: "bidme-managed",
           allow_unlinked_bids: true,
           unlinked_grace_hours: 48,
+          payment_link: "https://custom.dev/pay",
         },
         enforcement: {
           require_payment_before_bid: false,

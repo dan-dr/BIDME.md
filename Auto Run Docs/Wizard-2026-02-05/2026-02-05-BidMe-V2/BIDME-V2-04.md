@@ -16,7 +16,7 @@ This phase implements the payment-before-bidding enforcement system. Bidders mus
     - `saveBidders()` / `loadBidders()` — persist to `.bidme/data/bidders.json`
   - Initialize empty `bidders.json` during `bidme init` scaffolding (update `src/lib/scaffold.ts`)
 
-- [ ] Integrate payment verification into the bid processor:
+- [x] Integrate payment verification into the bid processor:
   - Update `src/commands/process-bid.ts`:
     - After parsing and validating bid format, check bidder's payment status via `bidder-registry.ts`
     - **If `config.enforcement.require_payment_before_bid` is true AND bidder is not linked:**

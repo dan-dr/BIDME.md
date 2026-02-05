@@ -171,6 +171,14 @@ export class GitHubAPI {
     );
   }
 
+  async updateComment(commentId: number, body: string): Promise<CommentData> {
+    return this.request<CommentData>(
+      "PATCH",
+      `/issues/comments/${commentId}`,
+      { body },
+    );
+  }
+
   async getComments(issueNumber: number): Promise<CommentData[]> {
     return this.request<CommentData[]>(
       "GET",

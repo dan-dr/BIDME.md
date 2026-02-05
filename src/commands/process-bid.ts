@@ -5,6 +5,7 @@ import { parseBidComment, validateBid } from "../lib/validation.ts";
 import { updateBidIssueBody } from "../lib/issue-template.ts";
 import { loadAnalytics } from "../lib/analytics-store.ts";
 import { logError, withRetry, isRateLimited } from "../lib/error-handler.ts";
+import { loadBidders, registerBidder, isPaymentLinked, setWarnedAt, saveBidders } from "../lib/bidder-registry.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface ProcessBidOptions {
@@ -127,8 +128,64 @@ export async function runProcessBid(
     return { success: false, message: msg };
   }
 
-  const bidStatus: BidRecord["status"] =
+  await loadBidders(target);
+  registerBidder(bidder);
+  const paymentLinked = isPaymentLinked(bidder);
+  const paymentLink = config.payment.payment_link || "https://bidme.dev/link-payment";
+  const graceHours = config.payment.unlinked_grace_hours;
+
+  if (config.enforcement.require_payment_before_bid && !paymentLinked) {
+    if (config.enforcement.strikethrough_unlinked && owner && repo) {
+      const api = new GitHubAPI(owner, repo);
+      try {
+        await api.updateComment(commentId, `~~${commentBody}~~`);
+        console.log("✓ Original comment struck through (unlinked bidder)");
+      } catch (err) {
+        console.warn("⚠ Failed to strikethrough comment");
+        logError(err, "process-bid:strikethrough");
+      }
+    }
+
+    if (owner && repo) {
+      const api = new GitHubAPI(owner, repo);
+      await api.addComment(
+        issueNumber,
+        `⚠️ @${bidder} — your bid has been paused. Please [link your payment method](${paymentLink}) within ${graceHours} hours to activate your bid. Bids without linked payment will be removed.`,
+      );
+    }
+
+    setWarnedAt(bidder);
+    await saveBidders(target);
+
+    const bidRecord: BidRecord = {
+      bidder,
+      amount: parsed.amount,
+      banner_url: parsed.banner_url,
+      destination_url: parsed.destination_url,
+      contact: parsed.contact,
+      status: "unlinked_pending",
+      comment_id: commentId,
+      timestamp: new Date().toISOString(),
+    };
+
+    freshPeriodData.bids.push(bidRecord);
+    await Bun.write(dataPath, JSON.stringify(freshPeriodData, null, 2));
+    console.log("✓ Bid recorded (status: unlinked_pending)");
+
+    const msg = `Bid of $${parsed.amount} by @${bidder} paused — payment not linked`;
+    console.log(`\n⚠ ${msg}`);
+    return { success: true, message: msg };
+  }
+
+  let bidStatus: BidRecord["status"] =
     config.approval.mode === "auto" ? "approved" : "pending";
+
+  let paymentWarning = "";
+  if (config.payment.allow_unlinked_bids && !paymentLinked) {
+    paymentWarning = `\n\n> **Note:** You haven't linked a payment method yet. Link one at ${paymentLink} to avoid delays if you win.`;
+  }
+
+  await saveBidders(target);
 
   const bidRecord: BidRecord = {
     bidder,
@@ -175,6 +232,8 @@ export async function runProcessBid(
         const reactions = config.approval.allowed_reactions.join(" or ");
         commentText += `\n\n> **Repo owner:** React to this comment with ${reactions} to approve this bid.`;
       }
+
+      commentText += paymentWarning;
 
       await api.addComment(issueNumber, commentText);
       console.log("✓ Confirmation comment posted");

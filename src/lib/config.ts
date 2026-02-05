@@ -22,6 +22,7 @@ export interface BidMeConfig {
     provider: "polar-own" | "bidme-managed";
     allow_unlinked_bids: boolean;
     unlinked_grace_hours: number;
+    payment_link: string;
   };
   enforcement: {
     require_payment_before_bid: boolean;
@@ -58,6 +59,7 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     provider: "polar-own",
     allow_unlinked_bids: false,
     unlinked_grace_hours: 24,
+    payment_link: "https://bidme.dev/link-payment",
   },
   enforcement: {
     require_payment_before_bid: true,
@@ -241,6 +243,7 @@ allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
 provider = "${config.payment.provider}"
 allow_unlinked_bids = ${config.payment.allow_unlinked_bids}
 unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
+payment_link = "${config.payment.payment_link}"
 `);
 
   sections.push(`# Enforcement rules
