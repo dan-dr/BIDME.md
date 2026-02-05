@@ -75,4 +75,5 @@ This phase implements inline analytics on bid issues (social proof for advertise
     - Test empty/missing analytics data produces graceful output
   - ✅ Completed: Created `src/lib/__tests__/content-enforcer.test.ts` (31 tests) covering image size/format/dimension validation (PNG, JPEG, GIF, WebP binary header parsing), URL accessibility errors, comment format validation (valid YAML, missing fields, malformed), prohibited content detection (case-insensitive, multi-keyword, per-field), and combined `enforceContent()` aggregation. Created `src/commands/__tests__/update-analytics.test.ts` (28 tests) covering `mergeDailyViews()` (dedup, keep highest, sort), `computePreviousWeekStats()` (date windowing, CTR), `computePeriodAggregates()` (multi-period, empty data), stats section markdown generation, and `runUpdateAnalytics()` integration (local mode, missing files, timestamp updates). All 314 tests pass (was 255).
 
-- [ ] Run all analytics and enforcement tests and fix any failures.
+- [x] Run all analytics and enforcement tests and fix any failures.
+  - ✅ Completed: Ran full test suite — all 314 tests pass across 12 files with 793 expect() calls and 0 failures. No fixes needed. Test coverage includes content-enforcer (31 tests), update-analytics (28 tests), daily-recap (15 tests), and all existing tests.
