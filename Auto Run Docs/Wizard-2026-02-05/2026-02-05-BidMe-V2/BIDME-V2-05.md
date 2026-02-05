@@ -67,7 +67,7 @@ This phase creates the production GitHub Actions workflow templates that ship wi
     - If a workflow file already exists in the target, skip it and log a message
     - The init wizard should show a summary of what was created at the end
 
-- [ ] Write tests for workflow template validation:
+- [x] Write tests for workflow template validation:
   - `src/commands/__tests__/workflows.test.ts`:
     - Test all 6 workflow YAML files are valid YAML syntax
     - Test each workflow has required fields: `name`, `on`, `jobs`, `permissions`
