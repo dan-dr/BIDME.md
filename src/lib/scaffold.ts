@@ -16,6 +16,12 @@ const EMPTY_ANALYTICS = JSON.stringify(
   2,
 );
 
+const EMPTY_BIDDERS = JSON.stringify(
+  { bidders: {} },
+  null,
+  2,
+);
+
 function bannerPlaceholder(owner: string, repo: string): string {
   const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
   return [
@@ -129,6 +135,7 @@ export async function scaffold(
   await writeIfNotExists(join(bidmeDir, "config.toml"), toml);
   await writeIfNotExists(join(dataDir, "current-period.json"), EMPTY_PERIOD);
   await writeIfNotExists(join(dataDir, "analytics.json"), EMPTY_ANALYTICS);
+  await writeIfNotExists(join(dataDir, "bidders.json"), EMPTY_BIDDERS);
 
   const { isGit, owner, repo } = await detectGitRepo(resolved);
 

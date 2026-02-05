@@ -4,7 +4,7 @@ export interface BidRecord {
   banner_url: string;
   destination_url: string;
   contact: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "unlinked_pending" | "expired";
   comment_id: number;
   timestamp: string;
 }

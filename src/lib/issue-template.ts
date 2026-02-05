@@ -14,6 +14,8 @@ export function generateBidTable(bids: BidRecord[]): string {
     pending: "⏳",
     approved: "✅",
     rejected: "❌",
+    unlinked_pending: "⚠️",
+    expired: "🕐",
   };
 
   const rows = sorted
