@@ -1,5 +1,5 @@
 import * as clack from "@clack/prompts";
-import { scaffold } from "../lib/scaffold.js";
+import { scaffold, type ScaffoldResult } from "../lib/scaffold.js";
 import { DEFAULT_CONFIG, type BidMeConfig } from "../lib/config.js";
 
 export interface InitOptions {
@@ -184,14 +184,33 @@ export async function runInit(options: InitOptions): Promise<void> {
   const s = clack.spinner();
   s.start("Scaffolding .bidme/ directory...");
 
+  let result: ScaffoldResult;
   try {
-    await scaffold(options.target, config);
+    result = await scaffold(options.target, config);
     s.stop("Scaffolding complete.");
   } catch (err) {
     s.stop("Scaffolding failed.");
     clack.log.error(
       `Failed to scaffold .bidme/ directory: ${err instanceof Error ? err.message : String(err)}`,
     );
+    return;
+  }
+
+  const lines: string[] = [];
+
+  if (result.configCreated) lines.push("  .bidme/config.toml");
+  for (const f of result.dataFilesCreated) lines.push(`  .bidme/data/${f}`);
+  if (result.redirectCopied) lines.push("  .bidme/redirect.html");
+  for (const f of result.workflowsCopied) lines.push(`  .github/workflows/${f}`);
+  if (result.readmeUpdated) lines.push("  README.md (banner placeholder)");
+
+  if (lines.length > 0) {
+    clack.log.success("Created:\n" + lines.join("\n"));
+  }
+
+  if (result.workflowsSkipped.length > 0) {
+    const skipped = result.workflowsSkipped.map((f) => `  .github/workflows/${f}`).join("\n");
+    clack.log.warn("Skipped (already exist):\n" + skipped);
   }
 
   clack.log.info(

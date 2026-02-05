@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resolve, join } from "path";
 import { mkdtemp, rm, readdir, stat, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import { scaffold } from "../../lib/scaffold.js";
+import { scaffold, type ScaffoldResult } from "../../lib/scaffold.js";
 import { DEFAULT_CONFIG, loadConfig, parseToml } from "../../lib/config.js";
 
 describe("init end-to-end", () => {
@@ -185,5 +185,71 @@ describe("init end-to-end", () => {
 
     const readme = await Bun.file(join(tempDir, "README.md")).text();
     expect(readme).toContain("testowner/testrepo");
+  });
+
+  test("scaffold returns ScaffoldResult with correct created files on fresh init", async () => {
+    const result = await scaffold(tempDir, DEFAULT_CONFIG);
+
+    expect(result.configCreated).toBe(true);
+    expect(result.dataFilesCreated).toContain("current-period.json");
+    expect(result.dataFilesCreated).toContain("analytics.json");
+    expect(result.dataFilesCreated).toContain("bidders.json");
+    expect(result.dataFilesCreated.length).toBe(3);
+    expect(result.redirectCopied).toBe(true);
+    expect(result.readmeUpdated).toBe(true);
+    expect(result.workflowsCopied).toEqual([]);
+    expect(result.workflowsSkipped).toEqual([]);
+  });
+
+  test("scaffold returns ScaffoldResult with workflow info for git repos", async () => {
+    await mkdir(join(tempDir, ".git"), { recursive: true });
+    await Bun.write(
+      join(tempDir, ".git", "config"),
+      '[remote "origin"]\n\turl = https://github.com/testowner/testrepo.git\n',
+    );
+
+    const result = await scaffold(tempDir, DEFAULT_CONFIG);
+
+    expect(result.workflowsCopied.length).toBe(6);
+    expect(result.workflowsCopied).toContain("bidme-schedule.yml");
+    expect(result.workflowsCopied).toContain("bidme-analytics.yml");
+    expect(result.workflowsSkipped).toEqual([]);
+    expect(result.owner).toBe("testowner");
+    expect(result.repo).toBe("testrepo");
+  });
+
+  test("scaffold reports skipped workflows when they already exist", async () => {
+    await mkdir(join(tempDir, ".git"), { recursive: true });
+    await Bun.write(
+      join(tempDir, ".git", "config"),
+      '[remote "origin"]\n\turl = https://github.com/testowner/testrepo.git\n',
+    );
+
+    const workflowDir = join(tempDir, ".github", "workflows");
+    await mkdir(workflowDir, { recursive: true });
+    await Bun.write(join(workflowDir, "bidme-schedule.yml"), "# existing");
+    await Bun.write(join(workflowDir, "bidme-analytics.yml"), "# existing");
+
+    const result = await scaffold(tempDir, DEFAULT_CONFIG);
+
+    expect(result.workflowsSkipped).toContain("bidme-schedule.yml");
+    expect(result.workflowsSkipped).toContain("bidme-analytics.yml");
+    expect(result.workflowsSkipped.length).toBe(2);
+    expect(result.workflowsCopied.length).toBe(4);
+    expect(result.workflowsCopied).not.toContain("bidme-schedule.yml");
+    expect(result.workflowsCopied).not.toContain("bidme-analytics.yml");
+
+    const existingContent = await Bun.file(join(workflowDir, "bidme-schedule.yml")).text();
+    expect(existingContent).toBe("# existing");
+  });
+
+  test("scaffold second run reports nothing created (all skipped)", async () => {
+    await scaffold(tempDir, DEFAULT_CONFIG);
+    const result = await scaffold(tempDir, DEFAULT_CONFIG);
+
+    expect(result.configCreated).toBe(false);
+    expect(result.dataFilesCreated).toEqual([]);
+    expect(result.redirectCopied).toBe(false);
+    expect(result.readmeUpdated).toBe(false);
   });
 });

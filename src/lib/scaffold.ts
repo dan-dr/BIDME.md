@@ -1,6 +1,17 @@
 import { join, resolve } from "path";
 import { type BidMeConfig, generateToml } from "./config.js";
 
+export interface ScaffoldResult {
+  configCreated: boolean;
+  dataFilesCreated: string[];
+  workflowsCopied: string[];
+  workflowsSkipped: string[];
+  redirectCopied: boolean;
+  readmeUpdated: boolean;
+  owner: string;
+  repo: string;
+}
+
 const BANNER_START = "<!-- BIDME:BANNER:START -->";
 const BANNER_END = "<!-- BIDME:BANNER:END -->";
 
@@ -73,10 +84,11 @@ async function ensureDir(dirPath: string): Promise<void> {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
-async function writeIfNotExists(filePath: string, content: string): Promise<void> {
+async function writeIfNotExists(filePath: string, content: string): Promise<boolean> {
   const file = Bun.file(filePath);
-  if (await file.exists()) return;
+  if (await file.exists()) return false;
   await Bun.write(filePath, content);
+  return true;
 }
 
 async function copyRedirectPage(target: string): Promise<boolean> {
@@ -98,7 +110,7 @@ async function copyRedirectPage(target: string): Promise<boolean> {
   }
 }
 
-async function copyWorkflowTemplates(target: string): Promise<string[]> {
+async function copyWorkflowTemplates(target: string): Promise<{ copied: string[]; skipped: string[] }> {
   const workflowDir = join(target, ".github", "workflows");
   await ensureDir(workflowDir);
 
@@ -109,47 +121,50 @@ async function copyWorkflowTemplates(target: string): Promise<string[]> {
   try {
     entries = (await fs.readdir(templatesDir)).filter((f) => f.endsWith(".yml"));
   } catch {
-    return [];
+    return { copied: [], skipped: [] };
   }
 
   const copied: string[] = [];
+  const skipped: string[] = [];
   for (const entry of entries) {
     const src = join(templatesDir, entry);
     const dest = join(workflowDir, entry);
     const destFile = Bun.file(dest);
     if (await destFile.exists()) {
-      console.log(`  Skipped ${entry} (already exists)`);
+      skipped.push(entry);
       continue;
     }
     const content = await Bun.file(src).text();
     await Bun.write(dest, content);
     copied.push(entry);
   }
-  return copied;
+  return { copied, skipped };
 }
 
 async function updateReadme(
   target: string,
   owner: string,
   repo: string,
-): Promise<void> {
+): Promise<boolean> {
   const readmePath = join(target, "README.md");
   const placeholder = bannerPlaceholder(owner, repo);
   const file = Bun.file(readmePath);
 
   if (await file.exists()) {
     const content = await file.text();
-    if (content.includes(BANNER_START)) return;
+    if (content.includes(BANNER_START)) return false;
     await Bun.write(readmePath, placeholder + "\n\n" + content);
+    return true;
   } else {
     await Bun.write(readmePath, placeholder + "\n");
+    return true;
   }
 }
 
 export async function scaffold(
   target: string,
   config: BidMeConfig,
-): Promise<void> {
+): Promise<ScaffoldResult> {
   const resolved = resolve(target);
 
   const bidmeDir = join(resolved, ".bidme");
@@ -159,17 +174,37 @@ export async function scaffold(
   await ensureDir(archiveDir);
 
   const toml = generateToml(config);
-  await writeIfNotExists(join(bidmeDir, "config.toml"), toml);
-  await writeIfNotExists(join(dataDir, "current-period.json"), EMPTY_PERIOD);
-  await writeIfNotExists(join(dataDir, "analytics.json"), EMPTY_ANALYTICS);
-  await writeIfNotExists(join(dataDir, "bidders.json"), EMPTY_BIDDERS);
+  const configCreated = await writeIfNotExists(join(bidmeDir, "config.toml"), toml);
+
+  const dataFilesCreated: string[] = [];
+  if (await writeIfNotExists(join(dataDir, "current-period.json"), EMPTY_PERIOD))
+    dataFilesCreated.push("current-period.json");
+  if (await writeIfNotExists(join(dataDir, "analytics.json"), EMPTY_ANALYTICS))
+    dataFilesCreated.push("analytics.json");
+  if (await writeIfNotExists(join(dataDir, "bidders.json"), EMPTY_BIDDERS))
+    dataFilesCreated.push("bidders.json");
 
   const { isGit, owner, repo } = await detectGitRepo(resolved);
 
+  let workflowsCopied: string[] = [];
+  let workflowsSkipped: string[] = [];
   if (isGit) {
-    await copyWorkflowTemplates(resolved);
+    const result = await copyWorkflowTemplates(resolved);
+    workflowsCopied = result.copied;
+    workflowsSkipped = result.skipped;
   }
 
-  await copyRedirectPage(resolved);
-  await updateReadme(resolved, owner, repo);
+  const redirectCopied = await copyRedirectPage(resolved);
+  const readmeUpdated = await updateReadme(resolved, owner, repo);
+
+  return {
+    configCreated,
+    dataFilesCreated,
+    workflowsCopied,
+    workflowsSkipped,
+    redirectCopied,
+    readmeUpdated,
+    owner,
+    repo,
+  };
 }

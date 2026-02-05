@@ -47,7 +47,7 @@ This phase creates the production GitHub Actions workflow templates that ship wi
   - Update `src/lib/scaffold.ts` to copy `redirect.html` during init
   - Update init to inform users they should enable GitHub Pages on their repo if they want click tracking
 
-- [ ] Remove old code that is fully replaced:
+- [x] Remove old code that is fully replaced:
   - Delete `scripts/` directory entirely (all logic now lives in `src/`)
   - Delete `pages/` directory (dashboard.html, admin.html, index.html — no standalone dashboard in v2)
   - Delete `bidme-config.yml` from project root (replaced by `.bidme/config.toml`)
@@ -58,8 +58,9 @@ This phase creates the production GitHub Actions workflow templates that ship wi
     - Keep: `test`, `typecheck`, `build`, `cli`
     - Add: `dev` script for local development
   - Update `.gitignore` if needed to ignore `dist/` but not `.bidme/data/`
+  - **Completed:** Also removed `tests/` directory (old v1 test suite referencing deleted `scripts/` and `pages/`). `bidme-config.yml` did not exist at root. All 142 remaining tests in `src/` pass. ~11,400 lines of dead code removed.
 
-- [ ] Update the init command to copy all workflow templates correctly:
+- [x] Update the init command to copy all workflow templates correctly:
   - Update `src/commands/init.ts` and `src/lib/scaffold.ts`:
     - During init, copy all 6 workflow files from `templates/workflows/` to target's `.github/workflows/`
     - Copy `templates/redirect.html` to target's `.bidme/redirect.html`
