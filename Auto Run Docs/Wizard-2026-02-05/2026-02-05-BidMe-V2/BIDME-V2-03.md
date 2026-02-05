@@ -40,7 +40,7 @@ This phase rewrites the bid processing pipeline — opener, processor, approval,
     - Saves updated period data
   - Register as CLI command: `bidme process-approval <issue> <comment>` in `src/cli.ts`
 
-- [ ] Rewrite the bid closer with tracking URL injection:
+- [x] Rewrite the bid closer with tracking URL injection:
   - `src/commands/close-bidding.ts`:
     - Loads config, reads period data
     - Selects the highest *approved* bid as winner (not just highest bid)

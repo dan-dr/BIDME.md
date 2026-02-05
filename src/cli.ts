@@ -71,6 +71,18 @@ program
   });
 
 program
+  .command("close-bidding")
+  .description("Close the active bidding period — select winner, update README, archive")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (options: { target: string }) => {
+    const { runCloseBidding } = await import("./commands/close-bidding.js");
+    const result = await runCloseBidding({ target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe configuration and workflows")
   .action(() => {
