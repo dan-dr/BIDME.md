@@ -29,15 +29,18 @@ This phase sets up the entire BidMe project from scratch — initializing the Bu
 
 - [x] Build the GitHub API utility module:
   - Create `scripts/utils/github-api.ts` with a `GitHubAPI` class that wraps the GitHub REST API using fetch (no external SDK):
-    - `createPR(title, body, head, base)` — creates a pull request
-    - `addComment(issueNumber, body)` — adds a comment to a PR
-    - `updatePRBody(prNumber, body)` — updates PR description
-    - `getComments(issueNumber)` — lists comments on a PR
+    - `createIssue(title, body, labels?)` — creates an issue
+    - `updateIssueBody(issueNumber, body)` — updates issue description
+    - `closeIssue(issueNumber)` — closes an issue
+    - `pinIssue(issueNodeId)` — pins an issue via GraphQL
+    - `unpinIssue(issueNodeId)` — unpins an issue via GraphQL
+    - `addComment(issueNumber, body)` — adds a comment to an issue
+    - `getComments(issueNumber)` — lists comments on an issue
     - `getReactions(commentId)` — gets reactions on a comment
     - `updateReadme(content, message)` — commits updated README content
   - Use `GITHUB_TOKEN` environment variable for authentication
   - Include proper error handling with typed error responses
-  > Completed: GitHubAPI class created with all 6 methods using native fetch, Bearer token auth from GITHUB_TOKEN env var or constructor param, typed GitHubAPIError with status/message/documentation_url. updateReadme handles both create and update via Contents API sha. 13 new tests passing, 37 total across project.
+  > Completed: GitHubAPI class created with issue-based methods (createIssue, updateIssueBody, closeIssue, pinIssue, unpinIssue) plus comment/reaction/readme methods using native fetch, Bearer token auth, typed GitHubAPIError. Pin/unpin use GitHub GraphQL API. Tests updated to match.
 
 - [x] Build the badge generator utility:
   - Create `scripts/utils/badge-generator.ts` with functions:

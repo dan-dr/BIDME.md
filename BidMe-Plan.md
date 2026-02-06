@@ -6,8 +6,8 @@ BidMe is an open-source platform that automates the process of bidding for banne
 
 ## Key Features
 
-1. **Automated Bidding Process**: Bids open weekly/monthly as GitHub PRs
-2. **PR-Based Bidding**: Bids submitted as PR comments in a specific format
+1. **Automated Bidding Process**: Bids open weekly/monthly as pinned GitHub issues
+2. **Issue-Based Bidding**: Bids submitted as issue comments in a specific format
 3. **Payment Integration**: Polar.sh handles payment processing
 4. **Owner Approval**: Repository owners approve/reject bids with emoji reactions
 5. **Analytics**: View counts and country distribution shown as badges
@@ -29,14 +29,14 @@ The system is built entirely on GitHub infrastructure:
 #### a. Bid Opening Workflow
 
 - Triggered on schedule (weekly/monthly)
-- Creates a new PR for the bidding period
-- Updates PR description with current highest bid
+- Creates a new pinned issue for the bidding period
+- Updates issue body with current highest bid
 
 #### b. Bid Processing Workflow
 
-- Triggered on PR comment
+- Triggered on issue comment
 - Validates bid format and bidder registration
-- Updates PR description with new highest bid if applicable
+- Updates issue body with new highest bid if applicable
 
 #### c. Bid Closing Workflow
 
@@ -44,15 +44,15 @@ The system is built entirely on GitHub infrastructure:
 - Selects highest approved bid
 - Processes payment through Polar.sh
 - Updates README with winning banner
-- Closes bidding PR and creates a record
+- Closes and unpins bidding issue, creates a record
 
 #### d. Bid Approval Workflow
 
 - Triggered on emoji reaction to bid comment
 - Marks bid as approved/rejected based on emoji
-- Updates PR description with current highest approved bid
+- Updates issue body with current highest approved bid
 
-### 2. Bid Format (in PR comments)
+### 2. Bid Format (in issue comments)
 
 ```
 ---
