@@ -3,7 +3,7 @@
 Let companies bid for banner space in your README. Highest approved bid wins.
 
 <!-- BIDME:BANNER:START -->
-[![BidMe Banner](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge&logoColor=white)](https://github.com/danhollick/bidme)
+[![BidMe Banner](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge&logoColor=white)](https://github.com/dan-dr/BIDME.md)
 <!-- BIDME:BANNER:END -->
 
 ## Quick Start
@@ -11,6 +11,8 @@ Let companies bid for banner space in your README. Highest approved bid wins.
 ```bash
 bunx bidme init    # or: npx bidme init
 ```
+
+> **Note:** BidMe is not yet published to npm. To run from source, clone the repo and use `bun run src/cli.ts init`.
 
 The interactive wizard handles the rest — config, workflows, README banner placeholder, everything.
 

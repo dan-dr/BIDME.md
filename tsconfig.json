@@ -16,13 +16,7 @@
     "noImplicitOverride": true,
 
     "noUnusedLocals": false,
-    "noUnusedParameters": false,
-
-    "paths": {
-      "@scripts/*": ["./scripts/*"],
-      "@utils/*": ["./scripts/utils/*"],
-      "@src/*": ["./src/*"]
-    }
+    "noUnusedParameters": false
   },
   "include": ["**/*.ts", "src"],
   "exclude": ["node_modules", "dist"]

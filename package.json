@@ -1,8 +1,16 @@
 {
   "name": "bidme",
   "version": "0.3.0",
+  "description": "Auction-based README sponsorships for GitHub repositories",
   "module": "index.ts",
   "type": "module",
+  "license": "MIT",
+  "author": "dan-dr",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dan-dr/BIDME.md.git"
+  },
+  "homepage": "https://github.com/dan-dr/BIDME.md",
   "keywords": ["cli", "github", "sponsors", "stripe", "bidding", "readme"],
   "bin": {
     "bidme": "./dist/cli.js"

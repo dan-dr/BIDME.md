@@ -1,6 +1,12 @@
 import { join, resolve } from "path";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { type BidMeConfig, generateToml } from "./config.js";
+
+function resolveTemplate(...segments: string[]): string {
+  const fromSource = resolve(import.meta.dir, "../../templates", ...segments);
+  if (existsSync(fromSource)) return fromSource;
+  return resolve(import.meta.dir, "../templates", ...segments);
+}
 
 export interface ScaffoldResult {
   configCreated: boolean;
@@ -97,7 +103,7 @@ async function copyRedirectPage(target: string): Promise<boolean> {
   const bidmeDir = join(target, ".bidme");
   await ensureDir(bidmeDir);
 
-  const templatePath = resolve(import.meta.dir, "../../templates/redirect.html");
+  const templatePath = resolveTemplate("redirect.html");
   const destPath = join(bidmeDir, "redirect.html");
 
   const destFile = Bun.file(destPath);
@@ -116,7 +122,7 @@ async function copyWorkflowTemplates(target: string): Promise<{ copied: string[]
   const workflowDir = join(target, ".github", "workflows");
   await ensureDir(workflowDir);
 
-  const templatesDir = resolve(import.meta.dir, "../../templates/workflows");
+  const templatesDir = resolveTemplate("workflows");
   const fs = await import("fs/promises");
 
   let entries: string[];
@@ -188,7 +194,8 @@ export async function scaffold(
 
   let pkgVersion = "0.2.0";
   try {
-    const pkgPath = resolve(import.meta.dir, "../../package.json");
+    const fromSource = resolve(import.meta.dir, "../../package.json");
+    const pkgPath = existsSync(fromSource) ? fromSource : resolve(import.meta.dir, "../package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     pkgVersion = pkg.version;
   } catch {}
