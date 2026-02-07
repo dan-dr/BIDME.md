@@ -24,9 +24,10 @@ Final cleanup: update package.json, remove all Polar code, update version.
   - Run `bun run build` and verify CLI builds correctly
   - ✅ Done: Fixed 1 test failure (updated `generateWinnerAnnouncement` test to use new paymentStatus parameter instead of checkout URL). Fixed 6 TypeScript errors in stripe-integration.test.ts (mock functions needed `as unknown as typeof fetch` cast for Bun's stricter type checking). All 377 tests pass, typecheck clean, build successful.
 
-- [ ] **Update .bidme/config.toml** in the bidme repo itself:
+- [x] **Update .bidme/config.toml** in the bidme repo itself:
   - Change `provider = "polar-own"` to `provider = "stripe"`
   - This is for testing the migration on the repo itself
+  - ✅ Done: Updated `.bidme/config.toml` payment provider from "polar-own" to "stripe"
 
 ## Breaking Change Notes
 
