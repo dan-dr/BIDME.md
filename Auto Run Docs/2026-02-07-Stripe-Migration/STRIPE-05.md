@@ -20,7 +20,9 @@
 
   **Verified:** Line 171-173 uses `paymentLink` variable which defaults to Stripe URL at line 154. Line 205 `paymentWarning` uses generic "payment method" language. Grep search confirmed no Polar references exist in the file.
 
-- [ ] **Update issue-template.ts**:
+- [x] **Update issue-template.ts**:
   - Check `src/lib/issue-template.ts` for any Polar references
   - Remove or update any Polar-specific language
   - Ensure payment messaging is generic ("payment method" not "Polar account")
+
+  **Verified:** Reviewed `src/lib/issue-template.ts` (212 lines). Grep search confirmed no Polar references exist in the file. All payment messaging uses generic language. The file contains bidding templates with "💳 Payment" section headers but no provider-specific terminology. Note: `src/lib/__tests__/config.test.ts:215` contains `polar-own` as a test case, but this is intentional - it validates that the config rejects non-Stripe providers, confirming the Stripe-only migration is working correctly.
