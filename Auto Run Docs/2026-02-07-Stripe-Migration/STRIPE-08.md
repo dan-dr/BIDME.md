@@ -18,10 +18,11 @@ Final cleanup: update package.json, remove all Polar code, update version.
   - Verify `src/lib/polar-integration.ts` is deleted (should be done in STRIPE-01)
   - ✅ Done: Verified `polar-integration.ts` is deleted. Remaining "polar" references in src/ are legitimate test assertions that verify Polar is NOT supported (e2e-smoke.test.ts tests Stripe is provider, config.test.ts tests "polar-own" is rejected). No actual Polar code/imports exist.
 
-- [ ] **Run full test suite and fix any failures**:
+- [x] **Run full test suite and fix any failures**:
   - Run `bun test` and ensure all tests pass
   - Run `bun run typecheck` and fix any type errors
   - Run `bun run build` and verify CLI builds correctly
+  - ✅ Done: Fixed 1 test failure (updated `generateWinnerAnnouncement` test to use new paymentStatus parameter instead of checkout URL). Fixed 6 TypeScript errors in stripe-integration.test.ts (mock functions needed `as unknown as typeof fetch` cast for Bun's stricter type checking). All 377 tests pass, typecheck clean, build successful.
 
 - [ ] **Update .bidme/config.toml** in the bidme repo itself:
   - Change `provider = "polar-own"` to `provider = "stripe"`

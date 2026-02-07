@@ -377,13 +377,14 @@ describe("generateWinnerAnnouncement", () => {
     expect(announcement).toContain("2026-02-01 to 2026-02-08");
   });
 
-  test("includes checkout link when provided", () => {
+  test("includes payment status message when provided", () => {
     const bid = makeBid();
     const period = makePeriod();
-    const announcement = generateWinnerAnnouncement(bid, period, "https://pay.example.com/checkout");
+    const paymentStatus = "✅ Payment processed successfully";
+    const announcement = generateWinnerAnnouncement(bid, period, paymentStatus);
 
-    expect(announcement).toContain("Complete Payment");
-    expect(announcement).toContain("https://pay.example.com/checkout");
+    expect(announcement).toContain("Payment");
+    expect(announcement).toContain("✅ Payment processed successfully");
   });
 
   test("shows manual payment message when no checkout URL", () => {

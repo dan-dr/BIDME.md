@@ -74,7 +74,7 @@ describe("StripeAPI", () => {
         expect(options.body).toContain("metadata%5Bgithub_username%5D=octocat");
 
         return new Response(JSON.stringify(mockCustomer), { status: 200 });
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       const result = await api.createCustomer("test@example.com", {
         github_username: "octocat",
@@ -100,7 +100,7 @@ describe("StripeAPI", () => {
         expect(options.body).toContain("usage=off_session");
 
         return new Response(JSON.stringify(mockSetupIntent), { status: 200 });
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       const result = await api.createSetupIntent("cus_123");
 
@@ -133,7 +133,7 @@ describe("StripeAPI", () => {
         expect(body).toContain("metadata%5Bperiod_id%5D=period_abc");
 
         return new Response(JSON.stringify(mockPaymentIntent), { status: 200 });
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       const result = await api.chargeCustomer("cus_123", "pm_123", 5000, {
         period_id: "period_abc",
@@ -162,7 +162,7 @@ describe("StripeAPI", () => {
         expect(options.method).toBe("GET");
 
         return new Response(JSON.stringify(mockPaymentMethod), { status: 200 });
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       const result = await api.getPaymentMethod("pm_123");
 
@@ -199,7 +199,7 @@ describe("StripeAPI", () => {
           }),
           { status: 404 },
         );
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       await expect(api.createSetupIntent("cus_invalid")).rejects.toThrow(
         StripeAPIError,
@@ -230,7 +230,7 @@ describe("StripeAPI", () => {
           }),
           { status: 402 },
         );
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       await expect(
         api.chargeCustomer("cus_123", "pm_123", 5000, {}),
