@@ -111,20 +111,13 @@ export async function collectConfig(): Promise<WizardConfig> {
   });
   if (clack.isCancel(approvalMode)) { clack.cancel("Setup cancelled."); process.exit(0); }
 
-  const paymentProvider = await clack.select({
-    message: "Payment mode:",
-    options: [
-      { value: "polar-own" as const, label: "Bring your own Polar.sh", hint: "you manage your Polar account" },
-      { value: "bidme-managed" as const, label: "Use BidMe managed", hint: "coming soon" },
-    ],
-    initialValue: "polar-own" as const,
-  });
-  if (clack.isCancel(paymentProvider)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  clack.log.info("Payment provider: Stripe");
+  clack.log.info("Required: STRIPE_SECRET_KEY environment variable");
 
   const allowUnlinked = await clack.select({
-    message: "Allow unlinked bidders (no Polar account)?",
+    message: "Allow unlinked bidders (no payment method on file)?",
     options: [
-      { value: false, label: "No (strict)", hint: "bidders must link Polar first" },
+      { value: false, label: "No (strict)", hint: "bidders must add payment method first" },
       { value: true, label: "Yes (with warnings)", hint: "bids accepted but flagged" },
     ],
     initialValue: false,
@@ -149,7 +142,7 @@ export async function collectConfig(): Promise<WizardConfig> {
       allowed_reactions: ["👍"],
     },
     payment: {
-      provider: paymentProvider,
+      provider: "stripe",
       allow_unlinked_bids: allowUnlinked,
       unlinked_grace_hours: 24,
       payment_link: "https://bidme.dev/link-payment",
