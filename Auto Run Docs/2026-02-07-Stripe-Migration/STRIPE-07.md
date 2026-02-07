@@ -24,7 +24,7 @@ Need comprehensive tests for the new Stripe integration module. Remove Polar tes
     - Mock fetch, verify correct endpoint
     - Test response parsing
 
-- [ ] **Delete Polar tests** — remove any test files for `polar-integration.ts`
+- [x] **Delete Polar tests** — remove any test files for `polar-integration.ts` *(No Polar test files found - no action needed. The only "polar" reference is in config.test.ts line 215 which is a negative test ensuring "polar-own" is rejected as invalid provider - this is correct behavior.)*
 
 - [ ] **Update existing e2e smoke test** at `src/__tests__/e2e-smoke.test.ts`:
   - Remove any Polar test cases
