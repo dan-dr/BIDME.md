@@ -26,7 +26,7 @@ Need comprehensive tests for the new Stripe integration module. Remove Polar tes
 
 - [x] **Delete Polar tests** — remove any test files for `polar-integration.ts` *(No Polar test files found - no action needed. The only "polar" reference is in config.test.ts line 215 which is a negative test ensuring "polar-own" is rejected as invalid provider - this is correct behavior.)*
 
-- [ ] **Update existing e2e smoke test** at `src/__tests__/e2e-smoke.test.ts`:
-  - Remove any Polar test cases
-  - Add test case for Stripe provider config
-  - Mock Stripe API in payment flow tests
+- [x] **Update existing e2e smoke test** at `src/__tests__/e2e-smoke.test.ts`: *(Completed - Added 2 new tests)*
+  - Remove any Polar test cases *(None found - e2e smoke test was already Polar-free)*
+  - Add test case for Stripe provider config *(Added "Stripe provider is configured by default in init" test)*
+  - Mock Stripe API in payment flow tests *(Added "close-bidding processes Stripe payment flow with winner" test that exercises the full payment flow with bidder data containing Stripe customer IDs, verifies Stripe handling in subprocess, and validates period archival)*

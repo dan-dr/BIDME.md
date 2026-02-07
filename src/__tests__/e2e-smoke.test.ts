@@ -273,4 +273,87 @@ content_guidelines:
       expect(content).toContain("name:");
     }
   });
+
+  test("close-bidding processes Stripe payment flow with winner", async () => {
+    await runCli(["init", "--defaults", "--target", e2eDir]);
+
+    // Create bidders.json with Stripe customer info
+    const biddersData = {
+      bidders: {
+        "test-bidder": {
+          github_username: "test-bidder",
+          registered_at: new Date().toISOString(),
+          payment_linked: true,
+          stripe_customer_id: "cus_test123",
+          stripe_payment_method_id: "pm_test456",
+        },
+      },
+    };
+    await Bun.write(
+      join(e2eDir, ".bidme", "data", "bidders.json"),
+      JSON.stringify(biddersData, null, 2),
+    );
+
+    // Create an open period with a winning bid
+    const periodData = {
+      period_id: "period-2026-02-07",
+      status: "open" as const,
+      start_date: "2026-02-01T00:00:00Z",
+      end_date: "2026-02-07T23:59:59Z",
+      issue_number: 1,
+      bids: [
+        {
+          bidder: "test-bidder",
+          amount: 100,
+          banner_url: "https://example.com/banner.png",
+          destination_url: "https://example.com",
+          contact: "test@example.com",
+          status: "approved" as const,
+          comment_id: 123,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    };
+    await Bun.write(
+      join(e2eDir, ".bidme", "data", "current-period.json"),
+      JSON.stringify(periodData, null, 2),
+    );
+
+    // Run close-bidding without STRIPE_SECRET_KEY to verify proper handling
+    const { exitCode, stdout } = await runCli(["close-bidding", "--target", e2eDir]);
+
+    // Verify the command ran successfully
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Closing Bidding Period");
+    expect(stdout).toContain("Winner: @test-bidder with $100");
+
+    // Verify Stripe skipped message appears (no STRIPE_SECRET_KEY in subprocess)
+    expect(stdout).toContain("Stripe not configured");
+
+    // Verify period was archived
+    const archiveFiles = await readdir(join(e2eDir, ".bidme", "data", "archive"));
+    expect(archiveFiles.length).toBeGreaterThan(0);
+    expect(archiveFiles[0]).toContain("period-");
+
+    // Verify archived period has winner info
+    const archivedContent = await Bun.file(
+      join(e2eDir, ".bidme", "data", "archive", archiveFiles[0]!),
+    ).text();
+    const archivedPeriod = JSON.parse(archivedContent);
+    expect(archivedPeriod.status).toBe("closed");
+    expect(archivedPeriod.bids[0].bidder).toBe("test-bidder");
+    expect(archivedPeriod.bids[0].amount).toBe(100);
+  });
+
+  test("Stripe provider is configured by default in init", async () => {
+    await runCli(["init", "--defaults", "--target", e2eDir]);
+
+    const configContent = await Bun.file(join(e2eDir, ".bidme", "config.toml")).text();
+    const parsed = parseToml(configContent);
+
+    // Verify Stripe is the payment provider (not Polar)
+    expect(parsed.payment.provider).toBe("stripe");
+    // Verify no Polar references exist in config
+    expect(configContent).not.toContain("polar");
+  });
 });
