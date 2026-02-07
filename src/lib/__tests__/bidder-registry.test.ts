@@ -42,7 +42,8 @@ describe("bidder-registry", () => {
       const record = registerBidder("alice");
       expect(record.github_username).toBe("alice");
       expect(record.payment_linked).toBe(false);
-      expect(record.payment_provider).toBeNull();
+      expect(record.stripe_customer_id).toBeUndefined();
+      expect(record.stripe_payment_method_id).toBeUndefined();
       expect(record.linked_at).toBeNull();
       expect(record.warned_at).toBeNull();
     });
@@ -86,28 +87,31 @@ describe("bidder-registry", () => {
     test("returns true after marking payment linked", async () => {
       await loadBidders(tempDir);
       registerBidder("charlie");
-      markPaymentLinked("charlie", "polar");
+      markPaymentLinked("charlie", "cus_charlie123", "pm_charlie456");
       expect(isPaymentLinked("charlie")).toBe(true);
     });
   });
 
   describe("markPaymentLinked", () => {
-    test("updates payment status and provider", async () => {
+    test("updates payment status and stores Stripe IDs", async () => {
       await loadBidders(tempDir);
       registerBidder("dave");
-      markPaymentLinked("dave", "stripe");
+      markPaymentLinked("dave", "cus_dave123", "pm_dave456");
       const record = getBidder("dave");
       expect(record!.payment_linked).toBe(true);
-      expect(record!.payment_provider).toBe("stripe");
+      expect(record!.stripe_customer_id).toBe("cus_dave123");
+      expect(record!.stripe_payment_method_id).toBe("pm_dave456");
       expect(record!.linked_at).not.toBeNull();
     });
 
     test("auto-registers bidder if not yet registered", async () => {
       await loadBidders(tempDir);
-      markPaymentLinked("newuser", "polar");
+      markPaymentLinked("newuser", "cus_new123", "pm_new456");
       const record = getBidder("newuser");
       expect(record).not.toBeNull();
       expect(record!.payment_linked).toBe(true);
+      expect(record!.stripe_customer_id).toBe("cus_new123");
+      expect(record!.stripe_payment_method_id).toBe("pm_new456");
     });
   });
 
@@ -151,7 +155,7 @@ describe("bidder-registry", () => {
       await ensureDataDir();
       await loadBidders(tempDir);
       registerBidder("alice");
-      markPaymentLinked("alice", "polar");
+      markPaymentLinked("alice", "cus_alice123", "pm_alice456");
       registerBidder("bob");
       setWarnedAt("bob", "2026-02-01T00:00:00.000Z");
       await saveBidders(tempDir);
@@ -162,7 +166,8 @@ describe("bidder-registry", () => {
       const alice = getBidder("alice");
       expect(alice).not.toBeNull();
       expect(alice!.payment_linked).toBe(true);
-      expect(alice!.payment_provider).toBe("polar");
+      expect(alice!.stripe_customer_id).toBe("cus_alice123");
+      expect(alice!.stripe_payment_method_id).toBe("pm_alice456");
 
       const bob = getBidder("bob");
       expect(bob).not.toBeNull();

@@ -278,7 +278,7 @@ describe("payment enforcement: strict mode", () => {
 
     await loadBidders(tempDir);
     registerBidder("bidder1");
-    markPaymentLinked("bidder1", "polar");
+    markPaymentLinked("bidder1", "cus_bidder1_123", "pm_bidder1_456");
     await saveBidders(tempDir);
     resetRegistryCache();
 
@@ -460,7 +460,7 @@ describe("payment enforcement: grace period", () => {
 
     await loadBidders(tempDir);
     registerBidder("bob");
-    markPaymentLinked("bob", "polar");
+    markPaymentLinked("bob", "cus_bob_123", "pm_bob_456");
     setWarnedAt("bob", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();

@@ -3,9 +3,10 @@ import { resolve } from "path";
 export interface BidderRecord {
   github_username: string;
   payment_linked: boolean;
-  payment_provider: string | null;
   linked_at: string | null;
   warned_at: string | null;
+  stripe_customer_id?: string;
+  stripe_payment_method_id?: string;
 }
 
 export interface BidderRegistry {
@@ -59,7 +60,6 @@ export function registerBidder(username: string): BidderRecord {
   const record: BidderRecord = {
     github_username: username,
     payment_linked: false,
-    payment_provider: null,
     linked_at: null,
     warned_at: null,
   };
@@ -67,7 +67,11 @@ export function registerBidder(username: string): BidderRecord {
   return record;
 }
 
-export function markPaymentLinked(username: string, provider: string): void {
+export function markPaymentLinked(
+  username: string,
+  stripeCustomerId: string,
+  stripePaymentMethodId: string,
+): void {
   if (!registryCache) {
     registryCache = { ...EMPTY_REGISTRY, bidders: {} };
   }
@@ -76,7 +80,8 @@ export function markPaymentLinked(username: string, provider: string): void {
     record = registerBidder(username);
   }
   record.payment_linked = true;
-  record.payment_provider = provider;
+  record.stripe_customer_id = stripeCustomerId;
+  record.stripe_payment_method_id = stripePaymentMethodId;
   record.linked_at = new Date().toISOString();
 }
 

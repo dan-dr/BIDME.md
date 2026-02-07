@@ -169,7 +169,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("alice");
-    markPaymentLinked("alice", "polar");
+    markPaymentLinked("alice", "cus_alice_123", "pm_alice_456");
     setWarnedAt("alice", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();
@@ -219,7 +219,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("alice");
-    markPaymentLinked("alice", "polar");
+    markPaymentLinked("alice", "cus_alice_123", "pm_alice_456");
     setWarnedAt("alice", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();
@@ -256,7 +256,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("bob");
-    markPaymentLinked("bob", "stripe");
+    markPaymentLinked("bob", "cus_bob_123", "pm_bob_456");
     setWarnedAt("bob", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();
@@ -357,7 +357,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("alice");
-    markPaymentLinked("alice", "polar");
+    markPaymentLinked("alice", "cus_alice_123", "pm_alice_456");
     setWarnedAt("alice", pastWarned);
 
     registerBidder("bob");
@@ -410,7 +410,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("alice");
-    markPaymentLinked("alice", "polar");
+    markPaymentLinked("alice", "cus_alice_123", "pm_alice_456");
     setWarnedAt("alice", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();
@@ -506,7 +506,7 @@ describe("check-grace command", () => {
 
     await loadBidders(tempDir);
     registerBidder("frank");
-    markPaymentLinked("frank", "polar");
+    markPaymentLinked("frank", "cus_frank_123", "pm_frank_456");
     setWarnedAt("frank", "2026-02-01T00:00:00.000Z");
     await saveBidders(tempDir);
     resetRegistryCache();
