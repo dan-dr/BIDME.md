@@ -196,8 +196,8 @@ export async function runCloseBidding(
       }
     }
 
-    const checkoutUrl = periodData.payment?.checkout_url;
-    const announcement = generateWinnerAnnouncement(winner, periodData, checkoutUrl);
+    // TODO: STRIPE-07 will add payment link generation here
+    const announcement = generateWinnerAnnouncement(winner, periodData, undefined);
     try {
       await api.addComment(periodData.issue_number, announcement);
       console.log("✓ Winner announcement posted");

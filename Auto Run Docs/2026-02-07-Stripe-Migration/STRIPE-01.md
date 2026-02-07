@@ -24,10 +24,12 @@ Replace Polar.sh with Stripe for payment processing. Stripe provides the require
 
   ✅ **Completed 2026-02-07**: Deleted `src/lib/polar-integration.ts`. Updated `src/commands/close-bidding.ts` to stub out the payment processing function (now returns null with a TODO note for STRIPE-07). Build and all 361 tests pass.
 
-- [ ] **Update payment types** in `src/lib/types.ts`:
+- [x] **Update payment types** in `src/lib/types.ts`:
   - Add `stripe_payment_intent_id?: string` to PeriodData.payment
   - Add `stripe_customer_id?: string` to PeriodData.payment
   - Remove any Polar-specific fields
+
+  ✅ **Completed 2026-02-07**: Updated `PeriodData.payment` in `src/lib/types.ts` to replace Polar-specific fields (`checkout_url`, `product_id`, `checkout_id`) with Stripe fields (`stripe_customer_id`, `stripe_payment_intent_id`). Changed `payment_status` enum from `"pending" | "paid" | "expired"` to `"pending" | "paid" | "failed"`. Updated `src/commands/close-bidding.ts` to remove `checkout_url` reference (now passes `undefined` to `generateWinnerAnnouncement`). All 361 tests pass.
 
 - [ ] **Update config types** in `src/lib/config.ts`:
   - Change `payment.provider` type to just `"stripe"` (remove polar options)

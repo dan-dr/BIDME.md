@@ -54,9 +54,8 @@ export interface PeriodData {
   created_at: string;
   issue_node_id?: string;
   payment?: {
-    checkout_url: string;
-    payment_status: "pending" | "paid" | "expired";
-    product_id?: string;
-    checkout_id?: string;
+    payment_status: "pending" | "paid" | "failed";
+    stripe_customer_id?: string;
+    stripe_payment_intent_id?: string;
   };
 }
