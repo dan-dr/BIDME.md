@@ -8,7 +8,8 @@ import {
   generateWinnerAnnouncement,
   generateNoBidsMessage,
 } from "../lib/issue-template.ts";
-import { PolarAPI } from "../lib/polar-integration.ts";
+// TODO: STRIPE-07 will add Stripe integration here
+// import { StripeAPI } from "../lib/stripe-integration.ts";
 import { logError, withRetry } from "../lib/error-handler.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
@@ -28,66 +29,13 @@ export function appendTrackingParams(
   return `${destinationUrl}?${params}`;
 }
 
+// TODO: STRIPE-07 will implement Stripe payment processing
 async function processPayment(
-  winner: BidRecord,
-  periodData: PeriodData,
+  _winner: BidRecord,
+  _periodData: PeriodData,
 ): Promise<PeriodData["payment"] | null> {
-  const polar = new PolarAPI();
-  if (!polar.isConfigured) {
-    console.log("⚠ Polar.sh not configured — skipping payment processing");
-    return null;
-  }
-
-  try {
-    const periodLabel = `${periodData.start_date.split("T")[0]} to ${periodData.end_date.split("T")[0]}`;
-
-    const product = await withRetry(
-      () =>
-        polar.createProduct(
-          `Banner Space: ${periodLabel} - $${winner.amount}`,
-          winner.amount,
-          `BidMe banner slot for period ${periodData.period_id}`,
-        ),
-      2,
-      {
-        delayMs: 2000,
-        onRetry: (attempt, error) => {
-          console.warn(`⚠ Polar product creation failed (attempt ${attempt}), retrying...`);
-          logError(error, "close-bidding:createProduct");
-        },
-      },
-    );
-    console.log(`✓ Polar.sh product created: ${product.id}`);
-
-    const checkout = await withRetry(
-      () =>
-        polar.createCheckoutSession(
-          winner.amount,
-          winner.contact,
-          periodData.period_id,
-        ),
-      2,
-      {
-        delayMs: 2000,
-        onRetry: (attempt, error) => {
-          console.warn(`⚠ Polar checkout creation failed (attempt ${attempt}), retrying...`);
-          logError(error, "close-bidding:createCheckout");
-        },
-      },
-    );
-    console.log(`✓ Polar.sh checkout session created: ${checkout.url}`);
-
-    return {
-      checkout_url: checkout.url,
-      payment_status: "pending",
-      product_id: product.id,
-      checkout_id: checkout.id,
-    };
-  } catch (err) {
-    console.error("⚠ Polar.sh payment processing failed:", err);
-    logError(err, "close-bidding:processPayment");
-    return null;
-  }
+  console.log("⚠ Payment processing not configured — Stripe integration pending (STRIPE-07)");
+  return null;
 }
 
 async function archivePeriod(periodData: PeriodData, target: string): Promise<void> {

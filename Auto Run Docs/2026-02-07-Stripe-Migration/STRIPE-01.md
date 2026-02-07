@@ -20,7 +20,9 @@ Replace Polar.sh with Stripe for payment processing. Stripe provides the require
 
   ✅ **Completed 2026-02-07**: Created `src/lib/stripe-integration.ts` with full test coverage (13 tests in `src/lib/__tests__/stripe-integration.test.ts`). Implements all specified interfaces (`StripeConfig`, `StripeSetupIntent`, `StripeCustomer`, `StripePaymentIntent`, `StripePaymentMethod`), `StripeAPI` class with all required methods, and error classes (`StripeAPIError`, `StripePaymentError`). Uses native fetch with form-urlencoded encoding per Stripe API requirements.
 
-- [ ] **Delete Polar integration** — remove `src/lib/polar-integration.ts` entirely
+- [x] **Delete Polar integration** — remove `src/lib/polar-integration.ts` entirely
+
+  ✅ **Completed 2026-02-07**: Deleted `src/lib/polar-integration.ts`. Updated `src/commands/close-bidding.ts` to stub out the payment processing function (now returns null with a TODO note for STRIPE-07). Build and all 361 tests pass.
 
 - [ ] **Update payment types** in `src/lib/types.ts`:
   - Add `stripe_payment_intent_id?: string` to PeriodData.payment
