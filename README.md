@@ -19,7 +19,7 @@ The interactive wizard handles the rest — config, workflows, README banner pla
 1. **Init** — Run `bidme init` to scaffold `.bidme/` config, GitHub Actions workflows, and a banner placeholder in your README.
 2. **Bidding Opens** — A cron-triggered workflow creates a pinned GitHub Issue for the new bidding period. Sponsors comment with their bid.
 3. **Bids Come In** — Each bid is validated automatically (amount, banner format, content guidelines). You approve the winner with an emoji reaction.
-4. **Winner Goes Live** — The period closes, the winning banner replaces the placeholder in your README, and payment is processed via Polar.sh.
+4. **Winner Goes Live** — The period closes, the winning banner replaces the placeholder in your README, and payment is processed via Stripe.
 
 ## Configuration
 
@@ -43,7 +43,7 @@ mode = "emoji"             # Approve winning bid with a reaction
 allowed_reactions = ["👍"]
 
 [payment]
-provider = "polar-own"
+provider = "stripe"
 bidme_fee_percent = 10
 
 [content_guidelines]
@@ -67,11 +67,17 @@ required = ["alt text", "clear branding"]
 
 ## Payment Setup
 
-BidMe uses [Polar.sh](https://polar.sh) for payments.
+BidMe uses [Stripe](https://stripe.com) for payments.
 
-1. Create a Polar.sh account and generate an access token
-2. Add `POLAR_ACCESS_TOKEN` as a [repository secret](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) in your GitHub repo
+1. Create a Stripe account and generate a secret key from the [API keys page](https://dashboard.stripe.com/apikeys)
+2. Add `STRIPE_SECRET_KEY` as a [repository secret](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) in your GitHub repo
 3. Done — BidMe handles checkout links and payment processing automatically when a period closes
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `STRIPE_SECRET_KEY` | Yes | Your Stripe secret key (starts with `sk_`) |
 
 ## For Advertisers
 

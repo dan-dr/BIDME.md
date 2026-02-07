@@ -17,9 +17,10 @@ GitHub Actions workflows need to use `STRIPE_SECRET_KEY`. Remove all `POLAR_ACCE
   - Remove any other Polar references in workflow files
   - ✅ Completed: Updated `bidme-close-bidding.yml`, `bidme-process-bid.yml`, and `close-bidding.yml` to use `STRIPE_SECRET_KEY` instead of `POLAR_ACCESS_TOKEN`. Verified no remaining Polar references in any workflow files.
 
-- [ ] **Update README.md** documentation:
+- [x] **Update README.md** documentation:
   - Remove all Polar documentation
   - Document Stripe as the payment provider
   - Add "Environment Variables" section:
     - `STRIPE_SECRET_KEY` — required, your Stripe secret key
   - Update any setup instructions that mention Polar
+  - ✅ Completed: Updated README.md to replace all Polar references with Stripe. Changed "How It Works" section (line 22), config example `provider` value (line 46), and rewrote "Payment Setup" section with Stripe instructions. Added new "Environment Variables" section documenting `STRIPE_SECRET_KEY`.
