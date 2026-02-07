@@ -151,7 +151,7 @@ export async function runProcessBid(
   await loadBidders(target);
   registerBidder(bidder);
   const paymentLinked = isPaymentLinked(bidder);
-  const paymentLink = config.payment.payment_link || "https://bidme.dev/link-payment";
+  const paymentLink = config.payment.payment_link || `https://bidme.dev/link-stripe?user=${encodeURIComponent(bidder)}`;
   const graceHours = config.payment.unlinked_grace_hours;
 
   if (config.enforcement.require_payment_before_bid && !paymentLinked) {
