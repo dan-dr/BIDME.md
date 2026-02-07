@@ -51,7 +51,7 @@ describe("init end-to-end", () => {
     expect(parsed.approval.mode).toBe("emoji");
     expect(parsed.approval.allowed_reactions).toEqual(["👍"]);
 
-    expect(parsed.payment.provider).toBe("polar-own");
+    expect(parsed.payment.provider).toBe("stripe");
     expect(parsed.payment.allow_unlinked_bids).toBe(false);
     expect(parsed.payment.unlinked_grace_hours).toBe(24);
 

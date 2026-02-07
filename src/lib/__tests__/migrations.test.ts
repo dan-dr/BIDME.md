@@ -74,7 +74,7 @@ content_guidelines:
     const parsed = parseToml(tomlContent);
 
     expect(parsed.approval.mode).toBe("emoji");
-    expect(parsed.payment.provider).toBe("polar-own");
+    expect(parsed.payment.provider).toBe("stripe");
     expect(parsed.enforcement.require_payment_before_bid).toBe(true);
     expect(parsed.tracking.append_utm).toBe(true);
   });

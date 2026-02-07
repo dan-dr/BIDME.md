@@ -19,7 +19,7 @@ export interface BidMeConfig {
     allowed_reactions: string[];
   };
   payment: {
-    provider: "polar-own" | "bidme-managed";
+    provider: "stripe";
     allow_unlinked_bids: boolean;
     unlinked_grace_hours: number;
     payment_link: string;
@@ -57,7 +57,7 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     allowed_reactions: ["👍"],
   },
   payment: {
-    provider: "polar-own",
+    provider: "stripe",
     allow_unlinked_bids: false,
     unlinked_grace_hours: 24,
     payment_link: "https://bidme.dev/link-payment",
@@ -155,7 +155,7 @@ export function validateConfig(config: unknown): BidMeConfig {
   }
 
   if (merged.payment) {
-    const validProviders = ["polar-own", "bidme-managed"];
+    const validProviders = ["stripe"];
     if (!validProviders.includes(merged.payment.provider)) {
       throw new ConfigValidationError(
         `payment.provider must be one of: ${validProviders.join(", ")}`,
@@ -249,7 +249,7 @@ mode = "${config.approval.mode}"
 allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
 `);
 
-  sections.push(`# Payment configuration
+  sections.push(`# Payment configuration (Stripe)
 [payment]
 provider = "${config.payment.provider}"
 allow_unlinked_bids = ${config.payment.allow_unlinked_bids}

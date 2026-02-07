@@ -31,8 +31,10 @@ Replace Polar.sh with Stripe for payment processing. Stripe provides the require
 
   ✅ **Completed 2026-02-07**: Updated `PeriodData.payment` in `src/lib/types.ts` to replace Polar-specific fields (`checkout_url`, `product_id`, `checkout_id`) with Stripe fields (`stripe_customer_id`, `stripe_payment_intent_id`). Changed `payment_status` enum from `"pending" | "paid" | "expired"` to `"pending" | "paid" | "failed"`. Updated `src/commands/close-bidding.ts` to remove `checkout_url` reference (now passes `undefined` to `generateWinnerAnnouncement`). All 361 tests pass.
 
-- [ ] **Update config types** in `src/lib/config.ts`:
+- [x] **Update config types** in `src/lib/config.ts`:
   - Change `payment.provider` type to just `"stripe"` (remove polar options)
   - Update `DEFAULT_CONFIG.payment.provider` to `"stripe"`
   - Remove validation for old provider values
   - Update `generateToml()` comments
+
+  ✅ **Completed 2026-02-07**: Updated `BidMeConfig.payment.provider` type from `"polar-own" | "bidme-managed"` to `"stripe"`. Changed `DEFAULT_CONFIG.payment.provider` to `"stripe"`. Updated `validateConfig` to accept only `"stripe"` as valid provider. Updated `generateToml()` payment section comment to `"# Payment configuration (Stripe)"`. Updated 6 test files to expect `"stripe"` instead of polar values. All 361 tests pass.

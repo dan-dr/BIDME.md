@@ -39,7 +39,7 @@ describe("TOML config system", () => {
       expect(config.banner.width).toBe(800);
       expect(config.banner.formats).toEqual(["png", "jpg", "svg"]);
       expect(config.approval.mode).toBe("emoji");
-      expect(config.payment.provider).toBe("polar-own");
+      expect(config.payment.provider).toBe("stripe");
       expect(config.enforcement.require_payment_before_bid).toBe(true);
       expect(config.tracking.append_utm).toBe(true);
       expect(config.tracking.utm_params).toBe("source=bidme&repo={owner}/{repo}");
@@ -111,7 +111,7 @@ increment = 10
           allowed_reactions: ["👍", "🎉"],
         },
         payment: {
-          provider: "bidme-managed",
+          provider: "stripe",
           allow_unlinked_bids: true,
           unlinked_grace_hours: 48,
           payment_link: "https://custom.dev/pay",
@@ -144,7 +144,7 @@ increment = 10
       expect(loaded.banner.max_size).toBe(500);
       expect(loaded.approval.mode).toBe("auto");
       expect(loaded.approval.allowed_reactions).toEqual(["👍", "🎉"]);
-      expect(loaded.payment.provider).toBe("bidme-managed");
+      expect(loaded.payment.provider).toBe("stripe");
       expect(loaded.payment.allow_unlinked_bids).toBe(true);
       expect(loaded.payment.unlinked_grace_hours).toBe(48);
       expect(loaded.enforcement.require_payment_before_bid).toBe(false);
@@ -212,9 +212,9 @@ increment = 10
     test("rejects invalid payment provider", () => {
       expect(() =>
         validateConfig({
-          payment: { provider: "stripe" },
+          payment: { provider: "polar-own" },
         }),
-      ).toThrow("payment.provider must be one of: polar-own, bidme-managed");
+      ).toThrow("payment.provider must be one of: stripe");
     });
 
     test("rejects negative unlinked_grace_hours", () => {
@@ -264,7 +264,7 @@ increment = 10
       expect(toml).toContain("# Bidding schedule and pricing");
       expect(toml).toContain("# Banner display constraints");
       expect(toml).toContain("# Bid approval settings");
-      expect(toml).toContain("# Payment configuration");
+      expect(toml).toContain("# Payment configuration (Stripe)");
       expect(toml).toContain("# Enforcement rules");
       expect(toml).toContain("# UTM tracking for bid links");
       expect(toml).toContain("# Content guidelines for banner submissions");

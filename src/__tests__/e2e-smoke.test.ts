@@ -109,7 +109,7 @@ describe("full end-to-end smoke test", () => {
     expect(parsed.banner.formats).toEqual(["png", "jpg", "svg"]);
     expect(parsed.banner.max_size).toBe(200);
     expect(parsed.approval.mode).toBe("emoji");
-    expect(parsed.payment.provider).toBe("polar-own");
+    expect(parsed.payment.provider).toBe("stripe");
     expect(parsed.enforcement.require_payment_before_bid).toBe(true);
     expect(parsed.tracking.append_utm).toBe(true);
     expect(parsed.content_guidelines.prohibited).toEqual(["adult content", "gambling", "misleading claims"]);
