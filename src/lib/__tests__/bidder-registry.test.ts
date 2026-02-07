@@ -9,6 +9,9 @@ import {
   registerBidder,
   markPaymentLinked,
   isPaymentLinked,
+  getStripeCustomerId,
+  getStripePaymentMethodId,
+  updateStripePaymentMethod,
   getGraceDeadline,
   setWarnedAt,
   resetRegistryCache,
@@ -112,6 +115,80 @@ describe("bidder-registry", () => {
       expect(record!.payment_linked).toBe(true);
       expect(record!.stripe_customer_id).toBe("cus_new123");
       expect(record!.stripe_payment_method_id).toBe("pm_new456");
+    });
+  });
+
+  describe("getStripeCustomerId", () => {
+    test("returns null for unknown bidder", async () => {
+      await loadBidders(tempDir);
+      expect(getStripeCustomerId("unknown")).toBeNull();
+    });
+
+    test("returns null for bidder without Stripe customer ID", async () => {
+      await loadBidders(tempDir);
+      registerBidder("nostripe");
+      expect(getStripeCustomerId("nostripe")).toBeNull();
+    });
+
+    test("returns customer ID after payment linked", async () => {
+      await loadBidders(tempDir);
+      registerBidder("stripe_user");
+      markPaymentLinked("stripe_user", "cus_test123", "pm_test456");
+      expect(getStripeCustomerId("stripe_user")).toBe("cus_test123");
+    });
+  });
+
+  describe("getStripePaymentMethodId", () => {
+    test("returns null for unknown bidder", async () => {
+      await loadBidders(tempDir);
+      expect(getStripePaymentMethodId("unknown")).toBeNull();
+    });
+
+    test("returns null for bidder without Stripe payment method", async () => {
+      await loadBidders(tempDir);
+      registerBidder("nostripe");
+      expect(getStripePaymentMethodId("nostripe")).toBeNull();
+    });
+
+    test("returns payment method ID after payment linked", async () => {
+      await loadBidders(tempDir);
+      registerBidder("stripe_user");
+      markPaymentLinked("stripe_user", "cus_test123", "pm_test456");
+      expect(getStripePaymentMethodId("stripe_user")).toBe("pm_test456");
+    });
+  });
+
+  describe("updateStripePaymentMethod", () => {
+    test("throws error for unknown bidder", async () => {
+      await loadBidders(tempDir);
+      expect(() => updateStripePaymentMethod("unknown", "pm_new")).toThrow(
+        'Bidder "unknown" not found in registry',
+      );
+    });
+
+    test("updates payment method for existing bidder", async () => {
+      await loadBidders(tempDir);
+      registerBidder("cardholder");
+      markPaymentLinked("cardholder", "cus_card123", "pm_old_card");
+      expect(getStripePaymentMethodId("cardholder")).toBe("pm_old_card");
+
+      updateStripePaymentMethod("cardholder", "pm_new_card");
+      expect(getStripePaymentMethodId("cardholder")).toBe("pm_new_card");
+    });
+
+    test("preserves other bidder fields when updating payment method", async () => {
+      await loadBidders(tempDir);
+      registerBidder("preservetest");
+      markPaymentLinked("preservetest", "cus_preserve123", "pm_original");
+      setWarnedAt("preservetest", "2026-01-15T00:00:00.000Z");
+
+      updateStripePaymentMethod("preservetest", "pm_updated");
+
+      const record = getBidder("preservetest");
+      expect(record!.stripe_customer_id).toBe("cus_preserve123");
+      expect(record!.stripe_payment_method_id).toBe("pm_updated");
+      expect(record!.payment_linked).toBe(true);
+      expect(record!.warned_at).toBe("2026-01-15T00:00:00.000Z");
     });
   });
 

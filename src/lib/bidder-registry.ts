@@ -91,6 +91,32 @@ export function isPaymentLinked(username: string): boolean {
   return record?.payment_linked ?? false;
 }
 
+export function getStripeCustomerId(username: string): string | null {
+  if (!registryCache) return null;
+  const record = registryCache.bidders[username];
+  return record?.stripe_customer_id ?? null;
+}
+
+export function getStripePaymentMethodId(username: string): string | null {
+  if (!registryCache) return null;
+  const record = registryCache.bidders[username];
+  return record?.stripe_payment_method_id ?? null;
+}
+
+export function updateStripePaymentMethod(
+  username: string,
+  paymentMethodId: string,
+): void {
+  if (!registryCache) {
+    registryCache = { ...EMPTY_REGISTRY, bidders: {} };
+  }
+  const record = registryCache.bidders[username];
+  if (!record) {
+    throw new Error(`Bidder "${username}" not found in registry`);
+  }
+  record.stripe_payment_method_id = paymentMethodId;
+}
+
 export function getGraceDeadline(username: string, graceHours: number): Date | null {
   if (!registryCache) return null;
   const record = registryCache.bidders[username];

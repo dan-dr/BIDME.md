@@ -20,10 +20,12 @@ The bidder registry (`src/lib/bidder-registry.ts`) tracks payment status. Needs 
 
   ✅ **Completed**: Updated `BidderRecord` interface with `stripe_customer_id` and `stripe_payment_method_id` fields. Removed `payment_provider` field. Updated `markPaymentLinked()` signature to accept Stripe IDs. Also updated `registerBidder()` to use new interface. Updated all test files (`bidder-registry.test.ts`, `payment-enforcement.test.ts`, `check-grace.test.ts`) to use new function signatures. All 361 tests pass.
 
-- [ ] **Add helper functions** to `src/lib/bidder-registry.ts`:
+- [x] **Add helper functions** to `src/lib/bidder-registry.ts`:
   - `getStripeCustomerId(username: string): string | null` — retrieve stored customer ID
   - `getStripePaymentMethodId(username: string): string | null` — retrieve stored payment method ID
   - `updateStripePaymentMethod(username: string, paymentMethodId: string): void` — update payment method (for when user updates card)
+
+  ✅ **Completed**: Added three helper functions to bidder-registry.ts for Stripe ID management. `getStripeCustomerId` and `getStripePaymentMethodId` return stored IDs (null if not found), `updateStripePaymentMethod` updates the payment method for an existing bidder (throws if bidder not found). All 370 tests pass.
 
 - [ ] **Update bidder registry tests** in `src/lib/__tests__/bidder-registry.test.ts`:
   - Remove any Polar-related tests
