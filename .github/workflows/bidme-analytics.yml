@@ -1,0 +1,31 @@
+name: "BidMe: Update Analytics"
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  repository_dispatch:
+    types: [bidme-click]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Update analytics
+        run: bun x bidme update-analytics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit data changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(bidme): update data"
