@@ -32,6 +32,16 @@ describe("init end-to-end", () => {
     expect(archiveStat.isDirectory()).toBe(true);
   });
 
+  test("config.toml uses Stripe as the only payment provider", async () => {
+    await scaffold(tempDir, DEFAULT_CONFIG);
+
+    const tomlContent = await Bun.file(join(tempDir, ".bidme", "config.toml")).text();
+    const parsed = parseToml(tomlContent);
+
+    expect(parsed.payment.provider).toBe("stripe");
+    expect(DEFAULT_CONFIG.payment.provider).toBe("stripe");
+  });
+
   test("config.toml is valid and parseable with all expected sections", async () => {
     await scaffold(tempDir, DEFAULT_CONFIG);
 
