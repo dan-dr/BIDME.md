@@ -1,0 +1,34 @@
+name: "BidMe: Process Bid"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process-bid:
+    runs-on: ubuntu-latest
+    if: |
+      !github.event.issue.pull_request &&
+      contains(github.event.comment.body, '---') &&
+      contains(toJSON(github.event.issue.labels.*.name), 'bidme')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Process bid comment
+        run: bun x bidme process-bid ${{ github.event.issue.number }} ${{ github.event.comment.id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      - name: Commit data changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(bidme): update data"
