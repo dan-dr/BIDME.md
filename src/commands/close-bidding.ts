@@ -8,8 +8,12 @@ import {
   generateWinnerAnnouncement,
   generateNoBidsMessage,
 } from "../lib/issue-template.ts";
-// TODO: STRIPE-07 will add Stripe integration here
-// import { StripeAPI } from "../lib/stripe-integration.ts";
+import { StripeAPI, StripePaymentError } from "../lib/stripe-integration.ts";
+import {
+  loadBidders,
+  getStripeCustomerId,
+  getStripePaymentMethodId,
+} from "../lib/bidder-registry.ts";
 import { logError, withRetry } from "../lib/error-handler.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
@@ -29,13 +33,82 @@ export function appendTrackingParams(
   return `${destinationUrl}?${params}`;
 }
 
-// TODO: STRIPE-07 will implement Stripe payment processing
+interface PaymentResult {
+  success: boolean;
+  paymentIntentId?: string;
+  error?: string;
+}
+
 async function processPayment(
-  _winner: BidRecord,
-  _periodData: PeriodData,
-): Promise<PeriodData["payment"] | null> {
-  console.log("⚠ Payment processing not configured — Stripe integration pending (STRIPE-07)");
-  return null;
+  winner: BidRecord,
+  periodData: PeriodData,
+  targetDir: string,
+): Promise<{ payment: PeriodData["payment"] | null; paymentResult: PaymentResult }> {
+  const stripeApi = new StripeAPI();
+  if (!stripeApi.isConfigured) {
+    console.log("⚠ Stripe not configured — skipping payment processing");
+    return { payment: null, paymentResult: { success: false, error: "Stripe not configured" } };
+  }
+
+  await loadBidders(targetDir);
+  const customerId = getStripeCustomerId(winner.bidder);
+  const paymentMethodId = getStripePaymentMethodId(winner.bidder);
+
+  if (!customerId || !paymentMethodId) {
+    console.log(`⚠ No Stripe payment method on file for @${winner.bidder}`);
+    return {
+      payment: {
+        payment_status: "pending",
+      },
+      paymentResult: { success: false, error: "No payment method on file" },
+    };
+  }
+
+  const amountCents = Math.round(winner.amount * 100);
+  console.log(`  Processing Stripe charge: $${winner.amount} (${amountCents} cents)`);
+
+  try {
+    const paymentIntent = await stripeApi.chargeCustomer(
+      customerId,
+      paymentMethodId,
+      amountCents,
+      {
+        period_id: periodData.period_id,
+        bidder: winner.bidder,
+        bid_amount: String(winner.amount),
+      },
+    );
+    console.log(`✓ Stripe payment successful: ${paymentIntent.id}`);
+    return {
+      payment: {
+        payment_status: "paid",
+        stripe_customer_id: customerId,
+        stripe_payment_intent_id: paymentIntent.id,
+      },
+      paymentResult: { success: true, paymentIntentId: paymentIntent.id },
+    };
+  } catch (err) {
+    if (err instanceof StripePaymentError) {
+      console.log(`⚠ Stripe payment failed: ${err.message} (code: ${err.code})`);
+      logError(err, "close-bidding:stripePayment");
+      return {
+        payment: {
+          payment_status: "failed",
+          stripe_customer_id: customerId,
+        },
+        paymentResult: { success: false, error: err.message },
+      };
+    }
+    console.log(`⚠ Stripe error: ${err instanceof Error ? err.message : "Unknown error"}`);
+    logError(err, "close-bidding:stripePayment");
+    return {
+      payment: {
+        payment_status: "failed",
+        stripe_customer_id: customerId,
+      },
+      paymentResult: { success: false, error: err instanceof Error ? err.message : "Unknown error" },
+    };
+  }
 }
 
 async function archivePeriod(periodData: PeriodData, target: string): Promise<void> {
@@ -111,9 +184,9 @@ export async function runCloseBidding(
       console.log(`  Banner: ${winner.banner_url}`);
       console.log(`  Destination: ${trackingUrl}`);
 
-      const paymentResult = await processPayment(winner, periodData);
-      if (paymentResult) {
-        periodData.payment = paymentResult;
+      const { payment } = await processPayment(winner, periodData, target);
+      if (payment) {
+        periodData.payment = payment;
       }
     } else {
       console.log("\n✗ No approved bids — no winner");
@@ -136,13 +209,15 @@ export async function runCloseBidding(
 
   const api = new GitHubAPI(owner, repo);
 
+  let stripePaymentSuccess = false;
   if (winner) {
     console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
 
-    const paymentResult = await processPayment(winner, periodData);
-    if (paymentResult) {
-      periodData.payment = paymentResult;
+    const { payment, paymentResult } = await processPayment(winner, periodData, target);
+    if (payment) {
+      periodData.payment = payment;
     }
+    stripePaymentSuccess = paymentResult.success;
 
     const trackingUrl = appendTrackingParams(winner.destination_url, owner, repo);
     console.log(`  Tracking URL: ${trackingUrl}`);
@@ -196,8 +271,10 @@ export async function runCloseBidding(
       }
     }
 
-    // TODO: STRIPE-07 will add payment link generation here
-    const announcement = generateWinnerAnnouncement(winner, periodData, undefined);
+    const paymentMessage = stripePaymentSuccess
+      ? "✅ Payment processed successfully"
+      : "⏳ Payment pending — winner will be contacted";
+    const announcement = generateWinnerAnnouncement(winner, periodData, paymentMessage);
     try {
       await api.addComment(periodData.issue_number, announcement);
       console.log("✓ Winner announcement posted");

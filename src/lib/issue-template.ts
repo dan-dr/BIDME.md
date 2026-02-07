@@ -143,10 +143,10 @@ export function generateBiddingIssueBody(
 export function generateWinnerAnnouncement(
   bid: BidRecord,
   period: PeriodData,
-  checkoutUrl?: string,
+  paymentStatus?: string,
 ): string {
-  const paymentSection = checkoutUrl
-    ? `\n### 💳 Payment\n\nPlease complete your payment to activate the banner:\n\n**[Complete Payment →](${checkoutUrl})**\n`
+  const paymentSection = paymentStatus
+    ? `\n### 💳 Payment\n\n${paymentStatus}\n`
     : `\n### 💳 Payment\n\n> Payment processing is not configured. Please contact the repository owner to arrange payment.\n`;
 
   return `## 🏆 Bidding Period Closed — Winner Announced!

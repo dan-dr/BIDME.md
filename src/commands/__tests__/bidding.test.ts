@@ -520,7 +520,7 @@ describe("close-bidding: winner selection", () => {
     process.env["GITHUB_REPOSITORY_OWNER"] = "testowner";
     process.env["GITHUB_REPOSITORY"] = "testowner/testrepo";
     process.env["GITHUB_TOKEN"] = "ghp_test_token_fake";
-    delete process.env["POLAR_API_KEY"];
+    delete process.env["STRIPE_SECRET_KEY"];
   });
 
   afterEach(async () => {
@@ -640,7 +640,7 @@ describe("archive period data structure", () => {
     await scaffold(tempDir, DEFAULT_CONFIG);
     delete process.env["GITHUB_REPOSITORY_OWNER"];
     delete process.env["GITHUB_REPOSITORY"];
-    delete process.env["POLAR_API_KEY"];
+    delete process.env["STRIPE_SECRET_KEY"];
   });
 
   afterEach(async () => {
@@ -697,5 +697,291 @@ describe("archive period data structure", () => {
     const archived: PeriodData = JSON.parse(await Bun.file(archivePath).text());
     expect(archived.bids).toHaveLength(3);
     expect(archived.bids.map((b) => b.bidder).sort()).toEqual(["a", "b", "c"]);
+  });
+});
+
+// ─── Close Bidding: Stripe Payment Processing ────────────────────────────────
+
+function mockFetchForStripe(overrides: Record<string, any> = {}) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mock(async (input: any, init?: any) => {
+    const url = typeof input === "string" ? input : input.toString();
+
+    if (url.includes("api.stripe.com")) {
+      if (url.includes("/payment_intents") && init?.method === "POST") {
+        if (overrides.stripePaymentFails) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                type: "card_error",
+                code: "card_declined",
+                decline_code: "insufficient_funds",
+                message: "Your card was declined.",
+              },
+            }),
+            { status: 402, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify(
+            overrides.paymentIntent ?? {
+              id: "pi_test_123456",
+              amount: 10000,
+              currency: "usd",
+              status: "succeeded",
+              customer: "cus_test_abc",
+              payment_method: "pm_test_xyz",
+              metadata: {},
+            },
+          ),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    if (url.includes("/comments/") && (!init?.method || init?.method === "GET")) {
+      return new Response(
+        JSON.stringify(
+          overrides.comment ?? {
+            id: 1001,
+            body: "```yaml\namount: 100\nbanner_url: https://example.com/banner.png\ndestination_url: https://example.com\ncontact: bid@example.com\n```",
+            user: { login: "bidder1" },
+            created_at: "2026-02-02T10:00:00.000Z",
+          },
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/issues/") && (!init?.method || init?.method === "GET")) {
+      return new Response(
+        JSON.stringify(
+          overrides.issue ?? {
+            number: 42,
+            body: ISSUE_BODY_STUB,
+            html_url: "https://github.com/testowner/testrepo/issues/42",
+            title: "BidMe: Banner Bidding",
+            state: "open",
+            node_id: "I_abc123",
+          },
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/issues") && init?.method === "POST") {
+      return new Response(
+        JSON.stringify(
+          overrides.createdIssue ?? {
+            number: 42,
+            html_url: "https://github.com/testowner/testrepo/issues/42",
+            node_id: "I_abc123",
+            body: "",
+            title: "",
+            state: "open",
+          },
+        ),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/issues/") && init?.method === "PATCH") {
+      return new Response(
+        JSON.stringify({ number: 42, body: "", html_url: "", title: "", state: "open", node_id: "" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/comments") && init?.method === "POST") {
+      return new Response(
+        JSON.stringify({ id: 2000, body: "", user: { login: "bidme-bot" }, created_at: "" }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/graphql")) {
+      return new Response(
+        JSON.stringify({ data: { pinIssue: { issue: { id: "I_abc123" } }, unpinIssue: { issue: { id: "I_abc123" } } } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (url.includes("/reactions")) {
+      return new Response(JSON.stringify(overrides.reactions ?? []), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (url.includes("/contents/")) {
+      return new Response(
+        JSON.stringify({ content: "", sha: "abc123" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!url.includes("api.github.com") && !url.includes("api.stripe.com") && (init?.method === "HEAD" || !init?.method)) {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Length": "1024",
+        },
+      });
+    }
+
+    return originalFetch(input, init);
+  }) as unknown as typeof fetch;
+  return originalFetch;
+}
+
+describe("close-bidding: Stripe payment processing", () => {
+  let tempDir: string;
+  const originalEnv = { ...process.env };
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(resolve(tmpdir(), "bidme-stripe-test-"));
+    await scaffold(tempDir, DEFAULT_CONFIG);
+    process.env["GITHUB_REPOSITORY_OWNER"] = "testowner";
+    process.env["GITHUB_REPOSITORY"] = "testowner/testrepo";
+    process.env["GITHUB_TOKEN"] = "ghp_test_token_fake";
+    process.env["STRIPE_SECRET_KEY"] = "sk_test_fake_key";
+  });
+
+  afterEach(async () => {
+    resetRegistryCache();
+    await rm(tempDir, { recursive: true });
+    process.env = { ...originalEnv };
+    mock.restore();
+  });
+
+  test("charges winner via Stripe when payment method is on file", async () => {
+    const bids = [makeBid({ bidder: "alice", amount: 100, status: "approved", comment_id: 1001 })];
+    const periodData = makePeriodData(bids);
+    await Bun.write(join(tempDir, ".bidme/data/current-period.json"), JSON.stringify(periodData));
+    await Bun.write(join(tempDir, "README.md"), "<!-- BIDME:BANNER:START -->\nold\n<!-- BIDME:BANNER:END -->");
+
+    const bidderRegistry = {
+      bidders: {
+        alice: {
+          github_username: "alice",
+          payment_linked: true,
+          linked_at: "2026-02-01T00:00:00.000Z",
+          warned_at: null,
+          stripe_customer_id: "cus_test_alice",
+          stripe_payment_method_id: "pm_test_alice",
+        },
+      },
+    };
+    await Bun.write(join(tempDir, ".bidme/data/bidders.json"), JSON.stringify(bidderRegistry));
+
+    const originalFetch = mockFetchForStripe();
+
+    const { runCloseBidding } = await import("../close-bidding.js");
+    const result = await runCloseBidding({ target: tempDir });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("alice");
+
+    const archivePath = join(tempDir, ".bidme/data/archive/period-2026-02-01.json");
+    const archived: PeriodData = JSON.parse(await Bun.file(archivePath).text());
+    expect(archived.payment).toBeDefined();
+    expect(archived.payment?.payment_status).toBe("paid");
+    expect(archived.payment?.stripe_payment_intent_id).toBe("pi_test_123456");
+
+    globalThis.fetch = originalFetch;
+  });
+
+  test("handles Stripe payment failure gracefully", async () => {
+    const bids = [makeBid({ bidder: "bob", amount: 150, status: "approved", comment_id: 1002 })];
+    const periodData = makePeriodData(bids);
+    await Bun.write(join(tempDir, ".bidme/data/current-period.json"), JSON.stringify(periodData));
+    await Bun.write(join(tempDir, "README.md"), "<!-- BIDME:BANNER:START -->\nold\n<!-- BIDME:BANNER:END -->");
+
+    const bidderRegistry = {
+      bidders: {
+        bob: {
+          github_username: "bob",
+          payment_linked: true,
+          linked_at: "2026-02-01T00:00:00.000Z",
+          warned_at: null,
+          stripe_customer_id: "cus_test_bob",
+          stripe_payment_method_id: "pm_test_bob",
+        },
+      },
+    };
+    await Bun.write(join(tempDir, ".bidme/data/bidders.json"), JSON.stringify(bidderRegistry));
+
+    const originalFetch = mockFetchForStripe({ stripePaymentFails: true });
+
+    const { runCloseBidding } = await import("../close-bidding.js");
+    const result = await runCloseBidding({ target: tempDir });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("bob");
+
+    const archivePath = join(tempDir, ".bidme/data/archive/period-2026-02-01.json");
+    const archived: PeriodData = JSON.parse(await Bun.file(archivePath).text());
+    expect(archived.payment).toBeDefined();
+    expect(archived.payment?.payment_status).toBe("failed");
+
+    globalThis.fetch = originalFetch;
+  });
+
+  test("marks payment as pending when no payment method on file", async () => {
+    const bids = [makeBid({ bidder: "charlie", amount: 200, status: "approved", comment_id: 1003 })];
+    const periodData = makePeriodData(bids);
+    await Bun.write(join(tempDir, ".bidme/data/current-period.json"), JSON.stringify(periodData));
+    await Bun.write(join(tempDir, "README.md"), "<!-- BIDME:BANNER:START -->\nold\n<!-- BIDME:BANNER:END -->");
+
+    const bidderRegistry = {
+      bidders: {
+        charlie: {
+          github_username: "charlie",
+          payment_linked: false,
+          linked_at: null,
+          warned_at: null,
+        },
+      },
+    };
+    await Bun.write(join(tempDir, ".bidme/data/bidders.json"), JSON.stringify(bidderRegistry));
+
+    const originalFetch = mockFetchForStripe();
+
+    const { runCloseBidding } = await import("../close-bidding.js");
+    const result = await runCloseBidding({ target: tempDir });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("charlie");
+
+    const archivePath = join(tempDir, ".bidme/data/archive/period-2026-02-01.json");
+    const archived: PeriodData = JSON.parse(await Bun.file(archivePath).text());
+    expect(archived.payment).toBeDefined();
+    expect(archived.payment?.payment_status).toBe("pending");
+
+    globalThis.fetch = originalFetch;
+  });
+
+  test("skips payment when Stripe is not configured", async () => {
+    delete process.env["STRIPE_SECRET_KEY"];
+
+    const bids = [makeBid({ bidder: "dave", amount: 100, status: "approved", comment_id: 1004 })];
+    const periodData = makePeriodData(bids);
+    await Bun.write(join(tempDir, ".bidme/data/current-period.json"), JSON.stringify(periodData));
+    await Bun.write(join(tempDir, "README.md"), "<!-- BIDME:BANNER:START -->\nold\n<!-- BIDME:BANNER:END -->");
+
+    const originalFetch = mockFetchForStripe();
+
+    const { runCloseBidding } = await import("../close-bidding.js");
+    const result = await runCloseBidding({ target: tempDir });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("dave");
+
+    const archivePath = join(tempDir, ".bidme/data/archive/period-2026-02-01.json");
+    const archived: PeriodData = JSON.parse(await Bun.file(archivePath).text());
+    expect(archived.payment).toBeUndefined();
+
+    globalThis.fetch = originalFetch;
   });
 });
