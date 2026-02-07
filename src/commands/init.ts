@@ -218,6 +218,10 @@ export async function runInit(options: InitOptions): Promise<void> {
     "  1. Review .bidme/config.toml\n" +
     "  2. Commit the .bidme/ folder and workflow files\n" +
     "  3. Push to GitHub to activate bidding\n" +
-    "  4. (Optional) Enable GitHub Pages for click tracking",
+    "  4. (Optional) Enable GitHub Pages for click tracking\n\n" +
+    "Stripe setup:\n" +
+    "  1. Create account at stripe.com\n" +
+    "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
+    "  3. (Optional) Set up webhook for payment confirmations",
   );
 }
