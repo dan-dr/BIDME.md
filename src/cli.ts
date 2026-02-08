@@ -133,6 +133,19 @@ program
   });
 
 program
+  .command("remove")
+  .description("Remove BidMe from the repository — deletes .bidme/, workflows, and README banner")
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .option("--force", "Skip confirmation prompt", false)
+  .action(async (options: { target: string; force: boolean }) => {
+    const { runRemove } = await import("./commands/remove.js");
+    const result = await runRemove({ target: resolve(options.target), force: options.force });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe installation — run migrations and upgrade config")
   .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
