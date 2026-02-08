@@ -19,15 +19,12 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install dependencies
-        run: bun install
-
       - name: Open new bidding period
-        run: bun run src/cli.ts open-bidding
+        run: bun x bidme open-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(bidme): open new bidding period"
+          commit_message: "chore(bidme): update data"

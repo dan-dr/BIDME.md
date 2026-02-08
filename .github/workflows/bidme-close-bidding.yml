@@ -19,11 +19,8 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install dependencies
-        run: bun install
-
       - name: Close bidding period
-        run: bun run src/cli.ts close-bidding
+        run: bun x bidme close-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
@@ -31,4 +28,4 @@ jobs:
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(bidme): close bidding period"
+          commit_message: "chore(bidme): update data"

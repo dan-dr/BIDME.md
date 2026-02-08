@@ -19,11 +19,8 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install dependencies
-        run: bun install
-
       - name: Generate daily recap
-        run: bun run src/cli.ts daily-recap
+        run: bun x bidme daily-recap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
