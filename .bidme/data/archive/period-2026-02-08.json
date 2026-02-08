@@ -1,0 +1,35 @@
+{
+  "period_id": "period-2026-02-08",
+  "status": "closed",
+  "start_date": "2026-02-08T15:02:06.323Z",
+  "end_date": "2026-02-22T15:02:06.323Z",
+  "issue_number": 9,
+  "issue_url": "https://github.com/dan-dr/BIDME.md/issues/9",
+  "issue_node_id": "I_kwDORIzv4s7pOilt",
+  "bids": [
+    {
+      "bidder": "github-actions[bot]",
+      "amount": 10,
+      "banner_url": "https://placehold.co/800x300.svg",
+      "destination_url": "https://example.com",
+      "contact": "bidder1@example.com",
+      "status": "unlinked_pending",
+      "comment_id": 3867359011,
+      "timestamp": "2026-02-08T15:02:09.420Z"
+    },
+    {
+      "bidder": "github-actions[bot]",
+      "amount": 12,
+      "banner_url": "https://placehold.co/800x300.svg",
+      "destination_url": "https://example.com",
+      "contact": "valid-bidder@example.com",
+      "status": "approved",
+      "comment_id": 3867359311,
+      "timestamp": "2026-02-08T15:02:15.636Z"
+    }
+  ],
+  "created_at": "2026-02-08T15:02:06.334Z",
+  "payment": {
+    "payment_status": "pending"
+  }
+}

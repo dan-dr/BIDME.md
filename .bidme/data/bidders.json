@@ -1,3 +1,10 @@
 {
-  "bidders": {}
+  "bidders": {
+    "github-actions[bot]": {
+      "github_username": "github-actions[bot]",
+      "payment_linked": false,
+      "linked_at": null,
+      "warned_at": "2026-02-08T15:02:09.420Z"
+    }
+  }
 }

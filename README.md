@@ -3,7 +3,10 @@
 Let companies bid for banner space in your README. Highest approved bid wins.
 
 <!-- BIDME:BANNER:START -->
-[![BidMe Banner](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge&logoColor=white)](https://github.com/dan-dr/BIDME.md)
+[![BidMe Banner](https://placehold.co/800x300.svg)](https://example.com?source=bidme&repo=dan-dr/BIDME.md)
+
+
+<sub>Sponsored via [BidMe](https://github.com/danarrib/bidme)</sub>
 <!-- BIDME:BANNER:END -->
 
 ## Quick Start
