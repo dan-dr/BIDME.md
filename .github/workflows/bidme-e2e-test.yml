@@ -25,28 +25,19 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # Ensure a test banner SVG exists in the repo
-      - name: "Setup: Create test banner"
-        run: |
-          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/.bidme/test/banner.svg"
-          mkdir -p .bidme/test
-          echo '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300"><rect width="800" height="300" fill="#4a90d9"/><text x="400" y="160" text-anchor="middle" fill="white" font-size="40">Test Banner</text></svg>' > .bidme/test/banner.svg
-          git config user.name "BidMe Bot"
-          git config user.email "bidme-bot@users.noreply.github.com"
-          git add .bidme/test/banner.svg
-          if git diff --cached --quiet; then
-            echo "Test banner already exists in repo"
-          else
-            git commit -m "chore: add test banner for E2E"
-            git push origin main
-            sleep 5
-          fi
-          # Verify the banner is accessible
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BANNER_URL")
-          echo "Banner URL status: $HTTP_CODE"
-          echo "banner_url=$BANNER_URL" >> "$GITHUB_OUTPUT"
-          echo "✅ Test banner ready at: $BANNER_URL"
+      # The test banner .bidme/test/banner.svg is committed in the repo
+      - name: "Setup: Verify test banner"
         id: setup
+        run: |
+          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.bidme/test/banner.svg"
+          if [ -f ".bidme/test/banner.svg" ]; then
+            echo "✅ Test banner exists locally"
+          else
+            echo "❌ Test banner missing from repo — commit .bidme/test/banner.svg"
+            exit 1
+          fi
+          echo "banner_url=$BANNER_URL" >> "$GITHUB_OUTPUT"
+          echo "Banner URL: $BANNER_URL"
 
       # ─────────────────────────────────────────────────
       # STEP 1: Open a bidding period (creates issue)
