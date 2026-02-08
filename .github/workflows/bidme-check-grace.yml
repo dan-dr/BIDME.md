@@ -26,8 +26,9 @@ jobs:
         run: bun run src/cli.ts check-grace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
 
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(bidme): update data"
+          commit_message: "chore(bidme): update grace period data"

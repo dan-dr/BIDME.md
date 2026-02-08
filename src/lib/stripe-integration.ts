@@ -212,4 +212,35 @@ export class StripeAPI {
   async getPaymentMethod(paymentMethodId: string): Promise<StripePaymentMethod> {
     return this.request<StripePaymentMethod>("GET", `/payment_methods/${paymentMethodId}`);
   }
+
+  async searchCustomersByMetadata(githubUsername: string): Promise<StripeCustomer[]> {
+    const query = `metadata["github_username"]:"${githubUsername}"`;
+    const result = await this.request<{ data: StripeCustomer[] }>(
+      "GET",
+      `/customers/search?query=${encodeURIComponent(query)}`,
+    );
+    return result.data;
+  }
+
+  async listPaymentMethods(customerId: string): Promise<StripePaymentMethod[]> {
+    const result = await this.request<{ data: StripePaymentMethod[] }>(
+      "GET",
+      `/payment_methods?customer=${customerId}&type=card`,
+    );
+    return result.data;
+  }
+
+  async createCheckoutSession(
+    customerId: string,
+    successUrl: string,
+    cancelUrl: string,
+  ): Promise<{ id: string; url: string }> {
+    return this.request<{ id: string; url: string }>("POST", "/checkout/sessions", {
+      customer: customerId,
+      mode: "setup",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      payment_method_types: ["card"],
+    });
+  }
 }

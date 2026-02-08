@@ -151,8 +151,42 @@ export async function runProcessBid(
   await loadBidders(target);
   registerBidder(bidder);
   const paymentLinked = isPaymentLinked(bidder);
-  const paymentLink = config.payment.payment_link || `https://bidme.dev/link-stripe?user=${encodeURIComponent(bidder)}`;
   const graceHours = config.payment.unlinked_grace_hours;
+
+  // Generate a Stripe Checkout session URL for unlinked bidders
+  let paymentLink = config.payment.payment_link || "";
+  if (!paymentLinked && owner && repo) {
+    try {
+      const { StripeAPI: StripeAPIClass } = await import("../lib/stripe-integration.ts");
+      const stripe = new StripeAPIClass();
+      if (stripe.isConfigured) {
+        const existing = await stripe.searchCustomersByMetadata(bidder);
+        let customerId: string;
+        if (existing.length > 0) {
+          customerId = existing[0]!.id;
+        } else {
+          const customer = await stripe.createCustomer(
+            `${bidder}@github.bidme`,
+            { github_username: bidder },
+          );
+          customerId = customer.id;
+        }
+        const repoUrl = `https://github.com/${owner}/${repo}`;
+        const session = await stripe.createCheckoutSession(
+          customerId,
+          `${repoUrl}?payment=success`,
+          `${repoUrl}?payment=cancelled`,
+        );
+        paymentLink = session.url;
+        console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
+      }
+    } catch (err) {
+      console.warn(`⚠ Could not create Stripe Checkout session: ${err instanceof Error ? err.message : "unknown"}`);
+    }
+  }
+  if (!paymentLink) {
+    paymentLink = `https://github.com/${owner}/${repo}`;
+  }
 
   if (config.enforcement.require_payment_before_bid && !paymentLinked) {
     if (config.enforcement.strikethrough_unlinked && owner && repo) {

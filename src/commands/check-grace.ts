@@ -1,11 +1,13 @@
 import { resolve } from "path";
 import { loadConfig } from "../lib/config.ts";
 import { GitHubAPI } from "../lib/github-api.ts";
+import { StripeAPI } from "../lib/stripe-integration.ts";
 import { logError } from "../lib/error-handler.ts";
 import {
   loadBidders,
   saveBidders,
   isPaymentLinked,
+  markPaymentLinked,
   getGraceDeadline,
   resetRegistryCache,
 } from "../lib/bidder-registry.ts";
@@ -53,6 +55,28 @@ export async function runCheckGrace(
   console.log(`  Found ${unlinkPending.length} unlinked_pending bid(s)\n`);
 
   await loadBidders(target);
+
+  // Auto-link: check Stripe for customers matching unlinked bidders
+  const stripe = new StripeAPI();
+  if (stripe.isConfigured) {
+    console.log("  Checking Stripe for newly linked payments...");
+    for (const bid of unlinkPending) {
+      if (isPaymentLinked(bid.bidder)) continue;
+      try {
+        const customers = await stripe.searchCustomersByMetadata(bid.bidder);
+        if (customers.length > 0) {
+          const customer = customers[0]!;
+          const methods = await stripe.listPaymentMethods(customer.id);
+          if (methods.length > 0) {
+            markPaymentLinked(bid.bidder, customer.id, methods[0]!.id);
+            console.log(`  ✓ Auto-linked @${bid.bidder} from Stripe (customer: ${customer.id})`);
+          }
+        }
+      } catch (err) {
+        console.warn(`  ⚠ Stripe lookup failed for @${bid.bidder}: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    }
+  }
 
   const owner = process.env["GITHUB_REPOSITORY_OWNER"] ?? "";
   const fullRepo = process.env["GITHUB_REPOSITORY"] ?? "";

@@ -30,4 +30,4 @@ jobs:
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(bidme): update data"
+          commit_message: "chore(bidme): open new bidding period"

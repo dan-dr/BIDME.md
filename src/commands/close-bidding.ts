@@ -14,7 +14,7 @@ import {
   getStripeCustomerId,
   getStripePaymentMethodId,
 } from "../lib/bidder-registry.ts";
-import { logError, withRetry } from "../lib/error-handler.ts";
+import { logError } from "../lib/error-handler.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface CloseBiddingOptions {
@@ -250,23 +250,10 @@ export async function runCloseBidding(
       );
 
       try {
-        await withRetry(
-          () =>
-            api.updateReadme(
-              updatedReadme,
-              `BidMe: Update banner — winner @${winner.bidder} ($${winner.amount})`,
-            ),
-          2,
-          {
-            onRetry: (attempt, error) => {
-              console.warn(`⚠ README update failed (attempt ${attempt}), retrying...`);
-              logError(error, "close-bidding:updateReadme");
-            },
-          },
-        );
-        console.log("✓ README updated with winning banner");
+        await Bun.write(readmePath, updatedReadme);
+        console.log("✓ README updated locally with winning banner");
       } catch (err) {
-        console.warn("⚠ Failed to update README after retries — banner not updated");
+        console.warn("⚠ Failed to update README — banner not updated");
         logError(err, "close-bidding:updateReadme");
       }
     }

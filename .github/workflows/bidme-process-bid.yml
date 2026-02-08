@@ -11,10 +11,12 @@ permissions:
 jobs:
   process-bid:
     runs-on: ubuntu-latest
+    # Only run on issue comments (not PRs), only on bidme-labeled issues,
+    # and only when the comment contains a yaml code fence (bid format)
     if: |
       !github.event.issue.pull_request &&
-      contains(github.event.comment.body, '---') &&
-      contains(toJSON(github.event.issue.labels.*.name), 'bidme')
+      contains(toJSON(github.event.issue.labels.*.name), 'bidme') &&
+      contains(github.event.comment.body, '```yaml')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,8 +32,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-
-      - name: Commit data changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(bidme): update data"

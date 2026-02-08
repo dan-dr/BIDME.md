@@ -119,6 +119,20 @@ program
   });
 
 program
+  .command("setup-payment")
+  .description("Create a Stripe Checkout session for a bidder to set up payment")
+  .argument("<username>", "GitHub username of the bidder")
+  .argument("<issue>", "Issue number to post the payment link", (val: string) => parseInt(val, 10))
+  .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
+  .action(async (username: string, issue: number, options: { target: string }) => {
+    const { runSetupPayment } = await import("./commands/setup-payment.js");
+    const result = await runSetupPayment(username, issue, { target: resolve(options.target) });
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+program
   .command("update")
   .description("Update BidMe installation — run migrations and upgrade config")
   .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
