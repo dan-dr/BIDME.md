@@ -25,6 +25,23 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # Create a tiny test banner SVG accessible via raw.githubusercontent.com
+      - name: "Setup: Create test banner"
+        run: |
+          mkdir -p .bidme/test
+          echo '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300"><rect width="800" height="300" fill="#4a90d9"/><text x="400" y="160" text-anchor="middle" fill="white" font-size="40">Test Banner</text></svg>' > .bidme/test/banner.svg
+          git config user.name "BidMe Bot"
+          git config user.email "bidme-bot@users.noreply.github.com"
+          git add .bidme/test/banner.svg
+          git commit -m "chore: add test banner for E2E"
+          git push origin main
+          # Give GitHub a moment to serve the raw file
+          sleep 5
+          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/.bidme/test/banner.svg"
+          echo "banner_url=$BANNER_URL" >> "$GITHUB_OUTPUT"
+          echo "✅ Test banner available at: $BANNER_URL"
+        id: setup
+
       # ─────────────────────────────────────────────────
       # STEP 1: Open a bidding period (creates issue)
       # ─────────────────────────────────────────────────
@@ -32,9 +49,8 @@ jobs:
         id: open
         run: |
           bun run src/cli.ts open-bidding
-          # Read the issue number from the period data
-          ISSUE_NUMBER=$(cat .bidme/data/current-period.json | bun -e "
-            const data = JSON.parse(await Bun.stdin.text());
+          ISSUE_NUMBER=$(bun -e "
+            const data = JSON.parse(await Bun.file('.bidme/data/current-period.json').text());
             console.log(data.issue_number);
           ")
           echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
@@ -44,21 +60,25 @@ jobs:
       # STEP 2: Post blocked bids (one per rule)
       # ─────────────────────────────────────────────────
 
-      # 2a: Bid blocked by payment not verified
+      # 2a: Bid blocked by payment not verified (should be caught BEFORE content check)
       - name: "Step 2a: Post bid - payment not verified"
         id: bid_no_payment
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
-          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
-            -f body='I would like to bid!
+          BANNER_URL="${{ steps.setup.outputs.banner_url }}"
+          BODY=$(cat <<BIDEOF
+          Bid from unverified user
 
-          ```yaml
+          \`\`\`yaml
           amount: 10
-          banner_url: https://via.placeholder.com/800x300.png
+          banner_url: $BANNER_URL
           destination_url: https://example.com
           contact: bidder1@example.com
-          ```' \
-            --jq '.id')
+          \`\`\`
+          BIDEOF
+          )
+          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
+            -f body="$BODY" --jq '.id')
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
           echo "✅ Posted unverified payment bid (comment $COMMENT)"
 
@@ -70,95 +90,78 @@ jobs:
             echo "✅ Bid correctly blocked: payment not verified"
           else
             echo "❌ Expected bid to be blocked for payment not verified"
+            echo "Full output above. Check if payment check runs before content enforcement."
             exit 1
           fi
 
-      # 2b: Bid blocked by banner size (image too large)
-      - name: "Step 2b: Post bid - banner size violation"
-        id: bid_bad_size
-        run: |
-          ISSUE=${{ steps.open.outputs.issue_number }}
-          # Use a large image URL that exceeds 5KB limit
-          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
-            -f body='Bid with oversized banner
-
-          ```yaml
-          amount: 12
-          banner_url: https://via.placeholder.com/2000x2000.png
-          destination_url: https://example.com
-          contact: bidder2@example.com
-          ```' \
-            --jq '.id')
-          echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
-          echo "✅ Posted oversized banner bid (comment $COMMENT)"
-
-      - name: "Step 2b: Process oversized banner bid"
-        run: |
-          RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_bad_size.outputs.comment_id }} 2>&1) || true
-          echo "$RESULT"
-          # This should fail due to image size or payment - either way it should be rejected/paused
-          echo "✅ Oversized banner bid processed (expected rejection or pause)"
-
-      # 2c: Bid blocked by amount too low
-      - name: "Step 2c: Post bid - amount too low"
+      # 2b: Bid blocked by amount too low
+      - name: "Step 2b: Post bid - amount too low"
         id: bid_too_low
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
-          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
-            -f body='Low bid
+          BANNER_URL="${{ steps.setup.outputs.banner_url }}"
+          BODY=$(cat <<BIDEOF
+          Low bid
 
-          ```yaml
+          \`\`\`yaml
           amount: 1
-          banner_url: https://via.placeholder.com/800x300.png
+          banner_url: $BANNER_URL
           destination_url: https://example.com
-          contact: bidder3@example.com
-          ```' \
-            --jq '.id')
+          contact: bidder2@example.com
+          \`\`\`
+          BIDEOF
+          )
+          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
+            -f body="$BODY" --jq '.id')
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
           echo "✅ Posted low bid (comment $COMMENT)"
 
-      - name: "Step 2c: Process low bid"
+      - name: "Step 2b: Process low bid"
         run: |
           RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_too_low.outputs.comment_id }} 2>&1) || true
           echo "$RESULT"
           if echo "$RESULT" | grep -q "at least\|too low\|minimum"; then
-            echo "✅ Bid correctly rejected: amount too low"
+            echo "✅ Bid correctly rejected: amount too low (min $5)"
           else
             echo "❌ Expected bid to be rejected for low amount"
             exit 1
           fi
 
-      # 2d: Bid blocked by bad increment
-      - name: "Step 2d: Post bid - bad increment"
+      # 2c: Bid blocked by bad increment (7 is not divisible by 2)
+      - name: "Step 2c: Post bid - bad increment"
         id: bid_bad_increment
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
-          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
-            -f body='Bad increment bid
+          BANNER_URL="${{ steps.setup.outputs.banner_url }}"
+          BODY=$(cat <<BIDEOF
+          Bad increment bid
 
-          ```yaml
+          \`\`\`yaml
           amount: 7
-          banner_url: https://via.placeholder.com/800x300.png
+          banner_url: $BANNER_URL
           destination_url: https://example.com
-          contact: bidder4@example.com
-          ```' \
-            --jq '.id')
+          contact: bidder3@example.com
+          \`\`\`
+          BIDEOF
+          )
+          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
+            -f body="$BODY" --jq '.id')
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
           echo "✅ Posted bad increment bid (comment $COMMENT)"
 
-      - name: "Step 2d: Process bad increment bid"
+      - name: "Step 2c: Process bad increment bid"
         run: |
           RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_bad_increment.outputs.comment_id }} 2>&1) || true
           echo "$RESULT"
           if echo "$RESULT" | grep -q "increment"; then
-            echo "✅ Bid correctly rejected: bad increment"
+            echo "✅ Bid correctly rejected: bad increment ($7 not divisible by $2)"
           else
             echo "❌ Expected bid to be rejected for bad increment"
             exit 1
           fi
 
-      # 2e: Bid blocked by invalid format (no yaml block)
-      - name: "Step 2e: Post bid - invalid format"
+      # 2d: Bid blocked by invalid format (no yaml block)
+      - name: "Step 2d: Post bid - invalid format"
         id: bid_bad_format
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
@@ -168,7 +171,7 @@ jobs:
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
           echo "✅ Posted invalid format bid (comment $COMMENT)"
 
-      - name: "Step 2e: Process invalid format bid"
+      - name: "Step 2d: Process invalid format bid"
         run: |
           RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_bad_format.outputs.comment_id }} 2>&1) || true
           echo "$RESULT"
@@ -186,38 +189,44 @@ jobs:
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
           COMMENTS=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments --jq '.[].body')
+          echo "--- All comments on issue ---"
           echo "$COMMENTS"
-          if echo "$COMMENTS" | grep -qi "payment\|link\|stripe"; then
+          echo "--- End comments ---"
+          if echo "$COMMENTS" | grep -qi "payment\|link your payment"; then
             echo "✅ Payment setup links found in issue comments"
           else
-            echo "⚠️ No payment link found in comments (may be expected if all bids were rejected before payment check)"
+            echo "⚠️ No payment link found (checking if any bid reached payment check)"
           fi
 
       # ─────────────────────────────────────────────────
       # STEP 4: Post a valid bid that should go through
-      # We need to temporarily disable require_payment_before_bid
+      # Temporarily disable payment requirement
       # ─────────────────────────────────────────────────
       - name: "Step 4: Temporarily allow unlinked bids for testing"
         run: |
-          # Patch config to allow bids without payment for the valid test bid
           sed -i 's/require_payment_before_bid = true/require_payment_before_bid = false/' .bidme/config.toml
           sed -i 's/allow_unlinked_bids = false/allow_unlinked_bids = true/' .bidme/config.toml
+          cat .bidme/config.toml | grep -E "require_payment|allow_unlinked"
           echo "✅ Config patched: payment enforcement disabled for test"
 
       - name: "Step 4: Post valid bid"
         id: bid_valid
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
-          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
-            -f body='Valid bid from verified bidder
+          BANNER_URL="${{ steps.setup.outputs.banner_url }}"
+          BODY=$(cat <<BIDEOF
+          Valid bid from verified bidder
 
-          ```yaml
+          \`\`\`yaml
           amount: 10
-          banner_url: https://via.placeholder.com/800x300.png
+          banner_url: $BANNER_URL
           destination_url: https://example.com
           contact: valid-bidder@example.com
-          ```' \
-            --jq '.id')
+          \`\`\`
+          BIDEOF
+          )
+          COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
+            -f body="$BODY" --jq '.id')
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
           echo "✅ Posted valid bid (comment $COMMENT)"
 
@@ -249,7 +258,7 @@ jobs:
           if echo "$BODY" | grep -q '\$10'; then
             echo "✅ Issue body shows the $10 bid"
           else
-            echo "⚠️ Issue body may not reflect the latest bid (check above)"
+            echo "⚠️ Issue body may not reflect the latest bid amount"
           fi
 
       # ─────────────────────────────────────────────────
@@ -282,21 +291,24 @@ jobs:
       # STEP 7: Create a PR with the banner update and merge
       # ─────────────────────────────────────────────────
       - name: "Step 7: Create PR branch with data changes"
+        id: pr_branch
         run: |
-          # Restore config
           git checkout .bidme/config.toml
-          # Stage any data changes from the test
-          git config user.name "BidMe Bot"
-          git config user.email "bidme-bot@users.noreply.github.com"
           BRANCH="bidme/e2e-test-$(date +%s)"
           git checkout -b "$BRANCH"
           git add -A
-          git diff --cached --quiet && echo "No changes to commit" || git commit -m "chore(bidme): e2e test data update"
-          git push origin "$BRANCH"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore(bidme): e2e test data update"
+            git push origin "$BRANCH"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-        id: pr_branch
 
       - name: "Step 7: Create and merge PR"
+        if: steps.pr_branch.outputs.has_changes == 'true'
         run: |
           BRANCH=${{ steps.pr_branch.outputs.branch }}
           PR_URL=$(gh pr create \
@@ -308,11 +320,10 @@ jobs:
           if echo "$PR_URL" | grep -q "github.com"; then
             PR_NUM=$(echo "$PR_URL" | grep -o '[0-9]*$')
             echo "✅ PR created: $PR_URL"
-            # Auto-merge
-            gh pr merge "$PR_NUM" --merge --delete-branch || echo "⚠️ Could not auto-merge (may need approvals)"
+            gh pr merge "$PR_NUM" --merge --delete-branch || echo "⚠️ Could not auto-merge"
             echo "✅ PR merged"
           else
-            echo "⚠️ No changes for PR or PR creation failed: $PR_URL"
+            echo "⚠️ PR creation output: $PR_URL"
           fi
 
       # ─────────────────────────────────────────────────
@@ -326,7 +337,11 @@ jobs:
           echo "  BidMe E2E Test Summary"
           echo "=========================================="
           echo "  Issue: #${{ steps.open.outputs.issue_number }}"
-          echo "  Blocked bids tested: 5"
-          echo "  Valid bid posted: yes"
+          echo "  Tests run:"
+          echo "    - Payment not verified: blocked"
+          echo "    - Amount too low: rejected"
+          echo "    - Bad increment: rejected"
+          echo "    - Invalid format: rejected"
+          echo "    - Valid bid: accepted"
           echo "  Period closed: yes"
           echo "=========================================="

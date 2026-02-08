@@ -7,6 +7,7 @@ import { loadAnalytics } from "../lib/analytics-store.ts";
 import { logError, withRetry, isRateLimited } from "../lib/error-handler.ts";
 import { loadBidders, registerBidder, isPaymentLinked, setWarnedAt, saveBidders } from "../lib/bidder-registry.ts";
 import { enforceContent } from "../lib/content-enforcer.ts";
+import { StripeAPI } from "../lib/stripe-integration.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface ProcessBidOptions {
@@ -35,7 +36,14 @@ export async function runProcessBid(
     return { success: false, message: msg };
   }
 
-  const periodData: PeriodData = JSON.parse(await periodFile.text());
+  const periodText = await periodFile.text();
+  if (!periodText.trim()) {
+    const msg = "No active bidding period found";
+    console.log(`✗ ${msg}`);
+    return { success: false, message: msg };
+  }
+
+  const periodData: PeriodData = JSON.parse(periodText);
   if (periodData.status !== "open") {
     const msg = "Bidding period is not open";
     console.log(`✗ ${msg}`);
@@ -80,6 +88,7 @@ export async function runProcessBid(
     }
   }
 
+  // 1. Parse bid format
   const parsed = parseBidComment(commentBody);
   if (!parsed) {
     const msg =
@@ -96,6 +105,7 @@ export async function runProcessBid(
 
   console.log(`  Parsed bid: $${parsed.amount} from ${parsed.contact}`);
 
+  // 2. Basic validation (amount, URLs, contact format)
   const validation = validateBid(parsed, config);
   if (!validation.valid) {
     const errorList = validation.errors.map((e) => `- ${e.message}`).join("\n");
@@ -110,25 +120,7 @@ export async function runProcessBid(
     return { success: false, message: msg };
   }
 
-  const enforcement = await enforceContent(parsed, config);
-  if (!enforcement.passed) {
-    const errorList = enforcement.errors.map((e) => `- ${e}`).join("\n");
-    const msg = `Content enforcement failed:\n${errorList}`;
-    console.log(`✗ ${msg}`);
-
-    if (owner && repo) {
-      const api = new GitHubAPI(owner, repo);
-      await api.addComment(
-        issueNumber,
-        `❌ **Bid rejected — content requirements not met**\n\n${errorList}`,
-      );
-    }
-
-    return { success: false, message: msg };
-  }
-
-  console.log("✓ Content enforcement passed");
-
+  // 3. Check highest bid (before payment/content to fail fast)
   const freshPeriodFile = Bun.file(dataPath);
   const freshPeriodData: PeriodData = JSON.parse(await freshPeriodFile.text());
 
@@ -148,47 +140,47 @@ export async function runProcessBid(
     return { success: false, message: msg };
   }
 
+  // 4. Payment check (before content enforcement which makes HTTP calls)
   await loadBidders(target);
   registerBidder(bidder);
   const paymentLinked = isPaymentLinked(bidder);
   const graceHours = config.payment.unlinked_grace_hours;
 
-  // Generate a Stripe Checkout session URL for unlinked bidders
-  let paymentLink = config.payment.payment_link || "";
-  if (!paymentLinked && owner && repo) {
-    try {
-      const { StripeAPI: StripeAPIClass } = await import("../lib/stripe-integration.ts");
-      const stripe = new StripeAPIClass();
-      if (stripe.isConfigured) {
-        const existing = await stripe.searchCustomersByMetadata(bidder);
-        let customerId: string;
-        if (existing.length > 0) {
-          customerId = existing[0]!.id;
-        } else {
-          const customer = await stripe.createCustomer(
-            `${bidder}@github.bidme`,
-            { github_username: bidder },
-          );
-          customerId = customer.id;
-        }
-        const repoUrl = `https://github.com/${owner}/${repo}`;
-        const session = await stripe.createCheckoutSession(
-          customerId,
-          `${repoUrl}?payment=success`,
-          `${repoUrl}?payment=cancelled`,
-        );
-        paymentLink = session.url;
-        console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
-      }
-    } catch (err) {
-      console.warn(`⚠ Could not create Stripe Checkout session: ${err instanceof Error ? err.message : "unknown"}`);
-    }
-  }
-  if (!paymentLink) {
-    paymentLink = `https://github.com/${owner}/${repo}`;
-  }
-
   if (config.enforcement.require_payment_before_bid && !paymentLinked) {
+    // Generate a Stripe Checkout session URL for the bidder
+    let paymentLink = config.payment.payment_link || "";
+    if (owner && repo) {
+      try {
+        const stripe = new StripeAPI();
+        if (stripe.isConfigured) {
+          const existing = await stripe.searchCustomersByMetadata(bidder);
+          let customerId: string;
+          if (existing.length > 0) {
+            customerId = existing[0]!.id;
+          } else {
+            const customer = await stripe.createCustomer(
+              `${bidder}@github.bidme`,
+              { github_username: bidder },
+            );
+            customerId = customer.id;
+          }
+          const repoUrl = `https://github.com/${owner}/${repo}`;
+          const session = await stripe.createCheckoutSession(
+            customerId,
+            `${repoUrl}?payment=success`,
+            `${repoUrl}?payment=cancelled`,
+          );
+          paymentLink = session.url;
+          console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
+        }
+      } catch (err) {
+        console.warn(`⚠ Could not create Stripe Checkout session: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    }
+    if (!paymentLink) {
+      paymentLink = `https://github.com/${owner}/${repo}`;
+    }
+
     if (config.enforcement.strikethrough_unlinked && owner && repo) {
       const api = new GitHubAPI(owner, repo);
       try {
@@ -231,11 +223,33 @@ export async function runProcessBid(
     return { success: true, message: msg };
   }
 
+  // 5. Content enforcement (banner image check — makes HTTP calls)
+  const enforcement = await enforceContent(parsed, config);
+  if (!enforcement.passed) {
+    const errorList = enforcement.errors.map((e) => `- ${e}`).join("\n");
+    const msg = `Content enforcement failed:\n${errorList}`;
+    console.log(`✗ ${msg}`);
+
+    if (owner && repo) {
+      const api = new GitHubAPI(owner, repo);
+      await api.addComment(
+        issueNumber,
+        `❌ **Bid rejected — content requirements not met**\n\n${errorList}`,
+      );
+    }
+
+    return { success: false, message: msg };
+  }
+
+  console.log("✓ Content enforcement passed");
+
+  // 6. Accept the bid
   let bidStatus: BidRecord["status"] =
     config.approval.mode === "auto" ? "approved" : "pending";
 
   let paymentWarning = "";
   if (config.payment.allow_unlinked_bids && !paymentLinked) {
+    const paymentLink = config.payment.payment_link || `https://github.com/${owner}/${repo}`;
     paymentWarning = `\n\n> **Note:** You haven't linked a payment method yet. Link one at ${paymentLink} to avoid delays if you win.`;
   }
 
