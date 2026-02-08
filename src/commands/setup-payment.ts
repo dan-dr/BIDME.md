@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { loadConfig } from "../lib/config.ts";
+import { loadConfig, resolvePaymentUrls } from "../lib/config.ts";
 import { GitHubAPI } from "../lib/github-api.ts";
 import { StripeAPI } from "../lib/stripe-integration.ts";
 import {
@@ -62,10 +62,11 @@ export async function runSetupPayment(
       console.log(`✓ Created Stripe customer: ${customerId}`);
     }
 
+    const paymentUrls = resolvePaymentUrls(config, owner, repo);
     const session = await stripe.createCheckoutSession(
       customerId,
-      "https://bidme.md/payment/success",
-      "https://bidme.md/payment/cancelled",
+      paymentUrls.success,
+      paymentUrls.fail,
     );
     console.log(`✓ Checkout session created: ${session.url}`);
 

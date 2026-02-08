@@ -22,12 +22,16 @@ max_size = 5
 mode = "auto"
 allowed_reactions = ["👍"]
 
-# Payment configuration
+# Payment configuration (Stripe)
+# base_url: leave empty to default to GitHub Pages (dan-dr.github.io/BIDME.md/.bidme/stripe)
+# success_url / fail_url: override individual redirect URLs (defaults derive from base_url)
 [payment]
 provider = "stripe"
 allow_unlinked_bids = false
 unlinked_grace_hours = 24
-payment_link = "https://bidme.md/payment/success"
+base_url = ""
+success_url = ""
+fail_url = ""
 bidme_fee_percent = 10
 
 # Enforcement rules

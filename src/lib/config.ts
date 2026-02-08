@@ -22,7 +22,9 @@ export interface BidMeConfig {
     provider: "stripe";
     allow_unlinked_bids: boolean;
     unlinked_grace_hours: number;
-    payment_link: string;
+    base_url: string;
+    success_url: string;
+    fail_url: string;
     bidme_fee_percent: number;
   };
   enforcement: {
@@ -60,7 +62,9 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     provider: "stripe",
     allow_unlinked_bids: false,
     unlinked_grace_hours: 24,
-    payment_link: "https://bidme.md/payment/success",
+    base_url: "",
+    success_url: "",
+    fail_url: "",
     bidme_fee_percent: 10,
   },
   enforcement: {
@@ -250,11 +254,15 @@ allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
 `);
 
   sections.push(`# Payment configuration (Stripe)
+# base_url: leave empty to default to GitHub Pages ({owner}.github.io/{repo}/.bidme/stripe)
+# success_url / fail_url: override individual redirect URLs (defaults derive from base_url)
 [payment]
 provider = "${config.payment.provider}"
 allow_unlinked_bids = ${config.payment.allow_unlinked_bids}
 unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
-payment_link = "${config.payment.payment_link}"
+base_url = "${config.payment.base_url}"
+success_url = "${config.payment.success_url}"
+fail_url = "${config.payment.fail_url}"
 bidme_fee_percent = ${config.payment.bidme_fee_percent}
 `);
 
@@ -282,4 +290,18 @@ required = ${JSON.stringify(config.content_guidelines.required)}
 export function parseToml(tomlString: string): BidMeConfig {
   const parsed = TOML.parse(tomlString) as unknown as BidMeConfig;
   return parsed;
+}
+
+export function resolvePaymentUrls(
+  config: BidMeConfig,
+  owner: string,
+  repo: string,
+): { success: string; fail: string } {
+  const defaultBase = `https://${owner}.github.io/${repo}/.bidme/stripe`;
+
+  const base = config.payment.base_url || defaultBase;
+  const success = config.payment.success_url || `${base}/success.html`;
+  const fail = config.payment.fail_url || `${base}/cancelled.html`;
+
+  return { success, fail };
 }

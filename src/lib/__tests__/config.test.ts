@@ -114,7 +114,9 @@ increment = 10
           provider: "stripe",
           allow_unlinked_bids: true,
           unlinked_grace_hours: 48,
-          payment_link: "https://custom.dev/pay",
+          base_url: "https://custom.dev",
+          success_url: "https://custom.dev/pay/success",
+          fail_url: "https://custom.dev/pay/cancelled",
           bidme_fee_percent: 15,
         },
         enforcement: {

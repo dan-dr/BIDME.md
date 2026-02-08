@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { loadConfig } from "../lib/config.ts";
+import { loadConfig, resolvePaymentUrls } from "../lib/config.ts";
 import { GitHubAPI, GitHubAPIError } from "../lib/github-api.ts";
 import { parseBidComment, validateBid } from "../lib/validation.ts";
 import { updateBidIssueBody } from "../lib/issue-template.ts";
@@ -147,8 +147,8 @@ export async function runProcessBid(
   const graceHours = config.payment.unlinked_grace_hours;
 
   if (config.enforcement.require_payment_before_bid && !paymentLinked) {
-    // Generate a Stripe Checkout session URL for the bidder
-    let paymentLink = config.payment.payment_link || "";
+    const paymentUrls = resolvePaymentUrls(config, owner, repo);
+    let paymentLink = "";
     if (owner && repo) {
       try {
         const stripe = new StripeAPI();
@@ -166,8 +166,8 @@ export async function runProcessBid(
           }
           const session = await stripe.createCheckoutSession(
             customerId,
-            "https://bidme.md/payment/success",
-            "https://bidme.md/payment/cancelled",
+            paymentUrls.success,
+            paymentUrls.fail,
           );
           paymentLink = session.url;
           console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
@@ -177,7 +177,7 @@ export async function runProcessBid(
       }
     }
     if (!paymentLink) {
-      paymentLink = `https://github.com/${owner}/${repo}`;
+      paymentLink = paymentUrls.success;
     }
 
     if (config.enforcement.strikethrough_unlinked && owner && repo) {
@@ -248,8 +248,8 @@ export async function runProcessBid(
 
   let paymentWarning = "";
   if (config.payment.allow_unlinked_bids && !paymentLinked) {
-    const paymentLink = config.payment.payment_link || `https://github.com/${owner}/${repo}`;
-    paymentWarning = `\n\n> **Note:** You haven't linked a payment method yet. Link one at ${paymentLink} to avoid delays if you win.`;
+    const urls = resolvePaymentUrls(config, owner, repo);
+    paymentWarning = `\n\n> **Note:** You haven't linked a payment method yet. Link one at ${urls.success} to avoid delays if you win.`;
   }
 
   await saveBidders(target);

@@ -145,7 +145,9 @@ export async function collectConfig(): Promise<WizardConfig> {
       provider: "stripe",
       allow_unlinked_bids: allowUnlinked,
       unlinked_grace_hours: 24,
-      payment_link: "https://bidme.md/payment/success",
+      base_url: "",
+      success_url: "",
+      fail_url: "",
       bidme_fee_percent: 10,
     },
     enforcement: {
@@ -196,6 +198,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   if (result.versionCreated) lines.push("  .bidme/version.json");
   for (const f of result.dataFilesCreated) lines.push(`  .bidme/data/${f}`);
   if (result.redirectCopied) lines.push("  .bidme/redirect.html");
+  for (const f of result.stripePagesCopied) lines.push(`  .bidme/stripe/${f}`);
   for (const f of result.workflowsCopied) lines.push(`  .github/workflows/${f}`);
   if (result.readmeUpdated) lines.push("  README.md (banner placeholder)");
 
@@ -208,20 +211,21 @@ export async function runInit(options: InitOptions): Promise<void> {
     clack.log.warn("Skipped (already exist):\n" + skipped);
   }
 
-  clack.log.info(
-    "To enable click tracking, enable GitHub Pages on your repo\n" +
-    "  (Settings → Pages → Deploy from branch) so .bidme/redirect.html is served.",
-  );
+  const pagesUrl = result.owner !== "OWNER"
+    ? `https://${result.owner}.github.io/${result.repo}/.bidme/stripe/`
+    : "https://{owner}.github.io/{repo}/.bidme/stripe/";
 
   clack.outro(
     "BidMe setup complete! Next steps:\n" +
     "  1. Review .bidme/config.toml\n" +
     "  2. Commit the .bidme/ folder and workflow files\n" +
     "  3. Push to GitHub to activate bidding\n" +
-    "  4. (Optional) Enable GitHub Pages for click tracking\n\n" +
+    "  4. Enable GitHub Pages:\n" +
+    "     Settings → Pages → Deploy from branch (main, / root)\n" +
+    `     Payment pages will be at: ${pagesUrl}\n` +
+    "  5. (Optional) Set payment.base_url in config.toml for a custom domain\n\n" +
     "Stripe setup:\n" +
     "  1. Create account at stripe.com\n" +
-    "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
-    "  3. (Optional) Set up webhook for payment confirmations",
+    "  2. Add STRIPE_SECRET_KEY to repository secrets",
   );
 }

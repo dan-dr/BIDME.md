@@ -14,6 +14,7 @@ export interface ScaffoldResult {
   workflowsCopied: string[];
   workflowsSkipped: string[];
   redirectCopied: boolean;
+  stripePagesCopied: string[];
   readmeUpdated: boolean;
   versionCreated: boolean;
   owner: string;
@@ -116,6 +117,44 @@ async function copyRedirectPage(target: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function copyStripePages(
+  target: string,
+  owner: string,
+  repo: string,
+): Promise<string[]> {
+  const stripeDir = join(target, ".bidme", "stripe");
+  await ensureDir(stripeDir);
+
+  const templatesDir = resolveTemplate("stripe");
+  const fs = await import("fs/promises");
+
+  let entries: string[];
+  try {
+    entries = (await fs.readdir(templatesDir)).filter((f) => f.endsWith(".html"));
+  } catch {
+    return [];
+  }
+
+  const repoUrl = `https://github.com/${owner}/${repo}`;
+  const copied: string[] = [];
+
+  for (const entry of entries) {
+    const dest = join(stripeDir, entry);
+    const destFile = Bun.file(dest);
+    if (await destFile.exists()) continue;
+
+    let content = await Bun.file(join(templatesDir, entry)).text();
+    content = content
+      .replace(/\{\{REPO_URL\}\}/g, repoUrl)
+      .replace(/\{\{OWNER\}\}/g, owner)
+      .replace(/\{\{REPO\}\}/g, repo);
+    await Bun.write(dest, content);
+    copied.push(entry);
+  }
+
+  return copied;
 }
 
 async function copyWorkflowTemplates(target: string): Promise<{ copied: string[]; skipped: string[] }> {
@@ -222,6 +261,7 @@ export async function scaffold(
   }
 
   const redirectCopied = await copyRedirectPage(resolved);
+  const stripePagesCopied = await copyStripePages(resolved, owner, repo);
   const readmeUpdated = await updateReadme(resolved, owner, repo);
 
   return {
@@ -230,6 +270,7 @@ export async function scaffold(
     workflowsCopied,
     workflowsSkipped,
     redirectCopied,
+    stripePagesCopied,
     readmeUpdated,
     versionCreated,
     owner,
