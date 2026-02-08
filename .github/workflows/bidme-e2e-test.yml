@@ -25,21 +25,27 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # Create a tiny test banner SVG accessible via raw.githubusercontent.com
+      # Ensure a test banner SVG exists in the repo
       - name: "Setup: Create test banner"
         run: |
+          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/.bidme/test/banner.svg"
           mkdir -p .bidme/test
           echo '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300"><rect width="800" height="300" fill="#4a90d9"/><text x="400" y="160" text-anchor="middle" fill="white" font-size="40">Test Banner</text></svg>' > .bidme/test/banner.svg
           git config user.name "BidMe Bot"
           git config user.email "bidme-bot@users.noreply.github.com"
           git add .bidme/test/banner.svg
-          git commit -m "chore: add test banner for E2E"
-          git push origin main
-          # Give GitHub a moment to serve the raw file
-          sleep 5
-          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/.bidme/test/banner.svg"
+          if git diff --cached --quiet; then
+            echo "Test banner already exists in repo"
+          else
+            git commit -m "chore: add test banner for E2E"
+            git push origin main
+            sleep 5
+          fi
+          # Verify the banner is accessible
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BANNER_URL")
+          echo "Banner URL status: $HTTP_CODE"
           echo "banner_url=$BANNER_URL" >> "$GITHUB_OUTPUT"
-          echo "✅ Test banner available at: $BANNER_URL"
+          echo "✅ Test banner ready at: $BANNER_URL"
         id: setup
 
       # ─────────────────────────────────────────────────
