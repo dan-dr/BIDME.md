@@ -214,11 +214,12 @@ jobs:
         run: |
           ISSUE=${{ steps.open.outputs.issue_number }}
           BANNER_URL="${{ steps.setup.outputs.banner_url }}"
+          # Use $12 to be higher than the $10 unlinked bid, and divisible by $2
           BODY=$(cat <<BIDEOF
           Valid bid from verified bidder
 
           \`\`\`yaml
-          amount: 10
+          amount: 12
           banner_url: $BANNER_URL
           destination_url: https://example.com
           contact: valid-bidder@example.com
@@ -228,16 +229,17 @@ jobs:
           COMMENT=$(gh api repos/${{ github.repository }}/issues/$ISSUE/comments \
             -f body="$BODY" --jq '.id')
           echo "comment_id=$COMMENT" >> "$GITHUB_OUTPUT"
-          echo "✅ Posted valid bid (comment $COMMENT)"
+          echo "✅ Posted valid bid of \$12 (comment $COMMENT)"
 
       - name: "Step 4: Process valid bid"
         run: |
-          RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_valid.outputs.comment_id }} 2>&1)
+          RESULT=$(bun run src/cli.ts process-bid ${{ steps.open.outputs.issue_number }} ${{ steps.bid_valid.outputs.comment_id }} 2>&1) || true
           echo "$RESULT"
           if echo "$RESULT" | grep -q "accepted\|approved\|Bid recorded"; then
             echo "✅ Valid bid accepted successfully"
           else
             echo "❌ Expected valid bid to be accepted"
+            echo "Note: Check if bid amount ($12) is higher than current highest and divisible by increment ($2)"
             exit 1
           fi
 
@@ -255,8 +257,8 @@ jobs:
             echo "❌ Issue body missing bid table"
             exit 1
           fi
-          if echo "$BODY" | grep -q '\$10'; then
-            echo "✅ Issue body shows the $10 bid"
+          if echo "$BODY" | grep -q '\$12'; then
+            echo "✅ Issue body shows the $12 bid"
           else
             echo "⚠️ Issue body may not reflect the latest bid amount"
           fi
