@@ -25,17 +25,10 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # The test banner .bidme/test/banner.svg is committed in the repo
-      - name: "Setup: Verify test banner"
+      - name: "Setup: Set banner URL"
         id: setup
         run: |
-          BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.bidme/test/banner.svg"
-          if [ -f ".bidme/test/banner.svg" ]; then
-            echo "✅ Test banner exists locally"
-          else
-            echo "❌ Test banner missing from repo — commit .bidme/test/banner.svg"
-            exit 1
-          fi
+          BANNER_URL="https://placehold.co/800x300.svg"
           echo "banner_url=$BANNER_URL" >> "$GITHUB_OUTPUT"
           echo "Banner URL: $BANNER_URL"
 
