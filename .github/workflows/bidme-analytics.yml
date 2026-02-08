@@ -20,8 +20,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install dependencies
+        run: bun install
+
       - name: Update analytics
-        run: bun x bidme update-analytics
+        run: bun run src/cli.ts update-analytics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

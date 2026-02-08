@@ -21,12 +21,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install dependencies
+        run: bun install
+
       - name: Process approval
-        run: bun x bidme process-approval ${{ github.event.issue.number }} ${{ github.event.comment.id }}
+        run: bun run src/cli.ts process-approval ${{ github.event.issue.number }} ${{ github.event.comment.id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Commit data changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(bidme): update data"

@@ -19,8 +19,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install dependencies
+        run: bun install
+
       - name: Open new bidding period
-        run: bun x bidme open-bidding
+        run: bun run src/cli.ts open-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

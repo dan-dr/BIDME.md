@@ -19,8 +19,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install BidMe
+        run: bun add bidme
+
       - name: Open new bidding period
-        run: bun x bidme open-bidding
+        run: bunx bidme open-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -20,8 +20,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install BidMe
+        run: bun add bidme
+
       - name: Update analytics
-        run: bun x bidme update-analytics
+        run: bunx bidme update-analytics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
