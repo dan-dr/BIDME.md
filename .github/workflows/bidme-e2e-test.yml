@@ -323,6 +323,16 @@ jobs:
       # ─────────────────────────────────────────────────
       # CLEANUP
       # ─────────────────────────────────────────────────
+      # CLEANUP
+      # ─────────────────────────────────────────────────
+      - name: "Cleanup: Delete test issue"
+        if: always() && steps.open.outputs.issue_number
+        run: |
+          ISSUE=${{ steps.open.outputs.issue_number }}
+          # Close the issue first, then attempt full deletion (requires admin scope)
+          gh api repos/${{ github.repository }}/issues/$ISSUE -X PATCH -f state=closed -f state_reason=not_planned || true
+          gh api repos/${{ github.repository }}/issues/$ISSUE -X DELETE 2>/dev/null || echo "Issue closed (deletion requires admin token)"
+
       - name: "Cleanup: Summary"
         if: always()
         run: |
