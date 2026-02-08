@@ -145,7 +145,7 @@ export async function collectConfig(): Promise<WizardConfig> {
       provider: "stripe",
       allow_unlinked_bids: allowUnlinked,
       unlinked_grace_hours: 24,
-      payment_link: "https://bidme.dev/link-payment",
+      payment_link: "https://bidme.md/payment/success",
       bidme_fee_percent: 10,
     },
     enforcement: {

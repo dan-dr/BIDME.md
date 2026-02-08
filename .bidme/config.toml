@@ -27,7 +27,7 @@ allowed_reactions = ["👍"]
 provider = "stripe"
 allow_unlinked_bids = false
 unlinked_grace_hours = 24
-payment_link = "https://bidme.dev/link-payment"
+payment_link = "https://bidme.md/payment/success"
 bidme_fee_percent = 10
 
 # Enforcement rules

@@ -45,7 +45,6 @@ export async function runSetupPayment(
   const owner = process.env["GITHUB_REPOSITORY_OWNER"] ?? "";
   const fullRepo = process.env["GITHUB_REPOSITORY"] ?? "";
   const repo = fullRepo.includes("/") ? fullRepo.split("/")[1]! : fullRepo;
-  const repoUrl = `https://github.com/${owner}/${repo}`;
 
   try {
     const existing = await stripe.searchCustomersByMetadata(username);
@@ -65,8 +64,8 @@ export async function runSetupPayment(
 
     const session = await stripe.createCheckoutSession(
       customerId,
-      `${repoUrl}?payment=success`,
-      `${repoUrl}?payment=cancelled`,
+      "https://bidme.md/payment/success",
+      "https://bidme.md/payment/cancelled",
     );
     console.log(`✓ Checkout session created: ${session.url}`);
 

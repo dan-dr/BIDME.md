@@ -164,11 +164,10 @@ export async function runProcessBid(
             );
             customerId = customer.id;
           }
-          const repoUrl = `https://github.com/${owner}/${repo}`;
           const session = await stripe.createCheckoutSession(
             customerId,
-            `${repoUrl}?payment=success`,
-            `${repoUrl}?payment=cancelled`,
+            "https://bidme.md/payment/success",
+            "https://bidme.md/payment/cancelled",
           );
           paymentLink = session.url;
           console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
