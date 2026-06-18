@@ -36,7 +36,9 @@ describe("workflow template validation", () => {
 
   test("workflows run the expected bidme commands", async () => {
     expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).toContain("command: open-bidding");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text()).toContain("command: process-bid");
+    const processBid = await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text();
+    expect(processBid).toContain("command: process-bid");
+    expect(processBid).toContain("contains(github.event.comment.body, 'bid:')");
     expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain("command: close-bidding");
     expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).toContain("command: update-analytics");
   });
