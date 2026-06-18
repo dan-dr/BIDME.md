@@ -89,7 +89,7 @@ BidMe uses [Stripe](https://stripe.com) for payments.
 |----------|----------|-------------|
 | `STRIPE_SECRET_KEY` | Yes | Your Stripe secret key (starts with `sk_`) |
 | `GITHUB_TOKEN` | In Actions | Built-in workflow token used for GitHub issue and variable APIs |
-| `BIDME_PAT` | Optional | Fallback token for Actions variables if `GITHUB_TOKEN` is blocked |
+| `BIDME_PAT` | Usually | Token for Actions variables when `GITHUB_TOKEN` is blocked by repo permissions |
 
 ## For Advertisers
 

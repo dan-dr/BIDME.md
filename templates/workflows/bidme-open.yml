@@ -22,3 +22,4 @@ jobs:
           command: open-bidding
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BIDME_PAT: ${{ secrets.BIDME_PAT }}

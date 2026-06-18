@@ -30,6 +30,7 @@ describe("workflow template validation", () => {
       expect(content).toContain("actions/checkout@v4");
       expect(content).toContain("uses: dan-dr/BIDME.md@main");
       expect(content).toContain("GITHUB_TOKEN");
+      expect(content).toContain("BIDME_PAT");
       expect(content).not.toContain("bunx bidme");
     });
   }

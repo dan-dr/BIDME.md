@@ -24,4 +24,5 @@ jobs:
           command: update-analytics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BIDME_PAT: ${{ secrets.BIDME_PAT }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
