@@ -1,0 +1,24 @@
+name: "BidMe: Open Bidding Period"
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+  actions: write
+
+jobs:
+  open-bidding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open new bidding period
+        uses: dan-dr/BIDME.md@main
+        with:
+          command: open-bidding
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

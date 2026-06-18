@@ -1,16 +1,8 @@
-import { resolve } from "path";
-import { loadConfig } from "../lib/config.ts";
 import { GitHubAPI } from "../lib/github-api.ts";
-import {
-  loadAnalytics,
-  saveAnalytics,
-  recordClick,
-  getClickThroughRate,
-  type AnalyticsData,
-  type DailyView,
-  type PeriodAnalytics,
-} from "../lib/analytics-store.ts";
+import { readAnalytics, readCurrentPeriod, writeAnalytics, type AnalyticsDailyView, type VariableAnalytics } from "../lib/variable-store.ts";
+import { generateLiveAnalyticsSection, updateBidIssueBody } from "../lib/issue-template.ts";
 import { logError } from "../lib/error-handler.ts";
+import type { LegacyAnalyticsData, PeriodAnalytics } from "../lib/types.ts";
 
 export interface UpdateAnalyticsOptions {
   target?: string;
@@ -22,8 +14,8 @@ export interface PreviousWeekStats {
   ctr: number;
 }
 
-function mergeDailyViews(existing: DailyView[], incoming: DailyView[]): DailyView[] {
-  const map = new Map<string, DailyView>();
+function mergeDailyViews(existing: AnalyticsDailyView[], incoming: AnalyticsDailyView[]): AnalyticsDailyView[] {
+  const map = new Map<string, AnalyticsDailyView>();
   for (const dv of existing) {
     map.set(dv.date, dv);
   }
@@ -42,7 +34,16 @@ function mergeDailyViews(existing: DailyView[], incoming: DailyView[]): DailyVie
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function computePreviousWeekStats(data: AnalyticsData): PreviousWeekStats {
+function getClickThroughRate(views: number, clicks: number): number {
+  return views === 0 ? 0 : (clicks / views) * 100;
+}
+
+function dailyViewsFor(data: VariableAnalytics | LegacyAnalyticsData): AnalyticsDailyView[] {
+  if ("daily_views" in data) return data.daily_views;
+  return data.dailyViews;
+}
+
+function computePreviousWeekStats(data: VariableAnalytics | LegacyAnalyticsData): PreviousWeekStats {
   const now = new Date();
   const endOfPreviousWeek = new Date(now);
   endOfPreviousWeek.setDate(endOfPreviousWeek.getDate() - endOfPreviousWeek.getDay());
@@ -54,7 +55,7 @@ function computePreviousWeekStats(data: AnalyticsData): PreviousWeekStats {
   const startStr = startOfPreviousWeek.toISOString().split("T")[0]!;
   const endStr = endOfPreviousWeek.toISOString().split("T")[0]!;
 
-  const views = data.dailyViews
+  const views = dailyViewsFor(data)
     .filter((dv) => dv.date >= startStr && dv.date < endStr)
     .reduce((sum, dv) => sum + dv.count, 0);
 
@@ -68,12 +69,15 @@ function computePreviousWeekStats(data: AnalyticsData): PreviousWeekStats {
   return { views, clicks, ctr };
 }
 
-function computePeriodAggregates(data: AnalyticsData, periods: PeriodAnalytics[]): PeriodAnalytics[] {
+function computePeriodAggregates<T extends VariableAnalytics["periods"][number] | PeriodAnalytics>(
+  data: VariableAnalytics | LegacyAnalyticsData,
+  periods: T[],
+): T[] {
   return periods.map((p) => {
     const startStr = p.start_date.split("T")[0]!;
     const endStr = p.end_date.split("T")[0]!;
 
-    const views = data.dailyViews
+    const views = dailyViewsFor(data)
       .filter((dv) => dv.date >= startStr && dv.date <= endStr)
       .reduce((sum, dv) => sum + dv.count, 0);
 
@@ -88,14 +92,25 @@ function computePeriodAggregates(data: AnalyticsData, periods: PeriodAnalytics[]
   });
 }
 
+function averageViews7d(analytics: VariableAnalytics): number {
+  const recent = analytics.daily_views.slice(-7);
+  if (recent.length === 0) return 0;
+  return recent.reduce((sum, view) => sum + view.count, 0) / recent.length;
+}
+
+function updateAnalyticsSection(body: string, section: string): string {
+  const pattern = /<!-- bidme-analytics-start -->[\s\S]*?<!-- bidme-analytics-end -->/;
+  if (pattern.test(body)) return body.replace(pattern, section);
+  return `${body}\n\n${section}`;
+}
+
 export async function runUpdateAnalytics(
   options: UpdateAnalyticsOptions = {},
 ): Promise<{ success: boolean; message: string }> {
   const target = options.target ?? process.cwd();
   console.log("=== BidMe: Updating Analytics ===\n");
 
-  const analyticsPath = resolve(target, ".bidme/data/analytics.json");
-  let analytics = await loadAnalytics(analyticsPath);
+  let analytics = await readAnalytics();
   console.log("✓ Analytics data loaded");
 
   const owner = process.env["GITHUB_REPOSITORY_OWNER"] ?? "";
@@ -107,8 +122,8 @@ export async function runUpdateAnalytics(
     const previousWeekStats = computePreviousWeekStats(analytics);
     console.log(`\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`);
 
-    analytics.lastUpdated = new Date().toISOString();
-    await saveAnalytics(analytics, analyticsPath);
+    analytics.last_updated = new Date().toISOString();
+    await writeAnalytics(analytics);
     console.log("✓ Analytics saved");
 
     return { success: true, message: "Analytics updated (local mode)" };
@@ -120,15 +135,13 @@ export async function runUpdateAnalytics(
     const trafficData = await api.getTrafficViews();
     console.log(`✓ Fetched traffic data: ${trafficData.count} total views`);
 
-    const incomingViews: DailyView[] = trafficData.views.map((v) => ({
+    const incomingViews: AnalyticsDailyView[] = trafficData.views.map((v) => ({
       date: v.timestamp.split("T")[0]!,
       count: v.count,
       uniques: v.uniques,
     }));
 
-    analytics.dailyViews = mergeDailyViews(analytics.dailyViews, incomingViews);
-    analytics.totalViews = analytics.dailyViews.reduce((sum, dv) => sum + dv.count, 0);
-    analytics.uniqueVisitors = analytics.dailyViews.reduce((sum, dv) => sum + dv.uniques, 0);
+    analytics.daily_views = mergeDailyViews(analytics.daily_views, incomingViews).slice(-90);
   } catch (err) {
     console.warn("⚠ Failed to fetch traffic views");
     logError(err, "update-analytics:getTrafficViews");
@@ -155,7 +168,7 @@ export async function runUpdateAnalytics(
           const bannerId = event.client_payload.banner_id;
           const timestamp = event.client_payload.timestamp ?? new Date().toISOString();
           const referrer = event.client_payload.referrer;
-          analytics = recordClick(analytics, bannerId, timestamp, referrer);
+          analytics.clicks.push({ banner_id: bannerId, timestamp, referrer });
           console.log(`✓ Recorded click for banner: ${bannerId}`);
         }
       }
@@ -173,12 +186,40 @@ export async function runUpdateAnalytics(
   const previousWeekStats = computePreviousWeekStats(analytics);
   console.log(`\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`);
 
-  analytics.lastUpdated = new Date().toISOString();
-  await saveAnalytics(analytics, analyticsPath);
+  analytics.clicks = analytics.clicks.filter((click) => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    return new Date(click.timestamp).getTime() >= cutoff;
+  });
+  analytics.last_updated = new Date().toISOString();
+  await writeAnalytics(analytics);
   console.log("✓ Analytics saved");
 
+  const period = await readCurrentPeriod();
+  if (period?.issue_number) {
+    try {
+      const issue = await api.getIssue(period.issue_number);
+      const periodClicks = analytics.clicks.filter((click) => click.banner_id === period.period_id).length;
+      const views7d = averageViews7d(analytics);
+      const ctr = getClickThroughRate(views7d * 7, periodClicks);
+      const analyticsSection = generateLiveAnalyticsSection(
+        views7d,
+        periodClicks,
+        ctr,
+        analytics.last_updated ?? new Date().toISOString(),
+      );
+      const withBids = updateBidIssueBody(issue.body, period.bids, analytics.periods.at(-1));
+      const updatedBody = updateAnalyticsSection(withBids, analyticsSection);
+      await api.updateIssueBody(period.issue_number, updatedBody);
+      console.log("✓ Issue dashboard refreshed");
+    } catch (err) {
+      console.warn("⚠ Failed to refresh issue dashboard");
+      logError(err, "update-analytics:updateIssue");
+    }
+  }
+
   console.log("\n=== Analytics Update Complete ===");
-  return { success: true, message: `Analytics updated: ${analytics.totalViews} total views, ${analytics.clicks.length} clicks` };
+  const totalViews = analytics.daily_views.reduce((sum, dv) => sum + dv.count, 0);
+  return { success: true, message: `Analytics updated: ${totalViews} total views, ${analytics.clicks.length} clicks` };
 }
 
 export { computePreviousWeekStats, mergeDailyViews, computePeriodAggregates };

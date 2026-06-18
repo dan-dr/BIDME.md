@@ -1,13 +1,11 @@
-import { resolve } from "path";
 import { loadConfig, resolvePaymentUrls } from "../lib/config.ts";
 import { GitHubAPI, GitHubAPIError } from "../lib/github-api.ts";
 import { parseBidComment, validateBid } from "../lib/validation.ts";
 import { updateBidIssueBody } from "../lib/issue-template.ts";
-import { loadAnalytics } from "../lib/analytics-store.ts";
 import { logError, withRetry, isRateLimited } from "../lib/error-handler.ts";
-import { loadBidders, registerBidder, isPaymentLinked, setWarnedAt, saveBidders } from "../lib/bidder-registry.ts";
 import { enforceContent } from "../lib/content-enforcer.ts";
 import { StripeAPI } from "../lib/stripe-integration.ts";
+import { readAnalytics, readCurrentPeriod, writeCurrentPeriod } from "../lib/variable-store.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface ProcessBidOptions {
@@ -28,22 +26,13 @@ export async function runProcessBid(
   console.log("✓ Config loaded");
   console.log(`  Approval mode: ${config.approval.mode}`);
 
-  const dataPath = resolve(target, ".bidme/data/current-period.json");
-  const periodFile = Bun.file(dataPath);
-  if (!(await periodFile.exists())) {
+  const periodData = await readCurrentPeriod();
+  if (!periodData) {
     const msg = "No active bidding period found";
     console.log(`✗ ${msg}`);
     return { success: false, message: msg };
   }
 
-  const periodText = await periodFile.text();
-  if (!periodText.trim()) {
-    const msg = "No active bidding period found";
-    console.log(`✗ ${msg}`);
-    return { success: false, message: msg };
-  }
-
-  const periodData: PeriodData = JSON.parse(periodText);
   if (periodData.status !== "open") {
     const msg = "Bidding period is not open";
     console.log(`✗ ${msg}`);
@@ -88,11 +77,22 @@ export async function runProcessBid(
     }
   }
 
+  if (commentBody.trim().toLowerCase().startsWith("/approve")) {
+    return processApprovalCommand({
+      issueNumber,
+      commentBody,
+      actor: bidder,
+      owner,
+      repo,
+      periodData,
+    });
+  }
+
   // 1. Parse bid format
   const parsed = parseBidComment(commentBody);
   if (!parsed) {
     const msg =
-      "Could not parse bid. Please use the YAML format:\n\n```yaml\namount: 100\nbanner_url: https://example.com/banner.png\ndestination_url: https://example.com\ncontact: you@example.com\n```";
+      "Could not parse bid. Attach a banner image and use:\n\n```yaml\n---\nbid:\n  amount: 100\n  destination_url: \"https://example.com\"\n  tagline: \"Build faster\"\n---\n```";
     console.log("✗ Failed to parse bid comment");
 
     if (owner && repo) {
@@ -103,7 +103,7 @@ export async function runProcessBid(
     return { success: false, message: msg };
   }
 
-  console.log(`  Parsed bid: $${parsed.amount} from ${parsed.contact}`);
+  console.log(`  Parsed bid: $${parsed.amount} from @${bidder}`);
 
   // 2. Basic validation (amount, URLs, contact format)
   const validation = validateBid(parsed, config);
@@ -121,9 +121,7 @@ export async function runProcessBid(
   }
 
   // 3. Check highest bid (before payment/content to fail fast)
-  const freshPeriodFile = Bun.file(dataPath);
-  const freshPeriodData: PeriodData = JSON.parse(await freshPeriodFile.text());
-
+  const freshPeriodData: PeriodData = (await readCurrentPeriod()) ?? periodData;
   const currentHighest = freshPeriodData.bids
     .filter((b) => b.status !== "rejected")
     .reduce((max, b) => Math.max(max, b.amount), 0);
@@ -141,72 +139,58 @@ export async function runProcessBid(
   }
 
   // 4. Payment check (before content enforcement which makes HTTP calls)
-  await loadBidders(target);
-  registerBidder(bidder);
-  const paymentLinked = isPaymentLinked(bidder);
-  const graceHours = config.payment.unlinked_grace_hours;
-
-  if (config.enforcement.require_payment_before_bid && !paymentLinked) {
-    const paymentUrls = resolvePaymentUrls(config, owner, repo);
-    let paymentLink = "";
-    if (owner && repo) {
-      try {
-        const stripe = new StripeAPI();
-        if (stripe.isConfigured) {
-          const existing = await stripe.searchCustomersByMetadata(bidder);
-          let customerId: string;
-          if (existing.length > 0) {
-            customerId = existing[0]!.id;
-          } else {
-            const customer = await stripe.createCustomer(
-              `${bidder}@github.bidme`,
-              { github_username: bidder },
-            );
-            customerId = customer.id;
-          }
-          const session = await stripe.createCheckoutSession(
-            customerId,
-            paymentUrls.success,
-            paymentUrls.fail,
-          );
-          paymentLink = session.url;
-          console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
-        }
-      } catch (err) {
-        console.warn(`⚠ Could not create Stripe Checkout session: ${err instanceof Error ? err.message : "unknown"}`);
+  let paymentLinked = false;
+  let paymentLink = "";
+  const stripe = new StripeAPI();
+  if (stripe.isConfigured) {
+    try {
+      const existing = await stripe.searchCustomersByMetadata(bidder);
+      const customer = existing[0];
+      if (customer) {
+        const methods = await stripe.listPaymentMethods(customer.id);
+        paymentLinked = methods.length > 0;
       }
+
+      if (!paymentLinked && owner && repo) {
+        const paymentUrls = resolvePaymentUrls(config, owner, repo);
+        const customerId = customer?.id ?? (await stripe.createCustomer(
+          `${bidder}@github.bidme`,
+          { github_username: bidder },
+        )).id;
+        const session = await stripe.createCheckoutSession(
+          customerId,
+          paymentUrls.success,
+          paymentUrls.fail,
+          bidder,
+        );
+        paymentLink = session.url;
+        console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
+      }
+    } catch (err) {
+      console.warn(`⚠ Stripe payment check failed: ${err instanceof Error ? err.message : "unknown"}`);
     }
+  }
+
+  if (!paymentLinked) {
     if (!paymentLink) {
+      const paymentUrls = resolvePaymentUrls(config, owner || "OWNER", repo || "REPO");
       paymentLink = paymentUrls.success;
-    }
-
-    if (config.enforcement.strikethrough_unlinked && owner && repo) {
-      const api = new GitHubAPI(owner, repo);
-      try {
-        await api.updateComment(commentId, `~~${commentBody}~~`);
-        console.log("✓ Original comment struck through (unlinked bidder)");
-      } catch (err) {
-        console.warn("⚠ Failed to strikethrough comment");
-        logError(err, "process-bid:strikethrough");
-      }
     }
 
     if (owner && repo) {
       const api = new GitHubAPI(owner, repo);
       await api.addComment(
         issueNumber,
-        `⚠️ @${bidder} — your bid has been paused. Please [link your payment method](${paymentLink}) within ${graceHours} hours to activate your bid. Bids without linked payment will be removed.`,
+        `⚠️ @${bidder} — please [authorize your payment method](${paymentLink}) to activate your bid. You have 24 hours.`,
       );
     }
-
-    setWarnedAt(bidder);
-    await saveBidders(target);
 
     const bidRecord: BidRecord = {
       bidder,
       amount: parsed.amount,
       banner_url: parsed.banner_url,
       destination_url: parsed.destination_url,
+      tagline: parsed.tagline,
       contact: parsed.contact,
       status: "unlinked_pending",
       comment_id: commentId,
@@ -214,7 +198,7 @@ export async function runProcessBid(
     };
 
     freshPeriodData.bids.push(bidRecord);
-    await Bun.write(dataPath, JSON.stringify(freshPeriodData, null, 2));
+    await writeCurrentPeriod(freshPeriodData);
     console.log("✓ Bid recorded (status: unlinked_pending)");
 
     const msg = `Bid of $${parsed.amount} by @${bidder} paused — payment not linked`;
@@ -246,19 +230,12 @@ export async function runProcessBid(
   let bidStatus: BidRecord["status"] =
     config.approval.mode === "auto" ? "approved" : "pending";
 
-  let paymentWarning = "";
-  if (config.payment.allow_unlinked_bids && !paymentLinked) {
-    const urls = resolvePaymentUrls(config, owner, repo);
-    paymentWarning = `\n\n> **Note:** You haven't linked a payment method yet. Link one at ${urls.success} to avoid delays if you win.`;
-  }
-
-  await saveBidders(target);
-
   const bidRecord: BidRecord = {
     bidder,
     amount: parsed.amount,
     banner_url: parsed.banner_url,
     destination_url: parsed.destination_url,
+    tagline: parsed.tagline,
     contact: parsed.contact,
     status: bidStatus,
     comment_id: commentId,
@@ -266,15 +243,14 @@ export async function runProcessBid(
   };
 
   freshPeriodData.bids.push(bidRecord);
-  await Bun.write(dataPath, JSON.stringify(freshPeriodData, null, 2));
+  await writeCurrentPeriod(freshPeriodData);
   console.log(`✓ Bid recorded (status: ${bidStatus})`);
 
   if (owner && repo) {
     const api = new GitHubAPI(owner, repo);
 
     try {
-      const analyticsPath = resolve(target, ".bidme/data/analytics.json");
-      const analytics = await loadAnalytics(analyticsPath);
+      const analytics = await readAnalytics();
       const previousStats = analytics.periods.length > 0
         ? analytics.periods[analytics.periods.length - 1]
         : undefined;
@@ -296,11 +272,8 @@ export async function runProcessBid(
       let commentText = `✅ **Bid accepted!**\n\n@${bidder} has placed a bid of **$${parsed.amount}**.\n\nStatus: ${statusLabel}`;
 
       if (bidStatus === "pending") {
-        const reactions = config.approval.allowed_reactions.join(" or ");
-        commentText += `\n\n> **Repo owner:** React to this comment with ${reactions} to approve this bid.`;
+        commentText += `\n\n> **Repo owner:** Comment \`/approve @${bidder}\` to approve this bid.`;
       }
-
-      commentText += paymentWarning;
 
       await api.addComment(issueNumber, commentText);
       console.log("✓ Confirmation comment posted");
@@ -312,6 +285,75 @@ export async function runProcessBid(
 
   const statusText = bidStatus === "approved" ? "approved" : "pending approval";
   const msg = `Bid of $${parsed.amount} by @${bidder} accepted (${statusText})`;
+  console.log(`\n✓ ${msg}`);
+  return { success: true, message: msg };
+}
+
+async function processApprovalCommand(args: {
+  issueNumber: number;
+  commentBody: string;
+  actor: string;
+  owner: string;
+  repo: string;
+  periodData: PeriodData;
+}): Promise<{ success: boolean; message: string }> {
+  const { issueNumber, commentBody, actor, owner, repo, periodData } = args;
+
+  if (owner && actor !== owner) {
+    const msg = `Only the repository owner can approve bids`;
+    console.log(`✗ ${msg}`);
+    return { success: false, message: msg };
+  }
+
+  const match = commentBody.match(/^\/approve(?:\s+@?([A-Za-z0-9-]+))?/i);
+  const requestedBidder = match?.[1];
+  const approvable = periodData.bids.filter((bid) => bid.status === "pending");
+  const bid = requestedBidder
+    ? approvable.find((candidate) => candidate.bidder.toLowerCase() === requestedBidder.toLowerCase())
+    : approvable.length === 1
+      ? approvable[0]
+      : undefined;
+
+  if (!bid) {
+    const hasUnlinked = requestedBidder
+      ? periodData.bids.some((candidate) =>
+        candidate.bidder.toLowerCase() === requestedBidder.toLowerCase() &&
+        candidate.status === "unlinked_pending"
+      )
+      : periodData.bids.some((candidate) => candidate.status === "unlinked_pending");
+    const msg = hasUnlinked
+      ? "Bid cannot be approved until payment is linked"
+      : "No matching pending bid to approve";
+    console.log(`✗ ${msg}`);
+    if (owner && repo) {
+      const api = new GitHubAPI(owner, repo);
+      await api.addComment(issueNumber, `❌ ${msg}`);
+    }
+    return { success: false, message: msg };
+  }
+
+  bid.status = "approved";
+  await writeCurrentPeriod(periodData);
+  console.log(`✓ Approved bid from @${bid.bidder}`);
+
+  if (owner && repo) {
+    const api = new GitHubAPI(owner, repo);
+    try {
+      const analytics = await readAnalytics();
+      const previousStats = analytics.periods.length > 0
+        ? analytics.periods[analytics.periods.length - 1]
+        : undefined;
+      const issue = await api.getIssue(issueNumber);
+      const updatedBody = updateBidIssueBody(issue.body, periodData.bids, previousStats);
+      await api.updateIssueBody(issueNumber, updatedBody);
+      await api.addComment(issueNumber, `✅ Approved bid from @${bid.bidder} for **$${bid.amount}**.`);
+    } catch (err) {
+      console.warn("⚠ Failed to update issue after approval — approval is still recorded");
+      logError(err, "process-bid:approve");
+    }
+  }
+
+  const msg = `Bid by @${bid.bidder} approved`;
   console.log(`\n✓ ${msg}`);
   return { success: true, message: msg };
 }

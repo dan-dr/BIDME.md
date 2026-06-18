@@ -19,17 +19,10 @@ export interface BidMeConfig {
     allowed_reactions: string[];
   };
   payment: {
-    provider: "stripe";
-    allow_unlinked_bids: boolean;
-    unlinked_grace_hours: number;
+    mode: "own_keys" | "connect";
     base_url: string;
-    success_url: string;
-    fail_url: string;
+    stripe_account_id?: string;
     bidme_fee_percent: number;
-  };
-  enforcement: {
-    require_payment_before_bid: boolean;
-    strikethrough_unlinked: boolean;
   };
   tracking: {
     append_utm: boolean;
@@ -51,7 +44,7 @@ export const DEFAULT_CONFIG: BidMeConfig = {
   banner: {
     width: 800,
     height: 100,
-    formats: ["png", "jpg", "svg"],
+    formats: ["png", "jpg", "svg", "webp"],
     max_size: 200,
   },
   approval: {
@@ -59,21 +52,13 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     allowed_reactions: ["👍"],
   },
   payment: {
-    provider: "stripe",
-    allow_unlinked_bids: false,
-    unlinked_grace_hours: 24,
+    mode: "own_keys",
     base_url: "",
-    success_url: "",
-    fail_url: "",
     bidme_fee_percent: 10,
-  },
-  enforcement: {
-    require_payment_before_bid: true,
-    strikethrough_unlinked: true,
   },
   tracking: {
     append_utm: true,
-    utm_params: "source=bidme&repo={owner}/{repo}",
+    utm_params: "utm_source=bidme&utm_campaign={owner}/{repo}",
   },
   content_guidelines: {
     prohibited: ["adult content", "gambling", "misleading claims"],
@@ -159,18 +144,10 @@ export function validateConfig(config: unknown): BidMeConfig {
   }
 
   if (merged.payment) {
-    const validProviders = ["stripe"];
-    if (!validProviders.includes(merged.payment.provider)) {
+    const validModes = ["own_keys", "connect"];
+    if (!validModes.includes(merged.payment.mode)) {
       throw new ConfigValidationError(
-        `payment.provider must be one of: ${validProviders.join(", ")}`,
-      );
-    }
-    if (
-      typeof merged.payment.unlinked_grace_hours !== "number" ||
-      merged.payment.unlinked_grace_hours < 0
-    ) {
-      throw new ConfigValidationError(
-        "payment.unlinked_grace_hours must be a non-negative number",
+        `payment.mode must be one of: ${validModes.join(", ")}`,
       );
     }
     if (
@@ -253,23 +230,12 @@ mode = "${config.approval.mode}"
 allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
 `);
 
-  sections.push(`# Payment configuration (Stripe)
-# base_url: leave empty to default to GitHub Pages ({owner}.github.io/{repo}/.bidme/stripe)
-# success_url / fail_url: override individual redirect URLs (defaults derive from base_url)
+  sections.push(`# Payment configuration
 [payment]
-provider = "${config.payment.provider}"
-allow_unlinked_bids = ${config.payment.allow_unlinked_bids}
-unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
-base_url = "${config.payment.base_url}"
-success_url = "${config.payment.success_url}"
-fail_url = "${config.payment.fail_url}"
+mode = "${config.payment.mode}"
 bidme_fee_percent = ${config.payment.bidme_fee_percent}
-`);
-
-  sections.push(`# Enforcement rules
-[enforcement]
-require_payment_before_bid = ${config.enforcement.require_payment_before_bid}
-strikethrough_unlinked = ${config.enforcement.strikethrough_unlinked}
+base_url = "${config.payment.base_url}"
+${config.payment.stripe_account_id ? `stripe_account_id = "${config.payment.stripe_account_id}"` : "# stripe_account_id = \"acct_...\""}
 `);
 
   sections.push(`# UTM tracking for bid links
@@ -297,11 +263,11 @@ export function resolvePaymentUrls(
   owner: string,
   repo: string,
 ): { success: string; fail: string } {
-  const defaultBase = `https://${owner}.github.io/${repo}/.bidme/stripe`;
+  const defaultBase = `https://${owner}.github.io/${repo}/bidme/stripe`;
 
   const base = config.payment.base_url || defaultBase;
-  const success = config.payment.success_url || `${base}/success.html`;
-  const fail = config.payment.fail_url || `${base}/cancelled.html`;
+  const success = `${base}/success.html`;
+  const fail = `${base}/cancelled.html`;
 
   return { success, fail };
 }

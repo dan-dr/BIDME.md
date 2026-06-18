@@ -1,11 +1,10 @@
-import type { PeriodData, BidRecord } from "./types.ts";
+import type { PeriodData, BidRecord, PeriodAnalytics } from "./types.ts";
 import type { BidMeConfig } from "./config.ts";
-import type { PeriodAnalytics } from "./analytics-store.ts";
 
 export function generateBidTable(bids: BidRecord[]): string {
   if (bids.length === 0) {
-    return `| Rank | Bidder | Amount | Status | Banner Preview |
-|------|--------|--------|--------|----------------|
+    return `| Rank | Bidder | Amount | Status | Tagline | Banner |
+|------|--------|--------|--------|---------|--------|
 | — | No bids yet | — | — | — |`;
   }
 
@@ -15,19 +14,18 @@ export function generateBidTable(bids: BidRecord[]): string {
     approved: "✅",
     rejected: "❌",
     unlinked_pending: "⚠️",
-    expired: "🕐",
   };
 
   const rows = sorted
     .map((bid, i) => {
       const emoji = statusEmoji[bid.status] ?? "⏳";
       const preview = `[preview](${bid.banner_url})`;
-      return `| ${i + 1} | @${bid.bidder} | $${bid.amount} | ${emoji} ${bid.status} | ${preview} |`;
+      return `| ${i + 1} | @${bid.bidder} | $${bid.amount} | ${emoji} ${bid.status} | ${bid.tagline ?? ""} | ${preview} |`;
     })
     .join("\n");
 
-  return `| Rank | Bidder | Amount | Status | Banner Preview |
-|------|--------|--------|--------|----------------|
+  return `| Rank | Bidder | Amount | Status | Tagline | Banner |
+|------|--------|--------|--------|---------|--------|
 ${rows}`;
 }
 
@@ -56,6 +54,24 @@ export function generateStatsSection(stats?: PeriodAnalytics): string {
 📊 **Previous BidMe sponsorship garnered ${stats.views} views, ${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR)
 
 Stats based on the previous full week of sponsorship`;
+}
+
+export function generateLiveAnalyticsSection(
+  avgDailyViews7d = 0,
+  periodClicks = 0,
+  ctr = 0,
+  lastUpdated = new Date().toISOString(),
+): string {
+  return `<!-- bidme-analytics-start -->
+### 📊 Live Analytics
+
+| Metric | Value |
+|--------|-------|
+| Avg daily views (7d) | ${Math.round(avgDailyViews7d).toLocaleString("en-US")} |
+| Banner clicks (this period) | ${periodClicks.toLocaleString("en-US")} |
+| CTR | ${ctr.toFixed(2)}% |
+| Last updated | ${lastUpdated.replace("T", " ").replace(/\.\d{3}Z$/, " UTC")} |
+<!-- bidme-analytics-end -->`;
 }
 
 export function generatePreviousStatsSection(stats: PeriodAnalytics): string {
@@ -96,6 +112,8 @@ ${topBid}`);
 
   sections.push(generateStatsSection(previousStats));
 
+  sections.push(generateLiveAnalyticsSection());
+
   sections.push(`### Rules
 - **Minimum bid:** $${config.bidding.minimum_bid}
 - **Bid increment:** $${config.bidding.increment}
@@ -109,13 +127,15 @@ ${table}`);
 
   sections.push(`### How to Bid
 
-Post a comment with the following format:
+Attach your banner image to a comment and include:
 
 \`\`\`yaml
-amount: 100
-banner_url: https://example.com/banner.png
-destination_url: https://example.com
-contact: you@example.com
+---
+bid:
+  amount: 100
+  destination_url: "https://example.com"
+  tagline: "Build faster with our tools"
+---
 \`\`\``);
 
   sections.push(`### Deadline
@@ -161,6 +181,7 @@ Your bid of **$${bid.amount}** has won the banner slot for this period.
 | Amount | $${bid.amount} |
 | Period | ${period.start_date.split("T")[0]} to ${period.end_date.split("T")[0]} |
 | Banner | [View](${bid.banner_url}) |
+| Tagline | ${bid.tagline ?? ""} |
 | Destination | ${bid.destination_url} |
 ${paymentSection}
 The README banner has been updated. Thank you to all bidders!

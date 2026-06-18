@@ -1,10 +1,8 @@
-import { resolve } from "path";
-import { mkdir } from "fs/promises";
 import { loadConfig } from "../lib/config.ts";
 import { GitHubAPI } from "../lib/github-api.ts";
 import { generateBiddingIssueBody } from "../lib/issue-template.ts";
-import { loadAnalytics } from "../lib/analytics-store.ts";
 import { logError, withRetry } from "../lib/error-handler.ts";
+import { readAnalytics, writeCurrentPeriod } from "../lib/variable-store.ts";
 import type { PeriodData } from "../lib/types.ts";
 
 export interface OpenBiddingOptions {
@@ -35,8 +33,7 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
   const title = `🎯 BidMe: Banner Bidding [${dateRange}]`;
   console.log(`\n✓ Bidding period: ${dateRange}`);
 
-  const analyticsPath = resolve(target, ".bidme/data/analytics.json");
-  const analytics = await loadAnalytics(analyticsPath);
+  const analytics = await readAnalytics();
   const previousStats = analytics.periods.length > 0
     ? analytics.periods[analytics.periods.length - 1]
     : undefined;
@@ -47,7 +44,6 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
     start_date: startDate.toISOString(),
     end_date: endDate.toISOString(),
     issue_number: 0,
-    issue_url: "",
     bids: [],
     created_at: new Date().toISOString(),
   };
@@ -63,11 +59,7 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
     console.log("  Would create issue:", title);
     console.log("  Issue body preview (first 200 chars):", body.slice(0, 200) + "...");
 
-    const dataDir = resolve(target, ".bidme/data");
-    await mkdir(dataDir, { recursive: true });
-    const dataPath = resolve(dataDir, "current-period.json");
-    await Bun.write(dataPath, JSON.stringify(periodStub, null, 2));
-    console.log(`\n✓ Period data saved to ${dataPath}`);
+    await writeCurrentPeriod(periodStub);
     return;
   }
 
@@ -105,11 +97,8 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
     created_at: periodStub.created_at,
   };
 
-  const dataDir = resolve(target, ".bidme/data");
-  await mkdir(dataDir, { recursive: true });
-  const dataPath = resolve(dataDir, "current-period.json");
-  await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
-  console.log(`✓ Period data saved to ${dataPath}`);
+  await writeCurrentPeriod(periodData);
+  console.log("✓ Period data saved to BIDME_CURRENT_PERIOD");
 
   console.log("\n=== Bidding Period Opened Successfully ===");
 }

@@ -182,7 +182,8 @@ export function checkProhibitedContent(
   const checkableText = [
     bid.banner_url,
     bid.destination_url,
-    bid.contact,
+    bid.tagline ?? "",
+    bid.contact ?? "",
   ].join(" ").toLowerCase();
 
   for (const keyword of prohibited) {

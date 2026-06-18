@@ -59,7 +59,7 @@ content_guidelines:
     expect(parsed.content_guidelines.required).toEqual(["alt text"]);
   });
 
-  test("adds default sections (approval, payment, enforcement, tracking) to migrated config", async () => {
+  test("adds default sections (approval, payment, tracking) to migrated config", async () => {
     const yaml = `bidding:
   schedule: monthly
   duration: 7
@@ -74,8 +74,7 @@ content_guidelines:
     const parsed = parseToml(tomlContent);
 
     expect(parsed.approval.mode).toBe("emoji");
-    expect(parsed.payment.provider).toBe("stripe");
-    expect(parsed.enforcement.require_payment_before_bid).toBe(true);
+    expect(parsed.payment.mode).toBe("own_keys");
     expect(parsed.tracking.append_utm).toBe(true);
   });
 
@@ -204,17 +203,17 @@ describe("v1→v2 workflow migration", () => {
     const migrated = await migrateWorkflows(tempDir);
 
     expect(migrated.length).toBe(3);
-    expect(migrated).toContain("schedule-bidding.yml → bidme-schedule.yml");
+    expect(migrated).toContain("schedule-bidding.yml → bidme-open.yml");
     expect(migrated).toContain("process-bid.yml → bidme-process-bid.yml");
-    expect(migrated).toContain("close-bidding.yml → bidme-close-bidding.yml");
+    expect(migrated).toContain("close-bidding.yml → bidme-close.yml");
 
     expect(await Bun.file(join(workflowDir, "schedule-bidding.yml")).exists()).toBe(false);
     expect(await Bun.file(join(workflowDir, "process-bid.yml")).exists()).toBe(false);
     expect(await Bun.file(join(workflowDir, "close-bidding.yml")).exists()).toBe(false);
 
-    expect(await Bun.file(join(workflowDir, "bidme-schedule.yml")).exists()).toBe(true);
+    expect(await Bun.file(join(workflowDir, "bidme-open.yml")).exists()).toBe(true);
     expect(await Bun.file(join(workflowDir, "bidme-process-bid.yml")).exists()).toBe(true);
-    expect(await Bun.file(join(workflowDir, "bidme-close-bidding.yml")).exists()).toBe(true);
+    expect(await Bun.file(join(workflowDir, "bidme-close.yml")).exists()).toBe(true);
   });
 
   test("returns empty array if no workflows directory exists", async () => {

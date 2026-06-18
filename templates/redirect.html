@@ -66,10 +66,10 @@
         // use as-is if decode fails
       }
 
-      // Extract repo from the page URL path: /{owner}/{repo}/.bidme/redirect.html
+      // Extract repo from GitHub Pages URL: https://{owner}.github.io/{repo}/bidme/redirect.html
       var pathParts = window.location.pathname.split("/").filter(Boolean);
-      var owner = pathParts[0] || "";
-      var repo = pathParts[1] || "";
+      var owner = window.location.hostname.replace(".github.io", "");
+      var repo = pathParts[0] || "";
 
       // Append UTM params to destination
       var separator = dest.indexOf("?") === -1 ? "?" : "&";

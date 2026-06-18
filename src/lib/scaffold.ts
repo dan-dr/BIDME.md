@@ -10,6 +10,7 @@ function resolveTemplate(...segments: string[]): string {
 
 export interface ScaffoldResult {
   configCreated: boolean;
+  archiveCreated: boolean;
   dataFilesCreated: string[];
   workflowsCopied: string[];
   workflowsSkipped: string[];
@@ -21,35 +22,14 @@ export interface ScaffoldResult {
   repo: string;
 }
 
-const BANNER_START = "<!-- BIDME:BANNER:START -->";
-const BANNER_END = "<!-- BIDME:BANNER:END -->";
-
-const EMPTY_PERIOD = JSON.stringify(
-  { period: null, bids: [], status: "inactive" },
-  null,
-  2,
-);
-
-const EMPTY_ANALYTICS = JSON.stringify(
-  { periods: [], total_revenue: 0, total_bids: 0 },
-  null,
-  2,
-);
-
-const EMPTY_BIDDERS = JSON.stringify(
-  { bidders: {} },
-  null,
-  2,
-);
+const BANNER_START = "<!-- bidme-banner-start -->";
 
 function bannerPlaceholder(owner: string, repo: string): string {
   const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
   return [
-    BANNER_START,
-    `[![Sponsored via BidMe](https://img.shields.io/badge/Sponsored%20via-BidMe-blue)](${issueUrl})`,
-    "",
-    `[Sponsored via BidMe](${issueUrl})`,
-    BANNER_END,
+    "<!-- bidme-banner-start -->",
+    `[![Your Ad Here](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge)](${issueUrl})`,
+    "<!-- bidme-banner-end -->",
   ].join("\n");
 }
 
@@ -101,11 +81,11 @@ async function writeIfNotExists(filePath: string, content: string): Promise<bool
 }
 
 async function copyRedirectPage(target: string): Promise<boolean> {
-  const bidmeDir = join(target, ".bidme");
-  await ensureDir(bidmeDir);
+  const publicBidmeDir = join(target, "bidme");
+  await ensureDir(publicBidmeDir);
 
   const templatePath = resolveTemplate("redirect.html");
-  const destPath = join(bidmeDir, "redirect.html");
+  const destPath = join(publicBidmeDir, "redirect.html");
 
   const destFile = Bun.file(destPath);
   if (await destFile.exists()) return false;
@@ -124,7 +104,7 @@ async function copyStripePages(
   owner: string,
   repo: string,
 ): Promise<string[]> {
-  const stripeDir = join(target, ".bidme", "stripe");
+  const stripeDir = join(target, "bidme", "stripe");
   await ensureDir(stripeDir);
 
   const templatesDir = resolveTemplate("stripe");
@@ -219,17 +199,10 @@ export async function scaffold(
   const archiveDir = join(dataDir, "archive");
 
   await ensureDir(archiveDir);
+  const archiveCreated = await writeIfNotExists(join(archiveDir, ".gitkeep"), "");
 
   const toml = generateToml(config);
   const configCreated = await writeIfNotExists(join(bidmeDir, "config.toml"), toml);
-
-  const dataFilesCreated: string[] = [];
-  if (await writeIfNotExists(join(dataDir, "current-period.json"), EMPTY_PERIOD))
-    dataFilesCreated.push("current-period.json");
-  if (await writeIfNotExists(join(dataDir, "analytics.json"), EMPTY_ANALYTICS))
-    dataFilesCreated.push("analytics.json");
-  if (await writeIfNotExists(join(dataDir, "bidders.json"), EMPTY_BIDDERS))
-    dataFilesCreated.push("bidders.json");
 
   let pkgVersion = "0.2.0";
   try {
@@ -266,7 +239,8 @@ export async function scaffold(
 
   return {
     configCreated,
-    dataFilesCreated,
+    archiveCreated,
+    dataFilesCreated: [],
     workflowsCopied,
     workflowsSkipped,
     redirectCopied,

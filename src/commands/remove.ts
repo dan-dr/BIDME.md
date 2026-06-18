@@ -2,18 +2,14 @@ import { join, resolve } from "path";
 import * as clack from "@clack/prompts";
 
 const WORKFLOW_FILES = [
-  "bidme-schedule.yml",
+  "bidme-open.yml",
   "bidme-process-bid.yml",
-  "bidme-process-approval.yml",
-  "bidme-close-bidding.yml",
-  "bidme-check-grace.yml",
+  "bidme-close.yml",
   "bidme-analytics.yml",
-  "bidme-daily-recap.yml",
-  "bidme-e2e-test.yml",
 ];
 
-const BANNER_START = "<!-- BIDME:BANNER:START -->";
-const BANNER_END = "<!-- BIDME:BANNER:END -->";
+const BANNER_START = "<!-- bidme-banner-start -->";
+const BANNER_END = "<!-- bidme-banner-end -->";
 
 export interface RemoveOptions {
   target: string;

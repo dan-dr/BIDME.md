@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resolve, join } from "path";
 import { mkdtemp, rm, mkdir } from "fs/promises";
 import { tmpdir } from "os";
-import type { AnalyticsData, DailyView, PeriodAnalytics } from "../../lib/analytics-store.js";
+import type { LegacyAnalyticsData, AnalyticsDailyView, PeriodAnalytics } from "../../lib/types.js";
 import {
   mergeDailyViews,
   computePreviousWeekStats,
@@ -11,7 +11,7 @@ import {
 } from "../update-analytics.js";
 import { generateStatsSection } from "../../lib/issue-template.js";
 
-function makeAnalytics(overrides: Partial<AnalyticsData> = {}): AnalyticsData {
+function makeAnalytics(overrides: Partial<LegacyAnalyticsData> = {}): LegacyAnalyticsData {
   return {
     totalViews: 0,
     uniqueVisitors: 0,
@@ -26,10 +26,10 @@ function makeAnalytics(overrides: Partial<AnalyticsData> = {}): AnalyticsData {
 
 describe("mergeDailyViews", () => {
   test("merges non-overlapping dates", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 10, uniques: 5 },
     ];
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-02", count: 20, uniques: 8 },
     ];
 
@@ -40,10 +40,10 @@ describe("mergeDailyViews", () => {
   });
 
   test("keeps highest count for duplicate dates", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 10, uniques: 5 },
     ];
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 25, uniques: 3 },
     ];
 
@@ -54,10 +54,10 @@ describe("mergeDailyViews", () => {
   });
 
   test("keeps existing when existing count is higher", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 50, uniques: 20 },
     ];
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 30, uniques: 25 },
     ];
 
@@ -68,10 +68,10 @@ describe("mergeDailyViews", () => {
   });
 
   test("sorts result by date ascending", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-05", count: 10, uniques: 5 },
     ];
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 20, uniques: 8 },
       { date: "2026-01-03", count: 15, uniques: 7 },
     ];
@@ -84,7 +84,7 @@ describe("mergeDailyViews", () => {
   });
 
   test("handles empty existing array", () => {
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 10, uniques: 5 },
     ];
 
@@ -94,7 +94,7 @@ describe("mergeDailyViews", () => {
   });
 
   test("handles empty incoming array", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 10, uniques: 5 },
     ];
 
@@ -109,12 +109,12 @@ describe("mergeDailyViews", () => {
   });
 
   test("deduplicates multiple overlapping dates", () => {
-    const existing: DailyView[] = [
+    const existing: AnalyticsDailyView[] = [
       { date: "2026-01-01", count: 10, uniques: 5 },
       { date: "2026-01-02", count: 20, uniques: 10 },
       { date: "2026-01-03", count: 30, uniques: 15 },
     ];
-    const incoming: DailyView[] = [
+    const incoming: AnalyticsDailyView[] = [
       { date: "2026-01-02", count: 25, uniques: 8 },
       { date: "2026-01-03", count: 15, uniques: 20 },
       { date: "2026-01-04", count: 40, uniques: 18 },
@@ -377,7 +377,7 @@ describe("runUpdateAnalytics", () => {
     expect(result.message).toContain("local mode");
   });
 
-  test("saves updated lastUpdated timestamp", async () => {
+  test("does not mutate legacy local analytics file in variable-store mode", async () => {
     const oldAnalytics = makeAnalytics({ lastUpdated: "2020-01-01T00:00:00.000Z" });
     await Bun.write(
       join(tempDir, ".bidme/data/analytics.json"),
@@ -388,8 +388,8 @@ describe("runUpdateAnalytics", () => {
 
     const saved = JSON.parse(
       await Bun.file(join(tempDir, ".bidme/data/analytics.json")).text(),
-    ) as AnalyticsData;
-    expect(saved.lastUpdated).not.toBe("2020-01-01T00:00:00.000Z");
+    ) as LegacyAnalyticsData;
+    expect(saved.lastUpdated).toBe("2020-01-01T00:00:00.000Z");
   });
 
   test("handles missing analytics file gracefully", async () => {

@@ -37,12 +37,11 @@ describe("TOML config system", () => {
       expect(config.bidding.minimum_bid).toBe(50);
       expect(config.bidding.increment).toBe(5);
       expect(config.banner.width).toBe(800);
-      expect(config.banner.formats).toEqual(["png", "jpg", "svg"]);
+      expect(config.banner.formats).toEqual(["png", "jpg", "svg", "webp"]);
       expect(config.approval.mode).toBe("emoji");
-      expect(config.payment.provider).toBe("stripe");
-      expect(config.enforcement.require_payment_before_bid).toBe(true);
+      expect(config.payment.mode).toBe("own_keys");
       expect(config.tracking.append_utm).toBe(true);
-      expect(config.tracking.utm_params).toBe("source=bidme&repo={owner}/{repo}");
+      expect(config.tracking.utm_params).toBe("utm_source=bidme&utm_campaign={owner}/{repo}");
       expect(config.content_guidelines.prohibited).toEqual([
         "adult content",
         "gambling",
@@ -70,10 +69,7 @@ increment = 10
       expect(config.banner.height).toBe(DEFAULT_CONFIG.banner.height);
       expect(config.banner.formats).toEqual(DEFAULT_CONFIG.banner.formats);
       expect(config.approval.mode).toBe(DEFAULT_CONFIG.approval.mode);
-      expect(config.payment.provider).toBe(DEFAULT_CONFIG.payment.provider);
-      expect(config.enforcement.require_payment_before_bid).toBe(
-        DEFAULT_CONFIG.enforcement.require_payment_before_bid,
-      );
+      expect(config.payment.mode).toBe(DEFAULT_CONFIG.payment.mode);
       expect(config.tracking.append_utm).toBe(DEFAULT_CONFIG.tracking.append_utm);
       expect(config.content_guidelines.prohibited).toEqual(
         DEFAULT_CONFIG.content_guidelines.prohibited,
@@ -111,17 +107,10 @@ increment = 10
           allowed_reactions: ["👍", "🎉"],
         },
         payment: {
-          provider: "stripe",
-          allow_unlinked_bids: true,
-          unlinked_grace_hours: 48,
+          mode: "connect",
           base_url: "https://custom.dev",
-          success_url: "https://custom.dev/pay/success",
-          fail_url: "https://custom.dev/pay/cancelled",
+          stripe_account_id: "acct_123",
           bidme_fee_percent: 15,
-        },
-        enforcement: {
-          require_payment_before_bid: false,
-          strikethrough_unlinked: false,
         },
         tracking: {
           append_utm: false,
@@ -146,11 +135,8 @@ increment = 10
       expect(loaded.banner.max_size).toBe(500);
       expect(loaded.approval.mode).toBe("auto");
       expect(loaded.approval.allowed_reactions).toEqual(["👍", "🎉"]);
-      expect(loaded.payment.provider).toBe("stripe");
-      expect(loaded.payment.allow_unlinked_bids).toBe(true);
-      expect(loaded.payment.unlinked_grace_hours).toBe(48);
-      expect(loaded.enforcement.require_payment_before_bid).toBe(false);
-      expect(loaded.enforcement.strikethrough_unlinked).toBe(false);
+      expect(loaded.payment.mode).toBe("connect");
+      expect(loaded.payment.stripe_account_id).toBe("acct_123");
       expect(loaded.tracking.append_utm).toBe(false);
       expect(loaded.tracking.utm_params).toBe("source=custom");
       expect(loaded.content_guidelines.prohibited).toEqual(["spam"]);
@@ -211,20 +197,12 @@ increment = 10
       ).toThrow("approval.mode must be one of: auto, emoji");
     });
 
-    test("rejects invalid payment provider", () => {
+    test("rejects invalid payment mode", () => {
       expect(() =>
         validateConfig({
-          payment: { provider: "polar-own" },
+          payment: { mode: "polar-own" },
         }),
-      ).toThrow("payment.provider must be one of: stripe");
-    });
-
-    test("rejects negative unlinked_grace_hours", () => {
-      expect(() =>
-        validateConfig({
-          payment: { unlinked_grace_hours: -1 },
-        }),
-      ).toThrow("payment.unlinked_grace_hours must be a non-negative number");
+      ).toThrow("payment.mode must be one of: own_keys, connect");
     });
 
     test("rejects invalid banner dimensions", () => {
@@ -266,8 +244,7 @@ increment = 10
       expect(toml).toContain("# Bidding schedule and pricing");
       expect(toml).toContain("# Banner display constraints");
       expect(toml).toContain("# Bid approval settings");
-      expect(toml).toContain("# Payment configuration (Stripe)");
-      expect(toml).toContain("# Enforcement rules");
+      expect(toml).toContain("# Payment configuration");
       expect(toml).toContain("# UTM tracking for bid links");
       expect(toml).toContain("# Content guidelines for banner submissions");
     });
@@ -280,10 +257,7 @@ increment = 10
       expect(parsed.bidding.duration).toBe(DEFAULT_CONFIG.bidding.duration);
       expect(parsed.banner.width).toBe(DEFAULT_CONFIG.banner.width);
       expect(parsed.approval.mode).toBe(DEFAULT_CONFIG.approval.mode);
-      expect(parsed.payment.provider).toBe(DEFAULT_CONFIG.payment.provider);
-      expect(parsed.enforcement.require_payment_before_bid).toBe(
-        DEFAULT_CONFIG.enforcement.require_payment_before_bid,
-      );
+      expect(parsed.payment.mode).toBe(DEFAULT_CONFIG.payment.mode);
       expect(parsed.tracking.append_utm).toBe(DEFAULT_CONFIG.tracking.append_utm);
     });
   });

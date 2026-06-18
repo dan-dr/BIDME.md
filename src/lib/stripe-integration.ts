@@ -28,6 +28,12 @@ export interface StripePaymentIntent {
   metadata: Record<string, string>;
 }
 
+export interface StripeAccount {
+  id: string;
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+}
+
 export interface StripePaymentMethod {
   id: string;
   type: string;
@@ -111,6 +117,7 @@ export class StripeAPI {
     const headers: Record<string, string> = {
       Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      "Stripe-Version": "2020-08-27",
     };
 
     let encodedBody: string | undefined;
@@ -197,8 +204,10 @@ export class StripeAPI {
     paymentMethodId: string,
     amount: number,
     metadata: Record<string, string>,
+    destinationAccountId?: string,
+    applicationFeeAmount?: number,
   ): Promise<StripePaymentIntent> {
-    return this.request<StripePaymentIntent>("POST", "/payment_intents", {
+    const body: Record<string, unknown> = {
       customer: customerId,
       payment_method: paymentMethodId,
       amount,
@@ -206,7 +215,14 @@ export class StripeAPI {
       off_session: true,
       confirm: true,
       metadata,
-    });
+    };
+    if (destinationAccountId) {
+      body["transfer_data"] = { destination: destinationAccountId };
+    }
+    if (applicationFeeAmount !== undefined) {
+      body["application_fee_amount"] = applicationFeeAmount;
+    }
+    return this.request<StripePaymentIntent>("POST", "/payment_intents", body);
   }
 
   async getPaymentMethod(paymentMethodId: string): Promise<StripePaymentMethod> {
@@ -225,7 +241,7 @@ export class StripeAPI {
   async listPaymentMethods(customerId: string): Promise<StripePaymentMethod[]> {
     const result = await this.request<{ data: StripePaymentMethod[] }>(
       "GET",
-      `/payment_methods?customer=${customerId}&type=card`,
+      `/customers/${customerId}/payment_methods?type=card&limit=1`,
     );
     return result.data;
   }
@@ -234,13 +250,23 @@ export class StripeAPI {
     customerId: string,
     successUrl: string,
     cancelUrl: string,
+    githubUsername?: string,
   ): Promise<{ id: string; url: string }> {
-    return this.request<{ id: string; url: string }>("POST", "/checkout/sessions", {
+    const body: Record<string, unknown> = {
       customer: customerId,
       mode: "setup",
       success_url: successUrl,
       cancel_url: cancelUrl,
       payment_method_types: ["card"],
-    });
+    };
+    if (githubUsername) {
+      body["metadata"] = { github_username: githubUsername };
+      body["setup_intent_data"] = { metadata: { github_username: githubUsername } };
+    }
+    return this.request<{ id: string; url: string }>("POST", "/checkout/sessions", body);
+  }
+
+  async getAccount(): Promise<StripeAccount> {
+    return this.request<StripeAccount>("GET", "/account");
   }
 }

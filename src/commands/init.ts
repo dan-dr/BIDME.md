@@ -105,7 +105,7 @@ export async function collectConfig(): Promise<WizardConfig> {
     message: "Bid approval mode:",
     options: [
       { value: "auto" as const, label: "Auto-accept all bids" },
-      { value: "emoji" as const, label: "Emoji react to approve", hint: "you manually approve each bid" },
+      { value: "emoji" as const, label: "Owner command approval", hint: "comment /approve @user" },
     ],
     initialValue: "emoji" as const,
   });
@@ -114,15 +114,15 @@ export async function collectConfig(): Promise<WizardConfig> {
   clack.log.info("Payment provider: Stripe");
   clack.log.info("Required: STRIPE_SECRET_KEY environment variable");
 
-  const allowUnlinked = await clack.select({
-    message: "Allow unlinked bidders (no payment method on file)?",
+  const paymentMode = await clack.select({
+    message: "Payment mode:",
     options: [
-      { value: false, label: "No (strict)", hint: "bidders must add payment method first" },
-      { value: true, label: "Yes (with warnings)", hint: "bids accepted but flagged" },
+      { value: "own_keys" as const, label: "Bring your own Stripe keys", hint: "owner keeps funds" },
+      { value: "connect" as const, label: "Stripe Connect", hint: "BidMe platform fee" },
     ],
-    initialValue: false,
+    initialValue: "own_keys" as const,
   });
-  if (clack.isCancel(allowUnlinked)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(paymentMode)) { clack.cancel("Setup cancelled."); process.exit(0); }
 
   return {
     bidding: {
@@ -142,21 +142,13 @@ export async function collectConfig(): Promise<WizardConfig> {
       allowed_reactions: ["👍"],
     },
     payment: {
-      provider: "stripe",
-      allow_unlinked_bids: allowUnlinked,
-      unlinked_grace_hours: 24,
+      mode: paymentMode,
       base_url: "",
-      success_url: "",
-      fail_url: "",
       bidme_fee_percent: 10,
-    },
-    enforcement: {
-      require_payment_before_bid: true,
-      strikethrough_unlinked: true,
     },
     tracking: {
       append_utm: true,
-      utm_params: "source=bidme&repo={owner}/{repo}",
+      utm_params: "utm_source=bidme&utm_campaign={owner}/{repo}",
     },
     content_guidelines: {
       prohibited: ["adult content", "gambling", "misleading claims"],
@@ -196,9 +188,9 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   if (result.configCreated) lines.push("  .bidme/config.toml");
   if (result.versionCreated) lines.push("  .bidme/version.json");
-  for (const f of result.dataFilesCreated) lines.push(`  .bidme/data/${f}`);
-  if (result.redirectCopied) lines.push("  .bidme/redirect.html");
-  for (const f of result.stripePagesCopied) lines.push(`  .bidme/stripe/${f}`);
+  if (result.archiveCreated) lines.push("  .bidme/data/archive/.gitkeep");
+  if (result.redirectCopied) lines.push("  bidme/redirect.html");
+  for (const f of result.stripePagesCopied) lines.push(`  bidme/stripe/${f}`);
   for (const f of result.workflowsCopied) lines.push(`  .github/workflows/${f}`);
   if (result.readmeUpdated) lines.push("  README.md (banner placeholder)");
 
@@ -212,20 +204,18 @@ export async function runInit(options: InitOptions): Promise<void> {
   }
 
   const pagesUrl = result.owner !== "OWNER"
-    ? `https://${result.owner}.github.io/${result.repo}/.bidme/stripe/`
-    : "https://{owner}.github.io/{repo}/.bidme/stripe/";
+    ? `https://${result.owner}.github.io/${result.repo}/bidme/stripe/`
+    : "https://{owner}.github.io/{repo}/bidme/stripe/";
 
   clack.outro(
     "BidMe setup complete! Next steps:\n" +
     "  1. Review .bidme/config.toml\n" +
-    "  2. Commit the .bidme/ folder and workflow files\n" +
-    "  3. Push to GitHub to activate bidding\n" +
+    "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
+    "  3. Optional: add BIDME_PAT if GitHub variables reject GITHUB_TOKEN writes\n" +
     "  4. Enable GitHub Pages:\n" +
     "     Settings → Pages → Deploy from branch (main, / root)\n" +
     `     Payment pages will be at: ${pagesUrl}\n` +
-    "  5. (Optional) Set payment.base_url in config.toml for a custom domain\n\n" +
-    "Stripe setup:\n" +
-    "  1. Create account at stripe.com\n" +
-    "  2. Add STRIPE_SECRET_KEY to repository secrets",
+    "  5. Run `bidme doctor` to verify setup\n" +
+    "  6. Commit & push",
   );
 }

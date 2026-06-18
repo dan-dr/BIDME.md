@@ -4,6 +4,10 @@
 
 BidMe is an open-source platform that automates the process of bidding for banner space in GitHub repository README files. The system leverages GitHub Actions, GitHub Pages, and Polar.sh to create a seamless bidding experience where advertisers can bid for banner space, and repository owners can approve bids and automatically receive payments.
 
+## TODO
+
+- Publish the BidMe GitHub Action in GitHub Marketplace after the action runtime stabilizes.
+
 ## Key Features
 
 1. **Automated Bidding Process**: Bids open weekly/monthly as pinned GitHub issues

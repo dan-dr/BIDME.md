@@ -13,7 +13,7 @@ import {
 import { DEFAULT_CONFIG } from "../config.js";
 import type { BidMeConfig } from "../config.js";
 import type { PeriodData, BidRecord } from "../types.js";
-import type { PeriodAnalytics } from "../analytics-store.js";
+import type { PeriodAnalytics } from "../types.js";
 
 function makePeriod(overrides: Partial<PeriodData> = {}): PeriodData {
   return {
@@ -35,7 +35,7 @@ function makeBid(overrides: Partial<BidRecord> = {}): BidRecord {
     amount: 100,
     banner_url: "https://example.com/banner.png",
     destination_url: "https://example.com",
-    contact: "bid@example.com",
+    tagline: "Build faster",
     status: "approved",
     comment_id: 1001,
     timestamp: "2026-02-02T10:00:00.000Z",
@@ -59,7 +59,7 @@ describe("generateBidTable", () => {
   test("generates empty table when no bids", () => {
     const table = generateBidTable([]);
     expect(table).toContain("No bids yet");
-    expect(table).toContain("| Rank | Bidder | Amount | Status | Banner Preview |");
+    expect(table).toContain("| Rank | Bidder | Amount | Status | Tagline | Banner |");
   });
 
   test("generates table with bids sorted by amount descending", () => {
@@ -198,9 +198,9 @@ describe("generateBidIssueBody", () => {
     expect(body).toContain("### How to Bid");
     expect(body).toContain("```yaml");
     expect(body).toContain("amount: 100");
-    expect(body).toContain("banner_url:");
     expect(body).toContain("destination_url:");
-    expect(body).toContain("contact:");
+    expect(body).toContain("tagline:");
+    expect(body).toContain("Attach your banner image");
   });
 
   test("includes deadline section", () => {

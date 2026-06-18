@@ -4,7 +4,8 @@ export interface ParsedBid {
   amount: number;
   banner_url: string;
   destination_url: string;
-  contact: string;
+  tagline?: string;
+  contact?: string;
 }
 
 export interface ValidationError {
@@ -18,29 +19,42 @@ export interface ValidationResult {
 }
 
 export function parseBidComment(body: string): ParsedBid | null {
+  const frontMatter = body.match(/---\s*\n([\s\S]*?)\n---/);
   const fenceMatch = body.match(/```ya?ml\s*\n([\s\S]*?)```/);
-  if (!fenceMatch) return null;
+  const yamlBlock = frontMatter?.[1] ?? fenceMatch?.[1];
+  if (!yamlBlock) return null;
 
-  const yamlBlock = fenceMatch[1]!;
   const fields: Record<string, string> = {};
+  let inBid = false;
 
   for (const line of yamlBlock.split("\n")) {
-    const match = line.match(/^\s*(\w+)\s*:\s*(.+?)\s*$/);
+    if (/^\s*bid\s*:\s*$/.test(line)) {
+      inBid = true;
+      continue;
+    }
+    const match = line.match(/^\s*(\w+)\s*:\s*["']?(.+?)["']?\s*$/);
     if (match) {
+      if (frontMatter && !inBid) continue;
       fields[match[1]!] = match[2]!;
     }
   }
 
   const amount = parseFloat(fields["amount"] ?? "");
-  const banner_url = fields["banner_url"] ?? "";
+  const banner_url = fields["banner_url"] ?? extractFirstMarkdownImage(body) ?? "";
   const destination_url = fields["destination_url"] ?? "";
-  const contact = fields["contact"] ?? "";
+  const tagline = fields["tagline"] ?? fields["alt_text"] ?? "";
+  const contact = fields["contact"];
 
-  if (isNaN(amount) || !banner_url || !destination_url || !contact) {
+  if (isNaN(amount) || !destination_url || !tagline) {
     return null;
   }
 
-  return { amount, banner_url, destination_url, contact };
+  return { amount, banner_url, destination_url, tagline, contact };
+}
+
+export function extractFirstMarkdownImage(body: string): string | null {
+  const match = body.match(/!\[[^\]]*]\((https?:\/\/[^)\s]+)\)/);
+  return match?.[1] ?? null;
 }
 
 export function validateBid(
@@ -63,19 +77,26 @@ export function validateBid(
     });
   }
 
-  try {
-    const url = new URL(bid.banner_url);
-    if (!["http:", "https:"].includes(url.protocol)) {
-      errors.push({
-        field: "banner_url",
-        message: "Banner URL must use http or https protocol",
-      });
-    }
-  } catch {
+  if (!bid.banner_url) {
     errors.push({
       field: "banner_url",
-      message: "Banner URL is not a valid URL",
+      message: "Attach a banner image to the GitHub comment",
     });
+  } else {
+    try {
+      const url = new URL(bid.banner_url);
+      if (!["http:", "https:"].includes(url.protocol)) {
+        errors.push({
+          field: "banner_url",
+          message: "Banner URL must use http or https protocol",
+        });
+      }
+    } catch {
+      errors.push({
+        field: "banner_url",
+        message: "Banner URL is not a valid URL",
+      });
+    }
   }
 
   try {
@@ -93,13 +114,10 @@ export function validateBid(
     });
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const githubUserRegex = /^@[\w-]+$/;
-  if (!emailRegex.test(bid.contact) && !githubUserRegex.test(bid.contact)) {
+  if (!bid.tagline?.trim()) {
     errors.push({
-      field: "contact",
-      message:
-        "Contact must be a valid email address or GitHub username (@user)",
+      field: "tagline",
+      message: "Tagline is required",
     });
   }
 

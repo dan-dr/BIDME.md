@@ -9,12 +9,8 @@ import {
   generateNoBidsMessage,
 } from "../lib/issue-template.ts";
 import { StripeAPI, StripePaymentError } from "../lib/stripe-integration.ts";
-import {
-  loadBidders,
-  getStripeCustomerId,
-  getStripePaymentMethodId,
-} from "../lib/bidder-registry.ts";
 import { logError } from "../lib/error-handler.ts";
+import { readAnalytics, readCurrentPeriod, writeAnalytics, writeCurrentPeriod } from "../lib/variable-store.ts";
 import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface CloseBiddingOptions {
@@ -25,8 +21,9 @@ export function appendTrackingParams(
   destinationUrl: string,
   owner: string,
   repo: string,
+  paramsTemplate = "utm_source=bidme&utm_campaign={owner}/{repo}",
 ): string {
-  const params = `source=bidme&repo=${owner}/${repo}`;
+  const params = paramsTemplate.replace("{owner}", owner).replace("{repo}", repo);
   if (destinationUrl.includes("?")) {
     return `${destinationUrl}&${params}`;
   }
@@ -42,7 +39,7 @@ interface PaymentResult {
 async function processPayment(
   winner: BidRecord,
   periodData: PeriodData,
-  targetDir: string,
+  config: BidMeConfig,
 ): Promise<{ payment: PeriodData["payment"] | null; paymentResult: PaymentResult }> {
   const stripeApi = new StripeAPI();
   if (!stripeApi.isConfigured) {
@@ -50,9 +47,10 @@ async function processPayment(
     return { payment: null, paymentResult: { success: false, error: "Stripe not configured" } };
   }
 
-  await loadBidders(targetDir);
-  const customerId = getStripeCustomerId(winner.bidder);
-  const paymentMethodId = getStripePaymentMethodId(winner.bidder);
+  const customers = await stripeApi.searchCustomersByMetadata(winner.bidder);
+  const customerId = customers[0]?.id;
+  const paymentMethods = customerId ? await stripeApi.listPaymentMethods(customerId) : [];
+  const paymentMethodId = paymentMethods[0]?.id;
 
   if (!customerId || !paymentMethodId) {
     console.log(`⚠ No Stripe payment method on file for @${winner.bidder}`);
@@ -68,6 +66,10 @@ async function processPayment(
   console.log(`  Processing Stripe charge: $${winner.amount} (${amountCents} cents)`);
 
   try {
+    const destination = config.payment.mode === "connect" ? config.payment.stripe_account_id : undefined;
+    const fee = destination
+      ? Math.round(amountCents * (config.payment.bidme_fee_percent / 100))
+      : undefined;
     const paymentIntent = await stripeApi.chargeCustomer(
       customerId,
       paymentMethodId,
@@ -77,6 +79,8 @@ async function processPayment(
         bidder: winner.bidder,
         bid_amount: String(winner.amount),
       },
+      destination,
+      fee,
     );
     console.log(`✓ Stripe payment successful: ${paymentIntent.id}`);
     return {
@@ -130,28 +134,11 @@ export async function runCloseBidding(
   const config = await loadConfig(target);
   console.log("✓ Config loaded");
 
-  const dataPath = resolve(target, ".bidme/data/current-period.json");
-  const periodFile = Bun.file(dataPath);
-  if (!(await periodFile.exists())) {
+  const periodData = await readCurrentPeriod();
+  if (!periodData) {
     const msg = "No active bidding period found — nothing to close";
     console.log(`⚠ ${msg}`);
     return { success: true, message: msg };
-  }
-
-  let periodData: PeriodData;
-  try {
-    const text = await periodFile.text();
-    if (!text.trim()) {
-      const msg = "Period data file is empty — nothing to close";
-      console.log(`⚠ ${msg}`);
-      return { success: true, message: msg };
-    }
-    periodData = JSON.parse(text);
-  } catch (err) {
-    const msg = "Period data file is corrupted — cannot close";
-    console.log(`✗ ${msg}`);
-    logError(err, "close-bidding:parsePeriodData");
-    return { success: false, message: msg };
   }
 
   if (periodData.status !== "open") {
@@ -179,12 +166,12 @@ export async function runCloseBidding(
     console.log("\n⚠ GitHub environment not configured — running in local mode");
 
     if (winner) {
-      const trackingUrl = appendTrackingParams(winner.destination_url, owner || "unknown", repo || "unknown");
+      const trackingUrl = appendTrackingParams(winner.destination_url, owner || "unknown", repo || "unknown", config.tracking.utm_params);
       console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
       console.log(`  Banner: ${winner.banner_url}`);
       console.log(`  Destination: ${trackingUrl}`);
 
-      const { payment } = await processPayment(winner, periodData, target);
+      const { payment } = await processPayment(winner, periodData, config);
       if (payment) {
         periodData.payment = payment;
       }
@@ -193,12 +180,9 @@ export async function runCloseBidding(
     }
 
     periodData.status = "closed";
-    await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
-
     await archivePeriod(periodData, target);
-
-    await Bun.write(dataPath, "");
-    console.log("✓ Current period data cleared");
+    await writeCurrentPeriod({});
+    console.log("✓ BIDME_CURRENT_PERIOD cleared");
 
     const msg = winner
       ? `Period closed — winner: @${winner.bidder} ($${winner.amount})`
@@ -213,13 +197,15 @@ export async function runCloseBidding(
   if (winner) {
     console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
 
-    const { payment, paymentResult } = await processPayment(winner, periodData, target);
+    const { payment, paymentResult } = await processPayment(winner, periodData, config);
     if (payment) {
       periodData.payment = payment;
     }
     stripePaymentSuccess = paymentResult.success;
 
-    const trackingUrl = appendTrackingParams(winner.destination_url, owner, repo);
+    const encodedDest = encodeURIComponent(appendTrackingParams(winner.destination_url, owner, repo, config.tracking.utm_params));
+    const pagesBase = config.payment.base_url || `https://${owner}.github.io/${repo}`;
+    const trackingUrl = `${pagesBase}/bidme/redirect.html?id=${encodeURIComponent(periodData.period_id)}&dest=${encodedDest}`;
     console.log(`  Tracking URL: ${trackingUrl}`);
 
     const readmePath = resolve(target, "README.md");
@@ -245,8 +231,8 @@ export async function runCloseBidding(
       const fullBanner = `${bannerMarkdown}${sponsoredLine}`;
 
       const updatedReadme = readmeContent.replace(
-        /<!-- BIDME:BANNER:START -->[\s\S]*?<!-- BIDME:BANNER:END -->/,
-        `<!-- BIDME:BANNER:START -->\n${fullBanner}\n<!-- BIDME:BANNER:END -->`,
+        /<!-- bidme-banner-start -->[\s\S]*?<!-- bidme-banner-end -->/,
+        `<!-- bidme-banner-start -->\n${fullBanner}\n<!-- bidme-banner-end -->`,
       );
 
       try {
@@ -299,12 +285,25 @@ export async function runCloseBidding(
   }
 
   periodData.status = "closed";
-  await Bun.write(dataPath, JSON.stringify(periodData, null, 2));
 
   await archivePeriod(periodData, target);
 
-  await Bun.write(dataPath, "");
-  console.log("✓ Current period data cleared");
+  const analytics = await readAnalytics();
+  analytics.periods.push({
+    period_id: periodData.period_id,
+    winner: winner?.bidder,
+    amount: winner?.amount,
+    start_date: periodData.start_date,
+    end_date: periodData.end_date,
+    views: 0,
+    clicks: analytics.clicks.filter((click) => click.banner_id === periodData.period_id).length,
+    ctr: 0,
+  });
+  analytics.last_updated = new Date().toISOString();
+  await writeAnalytics(analytics);
+
+  await writeCurrentPeriod({});
+  console.log("✓ BIDME_CURRENT_PERIOD cleared");
 
   const msg = winner
     ? `Period closed — winner: @${winner.bidder} ($${winner.amount})`

@@ -139,10 +139,9 @@ export async function migrateData(targetDir: string): Promise<boolean> {
 }
 
 const WORKFLOW_RENAMES: Record<string, string> = {
-  "schedule-bidding.yml": "bidme-schedule.yml",
+  "schedule-bidding.yml": "bidme-open.yml",
   "process-bid.yml": "bidme-process-bid.yml",
-  "process-approval.yml": "bidme-process-approval.yml",
-  "close-bidding.yml": "bidme-close-bidding.yml",
+  "close-bidding.yml": "bidme-close.yml",
   "update-analytics.yml": "bidme-analytics.yml",
 };
 

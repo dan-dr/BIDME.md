@@ -2,33 +2,26 @@ name: "BidMe: Update Analytics"
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 6 * * *"
   repository_dispatch:
-    types: [bidme-click]
+    types: [bidme-click, bidme-payment-linked]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  issues: write
+  actions: write
 
 jobs:
   update-analytics:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install BidMe
-        run: bun add bidme
+      - uses: actions/checkout@v4
 
       - name: Update analytics
-        run: bunx bidme update-analytics
+        uses: dan-dr/BIDME.md@main
+        with:
+          command: update-analytics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Commit data changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(bidme): update data"
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
