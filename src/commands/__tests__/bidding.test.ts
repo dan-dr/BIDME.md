@@ -87,8 +87,19 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
       return Response.json({ data: overrides.customers ?? [{ id: "cus_123", metadata: { github_username: "bidder1" } }] });
     }
 
+    if (url.endsWith("/customers") && method === "POST") {
+      return Response.json({ id: "cus_123", metadata: { github_username: "bidder1" } });
+    }
+
     if (url.includes("/customers/cus_123/payment_methods")) {
       return Response.json({ data: overrides.paymentMethods ?? [{ id: "pm_123", type: "card", customer: "cus_123" }] });
+    }
+
+    if (url.includes("/checkout/sessions") && method === "POST") {
+      if (overrides.checkoutFails) {
+        return Response.json({ error: { message: "checkout unavailable" } }, { status: 500 });
+      }
+      return Response.json({ id: "cs_test_123", url: "https://checkout.stripe.com/c/pay/cs_test_123" });
     }
 
     if (url.includes("/comments/") && method === "GET") {
@@ -216,6 +227,26 @@ describe("process-bid with GitHub variable state", () => {
     const saved = state.variableWrites["BIDME_CURRENT_PERIOD"] as PeriodData;
     expect(saved.bids[0]!.status).toBe("unlinked_pending");
     expect(state.comments.join("\n")).toContain("authorize your payment method");
+    expect(state.comments.join("\n")).toContain("https://checkout.stripe.com/c/pay/cs_test_123");
+
+    globalThis.fetch = originalFetch;
+  });
+
+  test("does not link payment authorization to success page when checkout cannot be created", async () => {
+    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+    const originalFetch = mockFetchForGitHub(state, {
+      customers: [],
+      paymentMethods: [],
+      checkoutFails: true,
+    });
+
+    const { runProcessBid } = await import("../process-bid.js");
+    const result = await runProcessBid(42, 1001, { target: tempDir });
+
+    expect(result.success).toBe(true);
+    const comments = state.comments.join("\n");
+    expect(comments).toContain("payment authorization could not be started");
+    expect(comments).not.toContain("success.html");
 
     globalThis.fetch = originalFetch;
   });

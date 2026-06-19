@@ -172,17 +172,12 @@ export async function runProcessBid(
   }
 
   if (!paymentLinked) {
-    if (!paymentLink) {
-      const paymentUrls = resolvePaymentUrls(config, owner || "OWNER", repo || "REPO");
-      paymentLink = paymentUrls.success;
-    }
-
     if (owner && repo) {
       const api = new GitHubAPI(owner, repo);
-      await api.addComment(
-        issueNumber,
-        `⚠️ @${bidder} — please [authorize your payment method](${paymentLink}) to activate your bid. You have 24 hours.`,
-      );
+      const body = paymentLink
+        ? `⚠️ @${bidder} — please [authorize your payment method](${paymentLink}) to activate your bid. You have 24 hours.`
+        : `⚠️ @${bidder} — payment authorization could not be started automatically. Your bid was recorded but is paused until Stripe setup is fixed.`;
+      await api.addComment(issueNumber, body);
     }
 
     const bidRecord: BidRecord = {
