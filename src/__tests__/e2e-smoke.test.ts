@@ -87,6 +87,7 @@ describe("full end-to-end smoke test", () => {
 
     expect(await fileExists(join(e2eDir, ".bidme", "config.toml"))).toBe(true);
     expect(await fileExists(join(e2eDir, ".bidme", "version.json"))).toBe(true);
+    expect(await fileExists(join(e2eDir, "404.html"))).toBe(true);
     expect(await fileExists(join(e2eDir, "bidme", "redirect.html"))).toBe(true);
     expect(await fileExists(join(e2eDir, "bidme", "stripe", "success.html"))).toBe(true);
     expect(await fileExists(join(e2eDir, ".bidme", "data", "archive", ".gitkeep"))).toBe(true);

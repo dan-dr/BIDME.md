@@ -21,6 +21,7 @@ describe("init end-to-end", () => {
 
     expect(await Bun.file(join(tempDir, ".bidme", "config.toml")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "version.json")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, "404.html")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, "bidme", "redirect.html")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, "bidme", "stripe", "success.html")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", ".gitkeep")).exists()).toBe(true);
@@ -30,6 +31,7 @@ describe("init end-to-end", () => {
     expect((await stat(join(tempDir, ".bidme", "data", "archive"))).isDirectory()).toBe(true);
     expect(result.dataFilesCreated).toEqual([]);
     expect(result.archiveCreated).toBe(true);
+    expect(result.notFoundCopied).toBe(true);
   });
 
   test("config.toml is valid and matches new spec defaults", async () => {

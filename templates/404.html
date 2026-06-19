@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Not Found</title>
+    <script>
+      const legacyStripePath = "/.bidme/stripe/";
+      const path = window.location.pathname;
+      const index = path.indexOf(legacyStripePath);
+
+      if (index !== -1) {
+        const base = path.slice(0, index);
+        const page = path.slice(index + legacyStripePath.length);
+        window.location.replace(`${base}/bidme/stripe/${page}${window.location.search}${window.location.hash}`);
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Not Found</h1>
+  </body>
+</html>

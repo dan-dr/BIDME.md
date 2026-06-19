@@ -15,6 +15,7 @@ export interface ScaffoldResult {
   workflowsCopied: string[];
   workflowsSkipped: string[];
   redirectCopied: boolean;
+  notFoundCopied: boolean;
   stripePagesCopied: string[];
   readmeUpdated: boolean;
   versionCreated: boolean;
@@ -86,6 +87,22 @@ async function copyRedirectPage(target: string): Promise<boolean> {
 
   const templatePath = resolveTemplate("redirect.html");
   const destPath = join(publicBidmeDir, "redirect.html");
+
+  const destFile = Bun.file(destPath);
+  if (await destFile.exists()) return false;
+
+  try {
+    const content = await Bun.file(templatePath).text();
+    await Bun.write(destPath, content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function copyNotFoundPage(target: string): Promise<boolean> {
+  const templatePath = resolveTemplate("404.html");
+  const destPath = join(target, "404.html");
 
   const destFile = Bun.file(destPath);
   if (await destFile.exists()) return false;
@@ -234,6 +251,7 @@ export async function scaffold(
   }
 
   const redirectCopied = await copyRedirectPage(resolved);
+  const notFoundCopied = await copyNotFoundPage(resolved);
   const stripePagesCopied = await copyStripePages(resolved, owner, repo);
   const readmeUpdated = await updateReadme(resolved, owner, repo);
 
@@ -244,6 +262,7 @@ export async function scaffold(
     workflowsCopied,
     workflowsSkipped,
     redirectCopied,
+    notFoundCopied,
     stripePagesCopied,
     readmeUpdated,
     versionCreated,
