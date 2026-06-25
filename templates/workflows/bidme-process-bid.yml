@@ -1,4 +1,4 @@
-name: "BidMe: Process Bid"
+name: "BIDME: Process Bid"
 
 on:
   issue_comment:

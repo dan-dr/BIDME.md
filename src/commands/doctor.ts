@@ -90,7 +90,7 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
   });
 
   checks.push({
-    name: "Public BidMe Pages files present",
+    name: "Public BIDME Pages files present",
     ok: existsSync(join(target, "bidme", "redirect.html")) &&
       existsSync(join(target, "bidme", "stripe", "success.html")) &&
       existsSync(join(target, "bidme", "stripe", "cancelled.html")),
@@ -115,6 +115,6 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
   const success = checks.every((check) => check.ok);
   return {
     success,
-    message: success ? "BidMe doctor passed" : "BidMe doctor found setup issues",
+    message: success ? "BIDME doctor passed" : "BIDME doctor found setup issues",
   };
 }

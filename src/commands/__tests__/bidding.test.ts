@@ -116,7 +116,7 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
         number: 42,
         body: generateBidIssueBody(DEFAULT_CONFIG, makePeriodData()),
         html_url: "https://github.com/testowner/testrepo/issues/42",
-        title: "BidMe",
+        title: "BIDME",
         state: "open",
         node_id: "I_abc123",
       });

@@ -76,15 +76,15 @@ export async function runUpdate(options: { target: string }): Promise<UpdateResu
   let pendingMigrations: Migration[];
 
   if (!versionInfo && isLegacy) {
-    console.log("Detected legacy BidMe v1 installation. Running full migration...");
+    console.log("Detected legacy BIDME v1 installation. Running full migration...");
     pendingMigrations = migrations;
   } else if (versionInfo) {
     console.log(`Upgrading from v${versionInfo.version} to v${packageVersion}...`);
     pendingMigrations = getMigrationsAfter(versionInfo.version);
   } else {
-    console.log("No BidMe installation detected. Run `bidme init` first.");
+    console.log("No BIDME installation detected. Run `bidme init` first.");
     result.success = false;
-    result.errors.push("No BidMe installation found");
+    result.errors.push("No BIDME installation found");
     return result;
   }
 

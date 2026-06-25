@@ -19,7 +19,7 @@ function validatePositiveInt(value: string): string | undefined {
 
 export async function collectConfig(): Promise<WizardConfig> {
   const setupMode = await clack.select({
-    message: "How would you like to configure BidMe?",
+    message: "How would you like to configure BIDME?",
     options: [
       { value: "defaults", label: "Default setup", hint: "recommended" },
       { value: "customize", label: "Customize", hint: "configure each setting" },
@@ -118,7 +118,7 @@ export async function collectConfig(): Promise<WizardConfig> {
     message: "Payment mode:",
     options: [
       { value: "own_keys" as const, label: "Bring your own Stripe keys", hint: "owner keeps funds" },
-      { value: "connect" as const, label: "Stripe Connect", hint: "BidMe platform fee" },
+      { value: "connect" as const, label: "Stripe Connect", hint: "BIDME platform fee" },
     ],
     initialValue: "own_keys" as const,
   });
@@ -158,7 +158,7 @@ export async function collectConfig(): Promise<WizardConfig> {
 }
 
 export async function runInit(options: InitOptions): Promise<void> {
-  clack.intro("🎯 BidMe Setup");
+  clack.intro("🎯 BIDME Setup");
 
   let config: WizardConfig;
 
@@ -208,7 +208,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     : "https://{owner}.github.io/{repo}/bidme/stripe/";
 
   clack.outro(
-    "BidMe setup complete! Next steps:\n" +
+    "BIDME setup complete! Next steps:\n" +
     "  1. Review .bidme/config.toml\n" +
     "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
     "  3. Optional: add BIDME_PAT if GitHub variables reject GITHUB_TOKEN writes\n" +

@@ -129,7 +129,7 @@ export async function runCloseBidding(
   options: CloseBiddingOptions = {},
 ): Promise<{ success: boolean; message: string }> {
   const target = options.target ?? process.cwd();
-  console.log("=== BidMe: Closing Bidding Period ===\n");
+  console.log("=== BIDME: Closing Bidding Period ===\n");
 
   const config = await loadConfig(target);
   console.log("✓ Config loaded");
@@ -227,7 +227,7 @@ export async function runCloseBidding(
         [],
       );
 
-      const sponsoredLine = `\n<sub>Sponsored via [BidMe](https://github.com/danarrib/bidme)</sub>`;
+      const sponsoredLine = `\n<sub>Sponsored via [BIDME](https://github.com/danarrib/bidme)</sub>`;
       const fullBanner = `${bannerMarkdown}${sponsoredLine}`;
 
       const updatedReadme = readmeContent.replace(

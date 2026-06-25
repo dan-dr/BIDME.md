@@ -240,7 +240,7 @@ increment = 10
     test("TOML comments are preserved in output", () => {
       const toml = generateToml(DEFAULT_CONFIG);
 
-      expect(toml).toContain("# BidMe Configuration");
+      expect(toml).toContain("# BIDME Configuration");
       expect(toml).toContain("# Bidding schedule and pricing");
       expect(toml).toContain("# Banner display constraints");
       expect(toml).toContain("# Bid approval settings");

@@ -17,7 +17,7 @@ const program = new Command();
 
 program
   .name("bidme")
-  .description("BidMe — sponsor banner bidding for GitHub READMEs")
+  .description("BIDME — sponsor banner bidding for GitHub READMEs")
   .version(getVersion(), "-v, --version", "Print the current version");
 
 program
@@ -35,7 +35,7 @@ program
 
 program
   .command("doctor")
-  .description("Verify BidMe repository, GitHub, Pages, and Stripe setup")
+  .description("Verify BIDME repository, GitHub, Pages, and Stripe setup")
   .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
   .action(async (options: { target: string }) => {
     const { runDoctor } = await import("./commands/doctor.js");
@@ -47,7 +47,7 @@ program
 
 program
   .command("remove")
-  .description("Remove BidMe from the repository — deletes .bidme/, workflows, and README banner")
+  .description("Remove BIDME from the repository — deletes .bidme/, workflows, and README banner")
   .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
   .option("--force", "Skip confirmation prompt", false)
   .action(async (options: { target: string; force: boolean }) => {
@@ -60,7 +60,7 @@ program
 
 program
   .command("update")
-  .description("Update BidMe installation — run migrations and upgrade config")
+  .description("Update BIDME installation — run migrations and upgrade config")
   .option("--target <path>", "Target directory with .bidme/ config", process.cwd())
   .action(async (options: { target: string }) => {
     const { runUpdate } = await import("./commands/update.js");

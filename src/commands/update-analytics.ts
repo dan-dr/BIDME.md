@@ -108,7 +108,7 @@ export async function runUpdateAnalytics(
   options: UpdateAnalyticsOptions = {},
 ): Promise<{ success: boolean; message: string }> {
   const target = options.target ?? process.cwd();
-  console.log("=== BidMe: Updating Analytics ===\n");
+  console.log("=== BIDME: Updating Analytics ===\n");
 
   let analytics = await readAnalytics();
   console.log("✓ Analytics data loaded");

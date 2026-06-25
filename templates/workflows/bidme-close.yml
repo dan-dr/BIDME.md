@@ -1,4 +1,4 @@
-name: "BidMe: Close Bidding Period"
+name: "BIDME: Close Bidding Period"
 
 on:
   schedule:

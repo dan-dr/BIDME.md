@@ -1,9 +1,9 @@
-# BidMe — Auction-Based README Sponsorships
+# BIDME — Auction-Based README Sponsorships
 
 Let companies bid for banner space in your README. Highest approved bid wins.
 
 <!-- bidme-banner-start -->
-[![BidMe Banner](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge&logoColor=white)](https://github.com/dan-dr/BIDME.md)
+[![BIDME Banner](https://img.shields.io/badge/Your_Ad_Here-BIDME-22c55e?style=for-the-badge&logoColor=white)](https://github.com/dan-dr/BIDME.md)
 <!-- bidme-banner-end -->
 
 ## Quick Start
@@ -13,7 +13,7 @@ bidme init
 bidme doctor
 ```
 
-> **Note:** BidMe is not yet published to npm. To run from source, clone the repo and use `bun run src/cli.ts init`.
+> **Note:** BIDME is not yet published to npm. To run from source, clone the repo and use `bun run src/cli.ts init`.
 
 The CLI scaffolds config, four GitHub Actions workflows, Stripe/redirect pages, and the README banner placeholder. The installed GitHub Action performs runtime automation.
 
@@ -33,7 +33,7 @@ Runtime state lives in GitHub Actions variables:
 
 ## Configuration
 
-BidMe stores its config in `.bidme/config.toml`:
+BIDME stores its config in `.bidme/config.toml`:
 
 ```toml
 [bidding]
@@ -68,14 +68,14 @@ required = ["alt text", "clear branding"]
 |---------|-------------|
 | `bidme init` | Interactive setup wizard — scaffolds config, workflows, and README banner |
 | `bidme doctor` | Verify config, workflows, GitHub Pages, required secrets, and Stripe |
-| `bidme update` | Upgrade an existing BidMe installation (runs migrations) |
-| `bidme remove` | Remove BidMe files from a repository |
+| `bidme update` | Upgrade an existing BIDME installation (runs migrations) |
+| `bidme remove` | Remove BIDME files from a repository |
 
-Runtime jobs (`open-bidding`, `process-bid`, `close-bidding`, `update-analytics`) run through the generated GitHub workflows using the BidMe GitHub Action.
+Runtime jobs (`open-bidding`, `process-bid`, `close-bidding`, `update-analytics`) run through the generated GitHub workflows using the BIDME GitHub Action.
 
 ## Payment Setup
 
-BidMe uses [Stripe](https://stripe.com) for payments.
+BIDME uses [Stripe](https://stripe.com) for payments.
 
 1. Create a Stripe account and generate a secret key from the [API keys page](https://dashboard.stripe.com/apikeys)
 2. Add `STRIPE_SECRET_KEY` as a repository secret.
@@ -104,7 +104,7 @@ bid:
 ---
 ```
 
-Attach the banner image directly to the GitHub comment. GitHub hosts it and BidMe extracts the Markdown image URL.
+Attach the banner image directly to the GitHub comment. GitHub hosts it and BIDME extracts the Markdown image URL.
 
 | Field | Required | Description |
 |-------|----------|-------------|

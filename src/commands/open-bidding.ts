@@ -17,7 +17,7 @@ function formatDateRange(start: Date, end: Date): string {
 
 export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<void> {
   const target = options.target ?? process.cwd();
-  console.log("=== BidMe: Opening New Bidding Period ===\n");
+  console.log("=== BIDME: Opening New Bidding Period ===\n");
 
   const config = await loadConfig(target);
   console.log("✓ Config loaded");
@@ -30,7 +30,7 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
   endDate.setDate(endDate.getDate() + config.bidding.duration);
 
   const dateRange = formatDateRange(startDate, endDate);
-  const title = `🎯 BidMe: Banner Bidding [${dateRange}]`;
+  const title = `🎯 BIDME: Banner Bidding [${dateRange}]`;
   console.log(`\n✓ Bidding period: ${dateRange}`);
 
   const analytics = await readAnalytics();

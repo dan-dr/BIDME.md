@@ -29,7 +29,7 @@ function bannerPlaceholder(owner: string, repo: string): string {
   const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
   return [
     "<!-- bidme-banner-start -->",
-    `[![Your Ad Here](https://img.shields.io/badge/Your_Ad_Here-BidMe-22c55e?style=for-the-badge)](${issueUrl})`,
+    `[![Your Ad Here](https://img.shields.io/badge/Your_Ad_Here-BIDME-22c55e?style=for-the-badge)](${issueUrl})`,
     "<!-- bidme-banner-end -->",
   ].join("\n");
 }

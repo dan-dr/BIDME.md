@@ -220,9 +220,9 @@ export async function migrateReadme(targetDir: string): Promise<boolean> {
   const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
   const v2Block = [
     BANNER_START,
-    `[![Sponsored via BidMe](https://img.shields.io/badge/Sponsored%20via-BidMe-blue)](${issueUrl})`,
+    `[![Sponsored via BIDME](https://img.shields.io/badge/Sponsored%20via-BIDME-blue)](${issueUrl})`,
     "",
-    `[Sponsored via BidMe](${issueUrl})`,
+    `[Sponsored via BIDME](${issueUrl})`,
     BANNER_END,
   ].join("\n");
 

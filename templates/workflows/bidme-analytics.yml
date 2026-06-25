@@ -1,4 +1,4 @@
-name: "BidMe: Update Analytics"
+name: "BIDME: Update Analytics"
 
 on:
   schedule:

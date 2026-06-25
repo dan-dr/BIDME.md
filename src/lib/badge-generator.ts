@@ -33,7 +33,7 @@ export function generateBannerSection(
   destUrl: string,
   badges: string[],
 ): string {
-  const banner = `[![BidMe Banner](${bannerUrl})](${destUrl})`;
+  const banner = `[![BIDME Banner](${bannerUrl})](${destUrl})`;
   const badgeLine = badges.join(" ");
   return `${banner}\n\n${badgeLine}`;
 }

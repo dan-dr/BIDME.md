@@ -47,7 +47,7 @@ async function main(): Promise<void> {
       break;
     }
     default:
-      throw new Error(`Unknown BidMe action command: ${command}`);
+      throw new Error(`Unknown BIDME action command: ${command}`);
   }
 }
 

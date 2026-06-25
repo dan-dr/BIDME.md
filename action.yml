@@ -1,9 +1,9 @@
-name: "BidMe"
-description: "Run BidMe automation inside a GitHub repository"
+name: "BIDME"
+description: "Run BIDME automation inside a GitHub repository"
 
 inputs:
   command:
-    description: "BidMe runtime command: open-bidding, process-bid, close-bidding, update-analytics"
+    description: "BIDME runtime command: open-bidding, process-bid, close-bidding, update-analytics"
     required: true
   issue:
     description: "GitHub issue number for process-bid"
@@ -21,12 +21,12 @@ runs:
   steps:
     - uses: oven-sh/setup-bun@v2
 
-    - name: Install BidMe action dependencies
+    - name: Install BIDME action dependencies
       shell: bash
       run: bun install --frozen-lockfile
       working-directory: ${{ github.action_path }}
 
-    - name: Run BidMe
+    - name: Run BIDME
       shell: bash
       run: |
         set -euo pipefail

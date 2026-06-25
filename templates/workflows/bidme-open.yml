@@ -1,4 +1,4 @@
-name: "BidMe: Open Bidding Period"
+name: "BIDME: Open Bidding Period"
 
 on:
   schedule:

@@ -51,7 +51,7 @@ export function generateStatsSection(stats?: PeriodAnalytics): string {
 
   return `### 📊 Previous Period Stats
 
-📊 **Previous BidMe sponsorship garnered ${stats.views} views, ${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR)
+📊 **Previous BIDME sponsorship garnered ${stats.views} views, ${stats.clicks} clicks** (${stats.ctr.toFixed(1)}% CTR)
 
 Stats based on the previous full week of sponsorship`;
 }
@@ -145,7 +145,7 @@ bid:
 Bids must be submitted before the deadline. The highest approved bid wins the banner slot.
 
 ---
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`);
+*Powered by [BIDME](https://github.com/danarrib/bidme)*`);
 
   return sections.join("\n\n");
 }
@@ -187,7 +187,7 @@ ${paymentSection}
 The README banner has been updated. Thank you to all bidders!
 
 ---
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+*Powered by [BIDME](https://github.com/danarrib/bidme)*`;
 }
 
 export function updateBidIssueBody(
@@ -228,5 +228,5 @@ The bidding period (**${period.start_date.split("T")[0]}** to **${period.end_dat
 The banner slot remains unchanged. A new bidding period will open on the next scheduled cycle.
 
 ---
-*Powered by [BidMe](https://github.com/danarrib/bidme)*`;
+*Powered by [BIDME](https://github.com/danarrib/bidme)*`;
 }

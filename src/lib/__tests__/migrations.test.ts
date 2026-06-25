@@ -258,7 +258,7 @@ Some content below.
     const updated = await Bun.file(join(tempDir, "README.md")).text();
     expect(updated).toContain("<!-- BIDME:BANNER:START -->");
     expect(updated).toContain("<!-- BIDME:BANNER:END -->");
-    expect(updated).toContain("[![Sponsored via BidMe]");
+    expect(updated).toContain("[![Sponsored via BIDME]");
     expect(updated).toContain("testowner/testrepo");
     expect(updated).toContain("Some content below.");
     expect(updated).not.toContain("Old banner content");
@@ -278,9 +278,9 @@ Some content below.
   test("is idempotent - returns false when already in v2 format", async () => {
     const issueUrl = "https://github.com/owner/repo/issues?q=label%3Abidme";
     const v2Readme = `<!-- BIDME:BANNER:START -->
-[![Sponsored via BidMe](https://img.shields.io/badge/Sponsored%20via-BidMe-blue)](${issueUrl})
+[![Sponsored via BIDME](https://img.shields.io/badge/Sponsored%20via-BIDME-blue)](${issueUrl})
 
-[Sponsored via BidMe](${issueUrl})
+[Sponsored via BIDME](${issueUrl})
 <!-- BIDME:BANNER:END -->
 `;
     await Bun.write(join(tempDir, "README.md"), v2Readme);

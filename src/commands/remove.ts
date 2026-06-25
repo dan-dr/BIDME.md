@@ -65,19 +65,19 @@ export async function runRemove(options: RemoveOptions): Promise<RemoveResult> {
   const target = resolve(options.target);
   const removed: string[] = [];
 
-  console.log("\n=== BidMe: Remove ===\n");
+  console.log("\n=== BIDME: Remove ===\n");
 
   const bidmeDir = join(target, ".bidme");
   if (!(await fileExists(join(bidmeDir, "config.toml")))) {
-    console.log("No BidMe installation found in this directory.");
+    console.log("No BIDME installation found in this directory.");
     return { success: true, removed };
   }
 
   if (!options.force) {
-    clack.intro("Remove BidMe from this repository");
+    clack.intro("Remove BIDME from this repository");
 
     const confirm = await clack.confirm({
-      message: "This will remove all BidMe files (.bidme/, workflows, README banner). Continue?",
+      message: "This will remove all BIDME files (.bidme/, workflows, README banner). Continue?",
     });
 
     if (clack.isCancel(confirm) || !confirm) {

@@ -18,7 +18,7 @@ export async function runProcessBid(
   options: ProcessBidOptions = {},
 ): Promise<{ success: boolean; message: string }> {
   const target = options.target ?? process.cwd();
-  console.log("=== BidMe: Processing Bid ===\n");
+  console.log("=== BIDME: Processing Bid ===\n");
   console.log(`  Issue: #${issueNumber}`);
   console.log(`  Comment: ${commentId}`);
 
