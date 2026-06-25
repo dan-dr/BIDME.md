@@ -189,8 +189,9 @@ export async function runInit(options: InitOptions): Promise<void> {
   if (result.configCreated) lines.push("  .bidme/config.toml");
   if (result.versionCreated) lines.push("  .bidme/version.json");
   if (result.archiveCreated) lines.push("  .bidme/data/archive/.gitkeep");
-  if (result.redirectCopied) lines.push("  bidme/redirect.html");
-  for (const f of result.stripePagesCopied) lines.push(`  bidme/stripe/${f}`);
+  if (result.redirectCopied) lines.push("  .bidme/pay/redirect.html");
+  for (const f of result.stripePagesCopied) lines.push(`  .bidme/pay/stripe/${f}`);
+  if (result.pagesConfigCreated) lines.push("  _config.yml");
   for (const f of result.workflowsCopied) lines.push(`  .github/workflows/${f}`);
   if (result.readmeUpdated) lines.push("  README.md (banner placeholder)");
 
@@ -204,8 +205,8 @@ export async function runInit(options: InitOptions): Promise<void> {
   }
 
   const pagesUrl = result.owner !== "OWNER"
-    ? `https://${result.owner}.github.io/${result.repo}/bidme/stripe/`
-    : "https://{owner}.github.io/{repo}/bidme/stripe/";
+    ? `https://${result.owner}.github.io/${result.repo}/.bidme/pay/stripe/`
+    : "https://{owner}.github.io/{repo}/.bidme/pay/stripe/";
 
   clack.outro(
     "BIDME setup complete! Next steps:\n" +

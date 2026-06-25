@@ -22,8 +22,15 @@ describe("init end-to-end", () => {
     expect(await Bun.file(join(tempDir, ".bidme", "config.toml")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "version.json")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, "404.html")).exists()).toBe(true);
-    expect(await Bun.file(join(tempDir, "bidme", "redirect.html")).exists()).toBe(true);
-    expect(await Bun.file(join(tempDir, "bidme", "stripe", "success.html")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, ".bidme", "pay", "redirect.html")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, ".bidme", "pay", "stripe", "success.html")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, "_config.yml")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, "bidme", "redirect.html")).exists()).toBe(false);
+    const pagesConfig = await Bun.file(join(tempDir, "_config.yml")).text();
+    expect(pagesConfig).toContain("- .bidme");
+    expect(pagesConfig).toContain("- .bidme/config.toml");
+    expect(pagesConfig).toContain("- .bidme/version.json");
+    expect(pagesConfig).toContain("- .bidme/data");
     expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", ".gitkeep")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).exists()).toBe(false);
     expect(await Bun.file(join(tempDir, ".bidme", "data", "analytics.json")).exists()).toBe(false);

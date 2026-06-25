@@ -55,7 +55,7 @@ allowed_reactions = ["👍"]
 [payment]
 mode = "own_keys"          # "own_keys" or "connect"
 bidme_fee_percent = 10
-base_url = ""              # defaults to https://{owner}.github.io/{repo}/bidme
+base_url = ""              # defaults to https://{owner}.github.io/{repo}/.bidme/pay/stripe
 
 [content_guidelines]
 prohibited = ["adult content", "gambling", "misleading claims"]
@@ -79,7 +79,7 @@ BIDME uses [Stripe](https://stripe.com) for payments.
 
 1. Create a Stripe account and generate a secret key from the [API keys page](https://dashboard.stripe.com/apikeys)
 2. Add `STRIPE_SECRET_KEY` as a repository secret.
-3. Enable GitHub Pages from the default branch root. Payment pages default to `https://{owner}.github.io/{repo}/bidme/stripe/`.
+3. Enable GitHub Pages from the default branch root. Payment pages default to `https://{owner}.github.io/{repo}/.bidme/pay/stripe/`. The generated `_config.yml` includes `.bidme` for Pages so Jekyll serves the nested pay files, and excludes config, version, data, and test files under `.bidme/`.
 4. Optional fallback: add `BIDME_PAT` as a repository secret if GitHub rejects Actions variable writes from `GITHUB_TOKEN`. Use a fine-grained PAT or GitHub App token with repository Actions variables read/write.
 5. Run `bidme doctor`.
 

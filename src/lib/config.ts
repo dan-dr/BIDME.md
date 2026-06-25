@@ -263,7 +263,7 @@ export function resolvePaymentUrls(
   owner: string,
   repo: string,
 ): { success: string; fail: string } {
-  const defaultBase = `https://${owner}.github.io/${repo}/bidme/stripe`;
+  const defaultBase = `https://${owner}.github.io/${repo}/.bidme/pay/stripe`;
 
   const base = config.payment.base_url || defaultBase;
   const success = `${base}/success.html`;

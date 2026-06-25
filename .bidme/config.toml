@@ -23,7 +23,7 @@ mode = "auto"
 allowed_reactions = ["👍"]
 
 # Payment configuration (Stripe)
-# base_url: leave empty to default to GitHub Pages (dan-dr.github.io/BIDME.md/.bidme/stripe)
+# base_url: leave empty to default to GitHub Pages (dan-dr.github.io/BIDME.md/.bidme/pay/stripe)
 # success_url / fail_url: override individual redirect URLs (defaults derive from base_url)
 [payment]
 provider = "stripe"

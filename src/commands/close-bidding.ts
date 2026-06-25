@@ -205,7 +205,7 @@ export async function runCloseBidding(
 
     const encodedDest = encodeURIComponent(appendTrackingParams(winner.destination_url, owner, repo, config.tracking.utm_params));
     const pagesBase = config.payment.base_url || `https://${owner}.github.io/${repo}`;
-    const trackingUrl = `${pagesBase}/bidme/redirect.html?id=${encodeURIComponent(periodData.period_id)}&dest=${encodedDest}`;
+    const trackingUrl = `${pagesBase}/.bidme/pay/redirect.html?id=${encodeURIComponent(periodData.period_id)}&dest=${encodedDest}`;
     console.log(`  Tracking URL: ${trackingUrl}`);
 
     const readmePath = resolve(target, "README.md");

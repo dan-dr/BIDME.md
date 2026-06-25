@@ -5,14 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Not Found</title>
     <script>
-      const legacyStripePath = "/.bidme/stripe/";
+      const legacyStripePaths = ["/bidme/stripe/", "/.bidme/stripe/"];
       const path = window.location.pathname;
-      const index = path.indexOf(legacyStripePath);
 
-      if (index !== -1) {
-        const base = path.slice(0, index);
-        const page = path.slice(index + legacyStripePath.length);
-        window.location.replace(`${base}/bidme/stripe/${page}${window.location.search}${window.location.hash}`);
+      for (const legacyStripePath of legacyStripePaths) {
+        const index = path.indexOf(legacyStripePath);
+        if (index !== -1) {
+          const base = path.slice(0, index);
+          const page = path.slice(index + legacyStripePath.length);
+          window.location.replace(`${base}/.bidme/pay/stripe/${page}${window.location.search}${window.location.hash}`);
+          break;
+        }
       }
     </script>
   </head>

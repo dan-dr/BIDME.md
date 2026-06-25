@@ -17,6 +17,7 @@ export interface ScaffoldResult {
   redirectCopied: boolean;
   notFoundCopied: boolean;
   stripePagesCopied: string[];
+  pagesConfigCreated: boolean;
   readmeUpdated: boolean;
   versionCreated: boolean;
   owner: string;
@@ -24,6 +25,7 @@ export interface ScaffoldResult {
 }
 
 const BANNER_START = "<!-- bidme-banner-start -->";
+const PUBLIC_PAY_DIR = ".bidme/pay";
 
 function bannerPlaceholder(owner: string, repo: string): string {
   const issueUrl = `https://github.com/${owner}/${repo}/issues?q=label%3Abidme`;
@@ -82,7 +84,7 @@ async function writeIfNotExists(filePath: string, content: string): Promise<bool
 }
 
 async function copyRedirectPage(target: string): Promise<boolean> {
-  const publicBidmeDir = join(target, "bidme");
+  const publicBidmeDir = join(target, PUBLIC_PAY_DIR);
   await ensureDir(publicBidmeDir);
 
   const templatePath = resolveTemplate("redirect.html");
@@ -121,7 +123,7 @@ async function copyStripePages(
   owner: string,
   repo: string,
 ): Promise<string[]> {
-  const stripeDir = join(target, "bidme", "stripe");
+  const stripeDir = join(target, PUBLIC_PAY_DIR, "stripe");
   await ensureDir(stripeDir);
 
   const templatesDir = resolveTemplate("stripe");
@@ -183,6 +185,22 @@ async function copyWorkflowTemplates(target: string): Promise<{ copied: string[]
     copied.push(entry);
   }
   return { copied, skipped };
+}
+
+async function writePagesConfig(target: string): Promise<boolean> {
+  const configPath = join(target, "_config.yml");
+  const content = [
+    "include:",
+    "  - .bidme",
+    "exclude:",
+    "  - .bidme/config.toml",
+    "  - .bidme/version.json",
+    "  - .bidme/data",
+    "  - .bidme/test",
+    "",
+  ].join("\n");
+
+  return writeIfNotExists(configPath, content);
 }
 
 async function updateReadme(
@@ -251,6 +269,7 @@ export async function scaffold(
   }
 
   const redirectCopied = await copyRedirectPage(resolved);
+  const pagesConfigCreated = await writePagesConfig(resolved);
   const notFoundCopied = await copyNotFoundPage(resolved);
   const stripePagesCopied = await copyStripePages(resolved, owner, repo);
   const readmeUpdated = await updateReadme(resolved, owner, repo);
@@ -264,6 +283,7 @@ export async function scaffold(
     redirectCopied,
     notFoundCopied,
     stripePagesCopied,
+    pagesConfigCreated,
     readmeUpdated,
     versionCreated,
     owner,

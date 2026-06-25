@@ -89,11 +89,21 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
     ok: readme.includes("<!-- bidme-banner-start -->"),
   });
 
+  const pagesConfigPath = join(target, "_config.yml");
+  const pagesConfig = existsSync(pagesConfigPath) ? await Bun.file(pagesConfigPath).text() : "";
+  checks.push({
+    name: "GitHub Pages config limits public .bidme files",
+    ok: pagesConfig.includes("- .bidme") &&
+      pagesConfig.includes("- .bidme/config.toml") &&
+      pagesConfig.includes("- .bidme/version.json") &&
+      pagesConfig.includes("- .bidme/data"),
+  });
+
   checks.push({
     name: "Public BIDME Pages files present",
-    ok: existsSync(join(target, "bidme", "redirect.html")) &&
-      existsSync(join(target, "bidme", "stripe", "success.html")) &&
-      existsSync(join(target, "bidme", "stripe", "cancelled.html")),
+    ok: existsSync(join(target, ".bidme", "pay", "redirect.html")) &&
+      existsSync(join(target, ".bidme", "pay", "stripe", "success.html")) &&
+      existsSync(join(target, ".bidme", "pay", "stripe", "cancelled.html")),
   });
 
   try {
