@@ -1,8 +1,14 @@
-import { GitHubAPI } from "../lib/github-api.ts";
-import { readAnalytics, readCurrentPeriod, writeAnalytics, type AnalyticsDailyView, type VariableAnalytics } from "../lib/variable-store.ts";
-import { generateLiveAnalyticsSection, updateBidIssueBody } from "../lib/issue-template.ts";
 import { logError } from "../lib/error-handler.ts";
+import { GitHubAPI } from "../lib/github-api.ts";
+import { generateLiveAnalyticsSection, updateBidIssueBody } from "../lib/issue-template.ts";
 import type { LegacyAnalyticsData, PeriodAnalytics } from "../lib/types.ts";
+import {
+  type AnalyticsDailyView,
+  readAnalytics,
+  readCurrentPeriod,
+  type VariableAnalytics,
+  writeAnalytics,
+} from "../lib/variable-store.ts";
 
 export interface UpdateAnalyticsOptions {
   target?: string;
@@ -14,7 +20,10 @@ export interface PreviousWeekStats {
   ctr: number;
 }
 
-function mergeDailyViews(existing: AnalyticsDailyView[], incoming: AnalyticsDailyView[]): AnalyticsDailyView[] {
+function mergeDailyViews(
+  existing: AnalyticsDailyView[],
+  incoming: AnalyticsDailyView[],
+): AnalyticsDailyView[] {
   const map = new Map<string, AnalyticsDailyView>();
   for (const dv of existing) {
     map.set(dv.date, dv);
@@ -43,7 +52,9 @@ function dailyViewsFor(data: VariableAnalytics | LegacyAnalyticsData): Analytics
   return data.dailyViews;
 }
 
-function computePreviousWeekStats(data: VariableAnalytics | LegacyAnalyticsData): PreviousWeekStats {
+function computePreviousWeekStats(
+  data: VariableAnalytics | LegacyAnalyticsData,
+): PreviousWeekStats {
   const now = new Date();
   const endOfPreviousWeek = new Date(now);
   endOfPreviousWeek.setDate(endOfPreviousWeek.getDate() - endOfPreviousWeek.getDay());
@@ -110,7 +121,7 @@ export async function runUpdateAnalytics(
   const target = options.target ?? process.cwd();
   console.log("=== BIDME: Updating Analytics ===\n");
 
-  let analytics = await readAnalytics();
+  const analytics = await readAnalytics();
   console.log("✓ Analytics data loaded");
 
   const owner = process.env["GITHUB_REPOSITORY_OWNER"] ?? "";
@@ -120,7 +131,9 @@ export async function runUpdateAnalytics(
   if (!owner || !repo) {
     console.log("\n⚠ GitHub environment not configured — skipping traffic fetch");
     const previousWeekStats = computePreviousWeekStats(analytics);
-    console.log(`\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`);
+    console.log(
+      `\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`,
+    );
 
     analytics.last_updated = new Date().toISOString();
     await writeAnalytics(analytics);
@@ -184,7 +197,9 @@ export async function runUpdateAnalytics(
   }
 
   const previousWeekStats = computePreviousWeekStats(analytics);
-  console.log(`\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`);
+  console.log(
+    `\n  Previous week: ${previousWeekStats.views} views, ${previousWeekStats.clicks} clicks, ${previousWeekStats.ctr.toFixed(1)}% CTR`,
+  );
 
   analytics.clicks = analytics.clicks.filter((click) => {
     const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
@@ -198,7 +213,9 @@ export async function runUpdateAnalytics(
   if (period?.issue_number) {
     try {
       const issue = await api.getIssue(period.issue_number);
-      const periodClicks = analytics.clicks.filter((click) => click.banner_id === period.period_id).length;
+      const periodClicks = analytics.clicks.filter(
+        (click) => click.banner_id === period.period_id,
+      ).length;
       const views7d = averageViews7d(analytics);
       const ctr = getClickThroughRate(views7d * 7, periodClicks);
       const analyticsSection = generateLiveAnalyticsSection(
@@ -219,7 +236,10 @@ export async function runUpdateAnalytics(
 
   console.log("\n=== Analytics Update Complete ===");
   const totalViews = analytics.daily_views.reduce((sum, dv) => sum + dv.count, 0);
-  return { success: true, message: `Analytics updated: ${totalViews} total views, ${analytics.clicks.length} clicks` };
+  return {
+    success: true,
+    message: `Analytics updated: ${totalViews} total views, ${analytics.clicks.length} clicks`,
+  };
 }
 
-export { computePreviousWeekStats, mergeDailyViews, computePeriodAggregates };
+export { computePeriodAggregates, computePreviousWeekStats, mergeDailyViews };

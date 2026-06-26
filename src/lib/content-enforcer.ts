@@ -1,6 +1,5 @@
 import type { BidMeConfig } from "./config.ts";
-import type { ParsedBid } from "./validation.ts";
-import type { ValidationResult, ValidationError } from "./validation.ts";
+import type { ParsedBid, ValidationError, ValidationResult } from "./validation.ts";
 
 const FORMAT_TO_MIME: Record<string, string> = {
   png: "image/png",
@@ -172,19 +171,13 @@ export function validateCommentFormat(body: string): ValidationResult {
   return { valid: errors.length === 0, errors };
 }
 
-export function checkProhibitedContent(
-  bid: ParsedBid,
-  config: BidMeConfig,
-): ValidationError[] {
+export function checkProhibitedContent(bid: ParsedBid, config: BidMeConfig): ValidationError[] {
   const errors: ValidationError[] = [];
   const prohibited = config.content_guidelines.prohibited;
 
-  const checkableText = [
-    bid.banner_url,
-    bid.destination_url,
-    bid.tagline ?? "",
-    bid.contact ?? "",
-  ].join(" ").toLowerCase();
+  const checkableText = [bid.banner_url, bid.destination_url, bid.tagline ?? "", bid.contact ?? ""]
+    .join(" ")
+    .toLowerCase();
 
   for (const keyword of prohibited) {
     if (checkableText.includes(keyword.toLowerCase())) {

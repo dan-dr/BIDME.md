@@ -1,5 +1,5 @@
-import { join, resolve } from "path";
 import * as clack from "@clack/prompts";
+import { join, resolve } from "path";
 
 const WORKFLOW_FILES = [
   "bidme-open.yml",

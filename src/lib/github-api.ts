@@ -101,11 +101,7 @@ export class GitHubAPI {
     return (await response.json()) as T;
   }
 
-  async createIssue(
-    title: string,
-    body: string,
-    labels?: string[],
-  ): Promise<IssueData> {
+  async createIssue(title: string, body: string, labels?: string[]): Promise<IssueData> {
     return this.request<IssueData>("POST", "/issues", {
       title,
       body,
@@ -117,10 +113,7 @@ export class GitHubAPI {
     return this.request<IssueData>("GET", `/issues/${issueNumber}`);
   }
 
-  async updateIssueBody(
-    issueNumber: number,
-    body: string,
-  ): Promise<IssueData> {
+  async updateIssueBody(issueNumber: number, body: string): Promise<IssueData> {
     return this.request<IssueData>("PATCH", `/issues/${issueNumber}`, {
       body,
     });
@@ -157,40 +150,23 @@ export class GitHubAPI {
   }
 
   async addComment(issueNumber: number, body: string): Promise<CommentData> {
-    return this.request<CommentData>(
-      "POST",
-      `/issues/${issueNumber}/comments`,
-      { body },
-    );
+    return this.request<CommentData>("POST", `/issues/${issueNumber}/comments`, { body });
   }
 
   async getComment(commentId: number): Promise<CommentData> {
-    return this.request<CommentData>(
-      "GET",
-      `/issues/comments/${commentId}`,
-    );
+    return this.request<CommentData>("GET", `/issues/comments/${commentId}`);
   }
 
   async updateComment(commentId: number, body: string): Promise<CommentData> {
-    return this.request<CommentData>(
-      "PATCH",
-      `/issues/comments/${commentId}`,
-      { body },
-    );
+    return this.request<CommentData>("PATCH", `/issues/comments/${commentId}`, { body });
   }
 
   async getComments(issueNumber: number): Promise<CommentData[]> {
-    return this.request<CommentData[]>(
-      "GET",
-      `/issues/${issueNumber}/comments`,
-    );
+    return this.request<CommentData[]>("GET", `/issues/${issueNumber}/comments`);
   }
 
   async getReactions(commentId: number): Promise<ReactionData[]> {
-    return this.request<ReactionData[]>(
-      "GET",
-      `/issues/comments/${commentId}/reactions`,
-    );
+    return this.request<ReactionData[]>("GET", `/issues/comments/${commentId}/reactions`);
   }
 
   async getTrafficViews(): Promise<{
@@ -209,16 +185,11 @@ export class GitHubAPI {
     return this.request("GET", "/traffic/clones");
   }
 
-  async getPopularReferrers(): Promise<
-    { referrer: string; count: number; uniques: number }[]
-  > {
+  async getPopularReferrers(): Promise<{ referrer: string; count: number; uniques: number }[]> {
     return this.request("GET", "/traffic/popular/referrers");
   }
 
-  async dispatchEvent(
-    eventType: string,
-    clientPayload: Record<string, unknown>,
-  ): Promise<void> {
+  async dispatchEvent(eventType: string, clientPayload: Record<string, unknown>): Promise<void> {
     await this.request("POST", "/dispatches", {
       event_type: eventType,
       client_payload: clientPayload,
@@ -248,10 +219,7 @@ export class GitHubAPI {
     });
   }
 
-  async updateReadme(
-    content: string,
-    message: string,
-  ): Promise<CommitResponse> {
+  async updateReadme(content: string, message: string): Promise<CommitResponse> {
     const existing = await this.request<{
       sha: string;
       content: string;

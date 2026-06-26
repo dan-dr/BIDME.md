@@ -1,5 +1,5 @@
-import type { PeriodData, BidRecord, PeriodAnalytics } from "./types.ts";
 import type { BidMeConfig } from "./config.ts";
+import type { BidRecord, PeriodAnalytics, PeriodData } from "./types.ts";
 
 export function generateBidTable(bids: BidRecord[]): string {
   if (bids.length === 0) {
@@ -30,9 +30,7 @@ ${rows}`;
 }
 
 export function generateCurrentTopBid(bids: BidRecord[]): string {
-  const approved = bids
-    .filter((b) => b.status === "approved")
-    .sort((a, b) => b.amount - a.amount);
+  const approved = bids.filter((b) => b.status === "approved").sort((a, b) => b.amount - a.amount);
 
   if (approved.length === 0) {
     return "No bids yet";
@@ -204,17 +202,11 @@ export function updateBidIssueBody(
   );
 
   const table = generateBidTable(bids);
-  body = body.replace(
-    /### Bid Table\n\n[\s\S]*?(?=\n\n### )/,
-    `### Bid Table\n\n${table}`,
-  );
+  body = body.replace(/### Bid Table\n\n[\s\S]*?(?=\n\n### )/, `### Bid Table\n\n${table}`);
 
   if (previousStats) {
     const statsSection = generateStatsSection(previousStats);
-    body = body.replace(
-      /### 📊 Previous Period Stats[\s\S]*?(?=\n\n### )/,
-      statsSection,
-    );
+    body = body.replace(/### 📊 Previous Period Stats[\s\S]*?(?=\n\n### )/, statsSection);
   }
 
   return body;

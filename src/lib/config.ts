@@ -137,18 +137,14 @@ export function validateConfig(config: unknown): BidMeConfig {
   if (merged.approval) {
     const validModes = ["auto", "emoji"];
     if (!validModes.includes(merged.approval.mode)) {
-      throw new ConfigValidationError(
-        `approval.mode must be one of: ${validModes.join(", ")}`,
-      );
+      throw new ConfigValidationError(`approval.mode must be one of: ${validModes.join(", ")}`);
     }
   }
 
   if (merged.payment) {
     const validModes = ["own_keys", "connect"];
     if (!validModes.includes(merged.payment.mode)) {
-      throw new ConfigValidationError(
-        `payment.mode must be one of: ${validModes.join(", ")}`,
-      );
+      throw new ConfigValidationError(`payment.mode must be one of: ${validModes.join(", ")}`);
     }
     if (
       typeof merged.payment.bidme_fee_percent !== "number" ||
@@ -189,10 +185,7 @@ export async function loadConfig(targetDir?: string): Promise<BidMeConfig> {
   return deepMerge(DEFAULT_CONFIG, parsed);
 }
 
-export async function saveConfig(
-  config: BidMeConfig,
-  targetDir?: string,
-): Promise<void> {
+export async function saveConfig(config: BidMeConfig, targetDir?: string): Promise<void> {
   const dir = targetDir ?? process.cwd();
   const configPath = resolve(dir, ".bidme", "config.toml");
   const toml = generateToml(config);
@@ -235,7 +228,7 @@ allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
 mode = "${config.payment.mode}"
 bidme_fee_percent = ${config.payment.bidme_fee_percent}
 base_url = "${config.payment.base_url}"
-${config.payment.stripe_account_id ? `stripe_account_id = "${config.payment.stripe_account_id}"` : "# stripe_account_id = \"acct_...\""}
+${config.payment.stripe_account_id ? `stripe_account_id = "${config.payment.stripe_account_id}"` : '# stripe_account_id = "acct_..."'}
 `);
 
   sections.push(`# UTM tracking for bid links

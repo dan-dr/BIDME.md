@@ -69,7 +69,8 @@ async function requestVariable(
 ): Promise<Response> {
   const isCreate = method === "POST";
   const path = isCreate ? "/actions/variables" : `/actions/variables/${name}`;
-  const body = method === "GET" ? undefined : JSON.stringify(isCreate ? { name, value } : { value });
+  const body =
+    method === "GET" ? undefined : JSON.stringify(isCreate ? { name, value } : { value });
   return fetch(`${GITHUB_API}/repos/${owner}/${repo}${path}`, {
     method,
     headers: {
@@ -93,7 +94,9 @@ export async function readVariable<T>(name: string, fallback: T): Promise<T> {
   const response = await requestVariable("GET", repo.owner, repo.repo, token, name);
   if (response.status === 404) return fallback;
   if (!response.ok) {
-    throw new Error(`Failed to read GitHub variable ${name}: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to read GitHub variable ${name}: ${response.status} ${response.statusText}`,
+    );
   }
   const data = (await response.json()) as { value?: string };
   return parseJson(data.value, fallback);
@@ -112,14 +115,18 @@ export async function writeVariable(name: string, value: unknown): Promise<void>
   const patch = await requestVariable("PATCH", repo.owner, repo.repo, token, name, serialized);
   if (patch.status !== 404) {
     if (!patch.ok) {
-      throw new Error(`Failed to update GitHub variable ${name}: ${patch.status} ${patch.statusText}`);
+      throw new Error(
+        `Failed to update GitHub variable ${name}: ${patch.status} ${patch.statusText}`,
+      );
     }
     return;
   }
 
   const create = await requestVariable("POST", repo.owner, repo.repo, token, name, serialized);
   if (!create.ok) {
-    throw new Error(`Failed to create GitHub variable ${name}: ${create.status} ${create.statusText}`);
+    throw new Error(
+      `Failed to create GitHub variable ${name}: ${create.status} ${create.statusText}`,
+    );
   }
 }
 
@@ -129,7 +136,9 @@ export async function readCurrentPeriod(): Promise<PeriodData | null> {
   return period as PeriodData;
 }
 
-export async function writeCurrentPeriod(period: PeriodData | Record<string, never>): Promise<void> {
+export async function writeCurrentPeriod(
+  period: PeriodData | Record<string, never>,
+): Promise<void> {
   await writeVariable("BIDME_CURRENT_PERIOD", period);
 }
 

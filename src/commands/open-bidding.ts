@@ -1,17 +1,16 @@
 import { loadConfig } from "../lib/config.ts";
+import { logError, withRetry } from "../lib/error-handler.ts";
 import { GitHubAPI } from "../lib/github-api.ts";
 import { generateBiddingIssueBody } from "../lib/issue-template.ts";
-import { logError, withRetry } from "../lib/error-handler.ts";
-import { readAnalytics, writeCurrentPeriod } from "../lib/variable-store.ts";
 import type { PeriodData } from "../lib/types.ts";
+import { readAnalytics, writeCurrentPeriod } from "../lib/variable-store.ts";
 
 export interface OpenBiddingOptions {
   target?: string;
 }
 
 function formatDateRange(start: Date, end: Date): string {
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return `${fmt(start)} - ${fmt(end)}, ${end.getFullYear()}`;
 }
 
@@ -34,9 +33,8 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
   console.log(`\n✓ Bidding period: ${dateRange}`);
 
   const analytics = await readAnalytics();
-  const previousStats = analytics.periods.length > 0
-    ? analytics.periods[analytics.periods.length - 1]
-    : undefined;
+  const previousStats =
+    analytics.periods.length > 0 ? analytics.periods[analytics.periods.length - 1] : undefined;
 
   const periodStub: PeriodData = {
     period_id: `period-${startDate.toISOString().split("T")[0]}`,
@@ -55,7 +53,9 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
   const repo = fullRepo.includes("/") ? fullRepo.split("/")[1]! : fullRepo;
 
   if (!owner || !repo) {
-    console.log("\n⚠ GitHub environment not configured (GITHUB_REPOSITORY_OWNER, GITHUB_REPOSITORY)");
+    console.log(
+      "\n⚠ GitHub environment not configured (GITHUB_REPOSITORY_OWNER, GITHUB_REPOSITORY)",
+    );
     console.log("  Would create issue:", title);
     console.log("  Issue body preview (first 200 chars):", body.slice(0, 200) + "...");
 
@@ -65,16 +65,12 @@ export async function runOpenBidding(options: OpenBiddingOptions = {}): Promise<
 
   const api = new GitHubAPI(owner, repo);
 
-  const issue = await withRetry(
-    () => api.createIssue(title, body, ["bidme"]),
-    2,
-    {
-      onRetry: (attempt, error) => {
-        console.warn(`⚠ Issue creation failed (attempt ${attempt}), retrying...`);
-        logError(error, "open-bidding:createIssue");
-      },
+  const issue = await withRetry(() => api.createIssue(title, body, ["bidme"]), 2, {
+    onRetry: (attempt, error) => {
+      console.warn(`⚠ Issue creation failed (attempt ${attempt}), retrying...`);
+      logError(error, "open-bidding:createIssue");
     },
-  );
+  });
   console.log(`\n✓ Issue created: #${issue.number} — ${issue.html_url}`);
 
   try {

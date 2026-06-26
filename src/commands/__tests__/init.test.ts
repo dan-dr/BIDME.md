@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolve, join } from "path";
-import { mkdtemp, rm, readdir, stat, mkdir } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, readdir, rm, stat } from "fs/promises";
 import { tmpdir } from "os";
-import { scaffold } from "../../lib/scaffold.js";
+import { join, resolve } from "path";
 import { DEFAULT_CONFIG, loadConfig, parseToml } from "../../lib/config.js";
+import { scaffold } from "../../lib/scaffold.js";
 
 describe("init end-to-end", () => {
   let tempDir: string;
@@ -23,7 +23,9 @@ describe("init end-to-end", () => {
     expect(await Bun.file(join(tempDir, ".bidme", "version.json")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, "404.html")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, ".bidme", "pay", "redirect.html")).exists()).toBe(true);
-    expect(await Bun.file(join(tempDir, ".bidme", "pay", "stripe", "success.html")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, ".bidme", "pay", "stripe", "success.html")).exists()).toBe(
+      true,
+    );
     expect(await Bun.file(join(tempDir, "_config.yml")).exists()).toBe(true);
     expect(await Bun.file(join(tempDir, "bidme", "redirect.html")).exists()).toBe(false);
     const pagesConfig = await Bun.file(join(tempDir, "_config.yml")).text();
@@ -31,8 +33,12 @@ describe("init end-to-end", () => {
     expect(pagesConfig).toContain("- .bidme/config.toml");
     expect(pagesConfig).toContain("- .bidme/version.json");
     expect(pagesConfig).toContain("- .bidme/data");
-    expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", ".gitkeep")).exists()).toBe(true);
-    expect(await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).exists()).toBe(false);
+    expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", ".gitkeep")).exists()).toBe(
+      true,
+    );
+    expect(await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).exists()).toBe(
+      false,
+    );
     expect(await Bun.file(join(tempDir, ".bidme", "data", "analytics.json")).exists()).toBe(false);
     expect(await Bun.file(join(tempDir, ".bidme", "data", "bidders.json")).exists()).toBe(false);
     expect((await stat(join(tempDir, ".bidme", "data", "archive"))).isDirectory()).toBe(true);
@@ -95,7 +101,9 @@ describe("init end-to-end", () => {
     );
 
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
-    const ymlFiles = (await readdir(join(tempDir, ".github", "workflows"))).filter((f) => f.endsWith(".yml")).sort();
+    const ymlFiles = (await readdir(join(tempDir, ".github", "workflows")))
+      .filter((f) => f.endsWith(".yml"))
+      .sort();
 
     expect(ymlFiles).toEqual([
       "bidme-analytics.yml",

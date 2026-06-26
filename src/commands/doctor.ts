@@ -39,7 +39,11 @@ async function secretExists(name: string): Promise<CheckResult> {
 async function variablesAccessAvailable(): Promise<CheckResult> {
   const response = await githubGet("/actions/variables");
   if (!response) {
-    return { name: "GitHub variables API readable", ok: false, detail: "GITHUB_TOKEN and GITHUB_REPOSITORY required" };
+    return {
+      name: "GitHub variables API readable",
+      ok: false,
+      detail: "GITHUB_TOKEN and GITHUB_REPOSITORY required",
+    };
   }
   return {
     name: "GitHub variables API readable",
@@ -52,7 +56,9 @@ async function variablesAccessAvailable(): Promise<CheckResult> {
   };
 }
 
-export async function runDoctor(options: DoctorOptions = {}): Promise<{ success: boolean; message: string }> {
+export async function runDoctor(
+  options: DoctorOptions = {},
+): Promise<{ success: boolean; message: string }> {
   const target = options.target ?? process.cwd();
   const checks: CheckResult[] = [];
 
@@ -63,7 +69,9 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
   checks.push({
     name: "GitHub Pages enabled",
     ok: pages?.ok ?? false,
-    detail: pages ? `${pages.status} ${pages.statusText}` : "GITHUB_TOKEN and GITHUB_REPOSITORY required",
+    detail: pages
+      ? `${pages.status} ${pages.statusText}`
+      : "GITHUB_TOKEN and GITHUB_REPOSITORY required",
   });
 
   try {
@@ -71,11 +79,22 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
     validateConfig(config);
     checks.push({ name: ".bidme/config.toml valid", ok: true });
   } catch (err) {
-    checks.push({ name: ".bidme/config.toml valid", ok: false, detail: err instanceof Error ? err.message : String(err) });
+    checks.push({
+      name: ".bidme/config.toml valid",
+      ok: false,
+      detail: err instanceof Error ? err.message : String(err),
+    });
   }
 
-  const workflows = ["bidme-open.yml", "bidme-process-bid.yml", "bidme-close.yml", "bidme-analytics.yml"];
-  const missing = workflows.filter((file) => !existsSync(join(target, ".github", "workflows", file)));
+  const workflows = [
+    "bidme-open.yml",
+    "bidme-process-bid.yml",
+    "bidme-close.yml",
+    "bidme-analytics.yml",
+  ];
+  const missing = workflows.filter(
+    (file) => !existsSync(join(target, ".github", "workflows", file)),
+  );
   checks.push({
     name: "Workflow files present",
     ok: missing.length === 0,
@@ -93,7 +112,8 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
   const pagesConfig = existsSync(pagesConfigPath) ? await Bun.file(pagesConfigPath).text() : "";
   checks.push({
     name: "GitHub Pages config limits public .bidme files",
-    ok: pagesConfig.includes("- .bidme") &&
+    ok:
+      pagesConfig.includes("- .bidme") &&
       pagesConfig.includes("- .bidme/config.toml") &&
       pagesConfig.includes("- .bidme/version.json") &&
       pagesConfig.includes("- .bidme/data"),
@@ -101,7 +121,8 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
 
   checks.push({
     name: "Public BIDME Pages files present",
-    ok: existsSync(join(target, ".bidme", "pay", "redirect.html")) &&
+    ok:
+      existsSync(join(target, ".bidme", "pay", "redirect.html")) &&
       existsSync(join(target, ".bidme", "pay", "stripe", "success.html")) &&
       existsSync(join(target, ".bidme", "pay", "stripe", "cancelled.html")),
   });
@@ -109,13 +130,21 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<{ success:
   try {
     const stripe = new StripeAPI();
     if (!stripe.isConfigured) {
-      checks.push({ name: "Stripe connection valid", ok: false, detail: "STRIPE_SECRET_KEY not set" });
+      checks.push({
+        name: "Stripe connection valid",
+        ok: false,
+        detail: "STRIPE_SECRET_KEY not set",
+      });
     } else {
       await stripe.getAccount();
       checks.push({ name: "Stripe connection valid", ok: true });
     }
   } catch (err) {
-    checks.push({ name: "Stripe connection valid", ok: false, detail: err instanceof Error ? err.message : String(err) });
+    checks.push({
+      name: "Stripe connection valid",
+      ok: false,
+      detail: err instanceof Error ? err.message : String(err),
+    });
   }
 
   for (const check of checks) {

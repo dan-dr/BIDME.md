@@ -1,6 +1,6 @@
 import { join, resolve } from "path";
-import { type Migration } from "./index.js";
-import { DEFAULT_CONFIG, generateToml, type BidMeConfig } from "../config.js";
+import { type BidMeConfig, DEFAULT_CONFIG, generateToml } from "../config.js";
+import type { Migration } from "./index.js";
 
 async function fileExists(path: string): Promise<boolean> {
   try {
@@ -311,7 +311,10 @@ function parseYamlValue(value: string): any {
     });
   }
 
-  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
     return value.slice(1, -1);
   }
 

@@ -1,17 +1,17 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolve, join } from "path";
-import { mkdtemp, rm, readdir, mkdir, stat } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, readdir, rm, stat } from "fs/promises";
 import { tmpdir } from "os";
+import { join, resolve } from "path";
+import { runUpdate } from "../../commands/update.js";
+import { parseToml } from "../config.js";
+import { getMigrationsAfter, migrations } from "../migrations/index.js";
 import {
+  cleanupOldFiles,
   migrateConfig,
   migrateData,
-  migrateWorkflows,
   migrateReadme,
-  cleanupOldFiles,
+  migrateWorkflows,
 } from "../migrations/v0.2.0.js";
-import { migrations, getMigrationsAfter } from "../migrations/index.js";
-import { parseToml } from "../config.js";
-import { runUpdate } from "../../commands/update.js";
 
 describe("v1→v2 config migration", () => {
   let tempDir: string;
@@ -124,16 +124,25 @@ describe("v1→v2 data migration", () => {
     await mkdir(join(tempDir, "data", "archive"), { recursive: true });
     await Bun.write(join(tempDir, "data", "current-period.json"), '{"period": null}');
     await Bun.write(join(tempDir, "data", "analytics.json"), '{"periods": []}');
-    await Bun.write(join(tempDir, "data", "archive", "period-2025-01-01.json"), '{"archived": true}');
+    await Bun.write(
+      join(tempDir, "data", "archive", "period-2025-01-01.json"),
+      '{"archived": true}',
+    );
 
     const result = await migrateData(tempDir);
     expect(result).toBe(true);
 
-    expect(await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).exists()).toBe(true);
+    expect(await Bun.file(join(tempDir, ".bidme", "data", "current-period.json")).exists()).toBe(
+      true,
+    );
     expect(await Bun.file(join(tempDir, ".bidme", "data", "analytics.json")).exists()).toBe(true);
-    expect(await Bun.file(join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json")).exists()).toBe(true);
+    expect(
+      await Bun.file(join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json")).exists(),
+    ).toBe(true);
 
-    const archive = await Bun.file(join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json")).text();
+    const archive = await Bun.file(
+      join(tempDir, ".bidme", "data", "archive", "period-2025-01-01.json"),
+    ).text();
     expect(archive).toBe('{"archived": true}');
   });
 
@@ -364,7 +373,10 @@ describe("migration is idempotent", () => {
 
   test("running full v0.2.0 migration twice does not break anything", async () => {
     await mkdir(join(tempDir, "data", "archive"), { recursive: true });
-    await Bun.write(join(tempDir, "bidme-config.yml"), "bidding:\n  schedule: monthly\n  duration: 7\n");
+    await Bun.write(
+      join(tempDir, "bidme-config.yml"),
+      "bidding:\n  schedule: monthly\n  duration: 7\n",
+    );
     await Bun.write(join(tempDir, "data", "analytics.json"), '{"periods": []}');
 
     const migration = migrations.find((m) => m.version === "0.2.0");

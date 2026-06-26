@@ -1,17 +1,19 @@
-import { resolve } from "path";
 import { mkdir } from "fs/promises";
-import { loadConfig } from "../lib/config.ts";
-import type { BidMeConfig } from "../lib/config.ts";
-import { GitHubAPI } from "../lib/github-api.ts";
+import { resolve } from "path";
 import { generateBannerSection } from "../lib/badge-generator.ts";
-import {
-  generateWinnerAnnouncement,
-  generateNoBidsMessage,
-} from "../lib/issue-template.ts";
-import { StripeAPI, StripePaymentError } from "../lib/stripe-integration.ts";
+import type { BidMeConfig } from "../lib/config.ts";
+import { loadConfig } from "../lib/config.ts";
 import { logError } from "../lib/error-handler.ts";
-import { readAnalytics, readCurrentPeriod, writeAnalytics, writeCurrentPeriod } from "../lib/variable-store.ts";
-import type { PeriodData, BidRecord } from "../lib/types.ts";
+import { GitHubAPI } from "../lib/github-api.ts";
+import { generateNoBidsMessage, generateWinnerAnnouncement } from "../lib/issue-template.ts";
+import { StripeAPI, StripePaymentError } from "../lib/stripe-integration.ts";
+import type { BidRecord, PeriodData } from "../lib/types.ts";
+import {
+  readAnalytics,
+  readCurrentPeriod,
+  writeAnalytics,
+  writeCurrentPeriod,
+} from "../lib/variable-store.ts";
 
 export interface CloseBiddingOptions {
   target?: string;
@@ -66,7 +68,8 @@ async function processPayment(
   console.log(`  Processing Stripe charge: $${winner.amount} (${amountCents} cents)`);
 
   try {
-    const destination = config.payment.mode === "connect" ? config.payment.stripe_account_id : undefined;
+    const destination =
+      config.payment.mode === "connect" ? config.payment.stripe_account_id : undefined;
     const fee = destination
       ? Math.round(amountCents * (config.payment.bidme_fee_percent / 100))
       : undefined;
@@ -110,7 +113,10 @@ async function processPayment(
         payment_status: "failed",
         stripe_customer_id: customerId,
       },
-      paymentResult: { success: false, error: err instanceof Error ? err.message : "Unknown error" },
+      paymentResult: {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      },
     };
   }
 }
@@ -166,7 +172,12 @@ export async function runCloseBidding(
     console.log("\n⚠ GitHub environment not configured — running in local mode");
 
     if (winner) {
-      const trackingUrl = appendTrackingParams(winner.destination_url, owner || "unknown", repo || "unknown", config.tracking.utm_params);
+      const trackingUrl = appendTrackingParams(
+        winner.destination_url,
+        owner || "unknown",
+        repo || "unknown",
+        config.tracking.utm_params,
+      );
       console.log(`\n✓ Winner: @${winner.bidder} with $${winner.amount}`);
       console.log(`  Banner: ${winner.banner_url}`);
       console.log(`  Destination: ${trackingUrl}`);
@@ -203,7 +214,9 @@ export async function runCloseBidding(
     }
     stripePaymentSuccess = paymentResult.success;
 
-    const encodedDest = encodeURIComponent(appendTrackingParams(winner.destination_url, owner, repo, config.tracking.utm_params));
+    const encodedDest = encodeURIComponent(
+      appendTrackingParams(winner.destination_url, owner, repo, config.tracking.utm_params),
+    );
     const pagesBase = config.payment.base_url || `https://${owner}.github.io/${repo}`;
     const trackingUrl = `${pagesBase}/.bidme/pay/redirect.html?id=${encodeURIComponent(periodData.period_id)}&dest=${encodedDest}`;
     console.log(`  Tracking URL: ${trackingUrl}`);
@@ -221,11 +234,7 @@ export async function runCloseBidding(
     }
 
     if (readmeContent) {
-      const bannerMarkdown = generateBannerSection(
-        winner.banner_url,
-        trackingUrl,
-        [],
-      );
+      const bannerMarkdown = generateBannerSection(winner.banner_url, trackingUrl, []);
 
       const sponsoredLine = `\n<sub>Sponsored via [BIDME](https://github.com/danarrib/bidme)</sub>`;
       const fullBanner = `${bannerMarkdown}${sponsoredLine}`;

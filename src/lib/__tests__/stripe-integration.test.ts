@@ -1,9 +1,5 @@
-import { describe, test, expect, beforeEach, afterEach, mock, spyOn } from "bun:test";
-import {
-  StripeAPI,
-  StripeAPIError,
-  StripePaymentError,
-} from "../stripe-integration.js";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import { StripeAPI, StripeAPIError, StripePaymentError } from "../stripe-integration.js";
 
 describe("StripeAPI", () => {
   const originalEnv = process.env["STRIPE_SECRET_KEY"];
@@ -201,9 +197,7 @@ describe("StripeAPI", () => {
         );
       }) as unknown as typeof fetch;
 
-      await expect(api.createSetupIntent("cus_invalid")).rejects.toThrow(
-        StripeAPIError,
-      );
+      await expect(api.createSetupIntent("cus_invalid")).rejects.toThrow(StripeAPIError);
 
       try {
         await api.createSetupIntent("cus_invalid");
@@ -232,9 +226,9 @@ describe("StripeAPI", () => {
         );
       }) as unknown as typeof fetch;
 
-      await expect(
-        api.chargeCustomer("cus_123", "pm_123", 5000, {}),
-      ).rejects.toThrow(StripePaymentError);
+      await expect(api.chargeCustomer("cus_123", "pm_123", 5000, {})).rejects.toThrow(
+        StripePaymentError,
+      );
 
       try {
         await api.chargeCustomer("cus_123", "pm_123", 5000, {});
@@ -252,9 +246,9 @@ describe("StripeAPI", () => {
       const unconfiguredApi = new StripeAPI();
       warnSpy.mockRestore();
 
-      await expect(unconfiguredApi.createCustomer("test@example.com", { github_username: "test" })).rejects.toThrow(
-        "Stripe is not configured — missing secret key",
-      );
+      await expect(
+        unconfiguredApi.createCustomer("test@example.com", { github_username: "test" }),
+      ).rejects.toThrow("Stripe is not configured — missing secret key");
     });
   });
 });
@@ -278,11 +272,7 @@ describe("StripeAPIError", () => {
 
 describe("StripePaymentError", () => {
   test("constructs with correct properties", () => {
-    const error = new StripePaymentError(
-      "Payment failed",
-      "card_declined",
-      "insufficient_funds",
-    );
+    const error = new StripePaymentError("Payment failed", "card_declined", "insufficient_funds");
 
     expect(error.name).toBe("StripePaymentError");
     expect(error.message).toBe("Payment failed");

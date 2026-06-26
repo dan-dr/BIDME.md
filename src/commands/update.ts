@@ -1,5 +1,5 @@
 import { join, resolve } from "path";
-import { migrations, getMigrationsAfter, type Migration } from "../lib/migrations/index.js";
+import { getMigrationsAfter, type Migration, migrations } from "../lib/migrations/index.js";
 
 export interface VersionInfo {
   version: string;

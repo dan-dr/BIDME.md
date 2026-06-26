@@ -84,7 +84,9 @@ export async function withRetry<T>(
 
 export function isRateLimited(error: unknown): boolean {
   if (error instanceof Error && "status" in error) {
-    return (error as { status: number }).status === 403 || (error as { status: number }).status === 429;
+    return (
+      (error as { status: number }).status === 403 || (error as { status: number }).status === 429
+    );
   }
   return false;
 }

@@ -89,9 +89,7 @@ export class StripeAPI {
   constructor(secretKey?: string) {
     const key = secretKey ?? process.env["STRIPE_SECRET_KEY"];
     if (!key) {
-      console.warn(
-        "⚠ STRIPE_SECRET_KEY not set — payment features will be skipped",
-      );
+      console.warn("⚠ STRIPE_SECRET_KEY not set — payment features will be skipped");
       this.config = null;
       return;
     }
@@ -151,10 +149,7 @@ export class StripeAPI {
     return data as T;
   }
 
-  private encodeFormData(
-    data: Record<string, unknown>,
-    prefix = "",
-  ): string {
+  private encodeFormData(data: Record<string, unknown>, prefix = ""): string {
     const params: string[] = [];
 
     for (const [key, value] of Object.entries(data)) {
@@ -171,7 +166,9 @@ export class StripeAPI {
               this.encodeFormData(item as Record<string, unknown>, `${fullKey}[${index}]`),
             );
           } else {
-            params.push(`${encodeURIComponent(`${fullKey}[${index}]`)}=${encodeURIComponent(String(item))}`);
+            params.push(
+              `${encodeURIComponent(`${fullKey}[${index}]`)}=${encodeURIComponent(String(item))}`,
+            );
           }
         });
       } else {

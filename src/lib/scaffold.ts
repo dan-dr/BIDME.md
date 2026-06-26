@@ -1,5 +1,5 @@
+import { existsSync, readFileSync } from "fs";
 import { join, resolve } from "path";
-import { readFileSync, existsSync } from "fs";
 import { type BidMeConfig, generateToml } from "./config.js";
 
 function resolveTemplate(...segments: string[]): string {
@@ -54,9 +54,7 @@ async function detectGitRepo(
   try {
     const configPath = join(gitDir, "config");
     const configContent = await Bun.file(configPath).text();
-    const match = configContent.match(
-      /url\s*=\s*.*?(?:github\.com)[:/]([^/\s]+)\/([^/\s.]+)/,
-    );
+    const match = configContent.match(/url\s*=\s*.*?(?:github\.com)[:/]([^/\s]+)\/([^/\s.]+)/);
     if (match && match[1] && match[2]) {
       return {
         isGit: true,
@@ -118,11 +116,7 @@ async function copyNotFoundPage(target: string): Promise<boolean> {
   }
 }
 
-async function copyStripePages(
-  target: string,
-  owner: string,
-  repo: string,
-): Promise<string[]> {
+async function copyStripePages(target: string, owner: string, repo: string): Promise<string[]> {
   const stripeDir = join(target, PUBLIC_PAY_DIR, "stripe");
   await ensureDir(stripeDir);
 
@@ -156,7 +150,9 @@ async function copyStripePages(
   return copied;
 }
 
-async function copyWorkflowTemplates(target: string): Promise<{ copied: string[]; skipped: string[] }> {
+async function copyWorkflowTemplates(
+  target: string,
+): Promise<{ copied: string[]; skipped: string[] }> {
   const workflowDir = join(target, ".github", "workflows");
   await ensureDir(workflowDir);
 
@@ -203,11 +199,7 @@ async function writePagesConfig(target: string): Promise<boolean> {
   return writeIfNotExists(configPath, content);
 }
 
-async function updateReadme(
-  target: string,
-  owner: string,
-  repo: string,
-): Promise<boolean> {
+async function updateReadme(target: string, owner: string, repo: string): Promise<boolean> {
   const readmePath = join(target, "README.md");
   const placeholder = bannerPlaceholder(owner, repo);
   const file = Bun.file(readmePath);
@@ -223,10 +215,7 @@ async function updateReadme(
   }
 }
 
-export async function scaffold(
-  target: string,
-  config: BidMeConfig,
-): Promise<ScaffoldResult> {
+export async function scaffold(target: string, config: BidMeConfig): Promise<ScaffoldResult> {
   const resolved = resolve(target);
 
   const bidmeDir = join(resolved, ".bidme");
@@ -242,7 +231,9 @@ export async function scaffold(
   let pkgVersion = "0.2.0";
   try {
     const fromSource = resolve(import.meta.dir, "../../package.json");
-    const pkgPath = existsSync(fromSource) ? fromSource : resolve(import.meta.dir, "../package.json");
+    const pkgPath = existsSync(fromSource)
+      ? fromSource
+      : resolve(import.meta.dir, "../package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     pkgVersion = pkg.version;
   } catch {}

@@ -1,13 +1,13 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { DEFAULT_CONFIG } from "../config.js";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { BidMeConfig } from "../config.js";
-import type { ParsedBid } from "../validation.js";
+import { DEFAULT_CONFIG } from "../config.js";
 import {
-  validateBannerImage,
-  validateCommentFormat,
   checkProhibitedContent,
   enforceContent,
+  validateBannerImage,
+  validateCommentFormat,
 } from "../content-enforcer.js";
+import type { ParsedBid } from "../validation.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -145,7 +145,9 @@ describe("validateBannerImage", () => {
 
       const result = await validateBannerImage("https://example.com/banner.svg", config);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.message.includes("450KB") && e.message.includes("200KB"))).toBe(true);
+      expect(
+        result.errors.some((e) => e.message.includes("450KB") && e.message.includes("200KB")),
+      ).toBe(true);
     });
 
     test("passes when content-length header is missing", async () => {
@@ -200,7 +202,9 @@ describe("validateBannerImage", () => {
     });
 
     test("fails for bmp format not in allowed list", async () => {
-      const config = makeConfig({ banner: { ...DEFAULT_CONFIG.banner, formats: ["png", "jpg", "svg"] } });
+      const config = makeConfig({
+        banner: { ...DEFAULT_CONFIG.banner, formats: ["png", "jpg", "svg"] },
+      });
 
       globalThis.fetch = mock(async () => {
         return new Response(null, {
@@ -270,7 +274,9 @@ describe("validateBannerImage", () => {
 
       const result = await validateBannerImage("https://example.com/banner.png", config);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.message.includes("1200x300") && e.message.includes("800x100"))).toBe(true);
+      expect(
+        result.errors.some((e) => e.message.includes("1200x300") && e.message.includes("800x100")),
+      ).toBe(true);
     });
 
     test("reads JPEG dimensions correctly", async () => {
@@ -293,7 +299,9 @@ describe("validateBannerImage", () => {
     });
 
     test("reads GIF dimensions correctly", async () => {
-      const config = makeConfig({ banner: { ...DEFAULT_CONFIG.banner, width: 800, height: 100, formats: ["gif"] } });
+      const config = makeConfig({
+        banner: { ...DEFAULT_CONFIG.banner, width: 800, height: 100, formats: ["gif"] },
+      });
       const gifBuf = makeGifBuffer(400, 50);
 
       globalThis.fetch = mock(async () => {
@@ -311,7 +319,9 @@ describe("validateBannerImage", () => {
     });
 
     test("reads WebP dimensions correctly", async () => {
-      const config = makeConfig({ banner: { ...DEFAULT_CONFIG.banner, width: 800, height: 100, formats: ["webp"] } });
+      const config = makeConfig({
+        banner: { ...DEFAULT_CONFIG.banner, width: 800, height: 100, formats: ["webp"] },
+      });
       const webpBuf = makeWebpBuffer(900, 150);
 
       globalThis.fetch = mock(async () => {
@@ -356,7 +366,9 @@ describe("validateBannerImage", () => {
 
   describe("multiple errors", () => {
     test("reports both size and dimension errors", async () => {
-      const config = makeConfig({ banner: { ...DEFAULT_CONFIG.banner, max_size: 100, width: 400, height: 50 } });
+      const config = makeConfig({
+        banner: { ...DEFAULT_CONFIG.banner, max_size: 100, width: 400, height: 50 },
+      });
       const pngBuf = makePngBuffer(800, 100);
 
       globalThis.fetch = mock(async () => {
@@ -462,7 +474,10 @@ describe("checkProhibitedContent", () => {
   test("returns no errors when no prohibited keywords found", () => {
     const bid = makeBid();
     const config = makeConfig({
-      content_guidelines: { ...DEFAULT_CONFIG.content_guidelines, prohibited: ["gambling", "adult content"] },
+      content_guidelines: {
+        ...DEFAULT_CONFIG.content_guidelines,
+        prohibited: ["gambling", "adult content"],
+      },
     });
 
     const errors = checkProhibitedContent(bid, config);
@@ -517,7 +532,10 @@ describe("checkProhibitedContent", () => {
       destination_url: "https://adult content.example.com",
     });
     const config = makeConfig({
-      content_guidelines: { ...DEFAULT_CONFIG.content_guidelines, prohibited: ["gambling", "adult content"] },
+      content_guidelines: {
+        ...DEFAULT_CONFIG.content_guidelines,
+        prohibited: ["gambling", "adult content"],
+      },
     });
 
     const errors = checkProhibitedContent(bid, config);

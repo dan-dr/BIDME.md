@@ -1,17 +1,17 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolve, join } from "path";
-import { mkdtemp, rm, mkdir } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
+import { join, resolve } from "path";
+import type { BidMeConfig } from "../config.js";
 import {
+  ConfigValidationError,
+  DEFAULT_CONFIG,
+  generateToml,
   loadConfig,
+  parseToml,
   saveConfig,
   validateConfig,
-  generateToml,
-  parseToml,
-  DEFAULT_CONFIG,
-  ConfigValidationError,
 } from "../config.js";
-import type { BidMeConfig } from "../config.js";
 
 describe("TOML config system", () => {
   let tempDir: string;

@@ -1,6 +1,6 @@
 import * as clack from "@clack/prompts";
-import { scaffold, type ScaffoldResult } from "../lib/scaffold.js";
-import { DEFAULT_CONFIG, type BidMeConfig } from "../lib/config.js";
+import { type BidMeConfig, DEFAULT_CONFIG } from "../lib/config.js";
+import { type ScaffoldResult, scaffold } from "../lib/scaffold.js";
 
 export interface InitOptions {
   target: string;
@@ -43,42 +43,60 @@ export async function collectConfig(): Promise<WizardConfig> {
     ],
     initialValue: "monthly" as const,
   });
-  if (clack.isCancel(schedule)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(schedule)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const durationStr = await clack.text({
     message: "Bidding duration in days:",
     defaultValue: "7",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(durationStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(durationStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const minBidStr = await clack.text({
     message: "Minimum bid amount in USD:",
     defaultValue: "50",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(minBidStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(minBidStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const incrementStr = await clack.text({
     message: "Bid increment in USD:",
     defaultValue: "5",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(incrementStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(incrementStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const widthStr = await clack.text({
     message: "Banner max width (px):",
     defaultValue: "800",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(widthStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(widthStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const heightStr = await clack.text({
     message: "Banner max height (px):",
     defaultValue: "100",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(heightStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(heightStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const formats = await clack.multiselect({
     message: "Accepted banner formats:",
@@ -92,14 +110,20 @@ export async function collectConfig(): Promise<WizardConfig> {
     initialValues: ["png", "jpg", "svg"],
     required: true,
   });
-  if (clack.isCancel(formats)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(formats)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const maxSizeStr = await clack.text({
     message: "Banner max file size in KB:",
     defaultValue: "200",
     validate: validatePositiveInt,
   });
-  if (clack.isCancel(maxSizeStr)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(maxSizeStr)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   const approvalMode = await clack.select({
     message: "Bid approval mode:",
@@ -109,7 +133,10 @@ export async function collectConfig(): Promise<WizardConfig> {
     ],
     initialValue: "emoji" as const,
   });
-  if (clack.isCancel(approvalMode)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(approvalMode)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   clack.log.info("Payment provider: Stripe");
   clack.log.info("Required: STRIPE_SECRET_KEY environment variable");
@@ -117,12 +144,19 @@ export async function collectConfig(): Promise<WizardConfig> {
   const paymentMode = await clack.select({
     message: "Payment mode:",
     options: [
-      { value: "own_keys" as const, label: "Bring your own Stripe keys", hint: "owner keeps funds" },
+      {
+        value: "own_keys" as const,
+        label: "Bring your own Stripe keys",
+        hint: "owner keeps funds",
+      },
       { value: "connect" as const, label: "Stripe Connect", hint: "BIDME platform fee" },
     ],
     initialValue: "own_keys" as const,
   });
-  if (clack.isCancel(paymentMode)) { clack.cancel("Setup cancelled."); process.exit(0); }
+  if (clack.isCancel(paymentMode)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
 
   return {
     bidding: {
@@ -204,19 +238,20 @@ export async function runInit(options: InitOptions): Promise<void> {
     clack.log.warn("Skipped (already exist):\n" + skipped);
   }
 
-  const pagesUrl = result.owner !== "OWNER"
-    ? `https://${result.owner}.github.io/${result.repo}/.bidme/pay/stripe/`
-    : "https://{owner}.github.io/{repo}/.bidme/pay/stripe/";
+  const pagesUrl =
+    result.owner !== "OWNER"
+      ? `https://${result.owner}.github.io/${result.repo}/.bidme/pay/stripe/`
+      : "https://{owner}.github.io/{repo}/.bidme/pay/stripe/";
 
   clack.outro(
     "BIDME setup complete! Next steps:\n" +
-    "  1. Review .bidme/config.toml\n" +
-    "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
-    "  3. Optional: add BIDME_PAT if GitHub variables reject GITHUB_TOKEN writes\n" +
-    "  4. Enable GitHub Pages:\n" +
-    "     Settings → Pages → Deploy from branch (main, / root)\n" +
-    `     Payment pages will be at: ${pagesUrl}\n` +
-    "  5. Run `bidme doctor` to verify setup\n" +
-    "  6. Commit & push",
+      "  1. Review .bidme/config.toml\n" +
+      "  2. Add STRIPE_SECRET_KEY to repository secrets\n" +
+      "  3. Optional: add BIDME_PAT if GitHub variables reject GITHUB_TOKEN writes\n" +
+      "  4. Enable GitHub Pages:\n" +
+      "     Settings → Pages → Deploy from branch (main, / root)\n" +
+      `     Payment pages will be at: ${pagesUrl}\n` +
+      "  5. Run `bidme doctor` to verify setup\n" +
+      "  6. Commit & push",
   );
 }

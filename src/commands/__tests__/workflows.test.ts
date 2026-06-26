@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolve, join } from "path";
-import { mkdtemp, rm, readdir, mkdir } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, readdir, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { scaffold } from "../../lib/scaffold.js";
+import { join, resolve } from "path";
 import { DEFAULT_CONFIG } from "../../lib/config.js";
+import { scaffold } from "../../lib/scaffold.js";
 
 const WORKFLOW_FILES = [
   "bidme-open.yml",
@@ -36,12 +36,18 @@ describe("workflow template validation", () => {
   }
 
   test("workflows run the expected bidme commands", async () => {
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).toContain("command: open-bidding");
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).toContain(
+      "command: open-bidding",
+    );
     const processBid = await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text();
     expect(processBid).toContain("command: process-bid");
     expect(processBid).toContain("contains(github.event.comment.body, 'bid:')");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain("command: close-bidding");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).toContain("command: update-analytics");
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain(
+      "command: close-bidding",
+    );
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).toContain(
+      "command: update-analytics",
+    );
   });
 
   test("repository action owns runtime dependency setup", async () => {
@@ -53,10 +59,18 @@ describe("workflow template validation", () => {
   });
 
   test("only close workflow commits archive and README changes", async () => {
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain("stefanzweifel/git-auto-commit-action@v5");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text()).not.toContain("git-auto-commit-action");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).not.toContain("git-auto-commit-action");
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).not.toContain("git-auto-commit-action");
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain(
+      "stefanzweifel/git-auto-commit-action@v5",
+    );
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text()).not.toContain(
+      "git-auto-commit-action",
+    );
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).not.toContain(
+      "git-auto-commit-action",
+    );
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).not.toContain(
+      "git-auto-commit-action",
+    );
   });
 });
 

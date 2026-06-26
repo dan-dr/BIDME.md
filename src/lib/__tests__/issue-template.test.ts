@@ -1,19 +1,18 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { BidMeConfig } from "../config.js";
+import { DEFAULT_CONFIG } from "../config.js";
 import {
-  generateBidIssueBody,
   generateBiddingIssueBody,
+  generateBidIssueBody,
   generateBidTable,
   generateCurrentTopBid,
-  generateStatsSection,
-  generatePreviousStatsSection,
-  generateWinnerAnnouncement,
   generateNoBidsMessage,
+  generatePreviousStatsSection,
+  generateStatsSection,
+  generateWinnerAnnouncement,
   updateBidIssueBody,
 } from "../issue-template.js";
-import { DEFAULT_CONFIG } from "../config.js";
-import type { BidMeConfig } from "../config.js";
-import type { PeriodData, BidRecord } from "../types.js";
-import type { PeriodAnalytics } from "../types.js";
+import type { BidRecord, PeriodAnalytics, PeriodData } from "../types.js";
 
 function makePeriod(overrides: Partial<PeriodData> = {}): PeriodData {
   return {

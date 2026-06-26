@@ -57,10 +57,7 @@ export function extractFirstMarkdownImage(body: string): string | null {
   return match?.[1] ?? null;
 }
 
-export function validateBid(
-  bid: ParsedBid,
-  config: BidMeConfig,
-): ValidationResult {
+export function validateBid(bid: ParsedBid, config: BidMeConfig): ValidationResult {
   const errors: ValidationError[] = [];
 
   if (bid.amount < config.bidding.minimum_bid) {

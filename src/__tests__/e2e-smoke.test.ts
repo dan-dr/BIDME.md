@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolve, join } from "path";
-import { mkdtemp, rm, readdir, stat } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdtemp, readdir, rm, stat } from "fs/promises";
 import { tmpdir } from "os";
-import { parseToml } from "../lib/config.js";
+import { join, resolve } from "path";
 import { runUpdate } from "../commands/update.js";
+import { parseToml } from "../lib/config.js";
 
 const PROJECT_ROOT = resolve(import.meta.dir, "../..");
 
@@ -19,7 +19,10 @@ async function dirExists(path: string): Promise<boolean> {
   }
 }
 
-async function runCli(args: string[], cwd?: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+async function runCli(
+  args: string[],
+  cwd?: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["bun", "run", "src/cli.ts", ...args], {
     cwd: cwd ?? PROJECT_ROOT,
     stdout: "pipe",
@@ -37,7 +40,11 @@ async function runCli(args: string[], cwd?: string): Promise<{ exitCode: number;
   return { exitCode, stdout, stderr };
 }
 
-async function runAction(command: string, target: string, cwd?: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+async function runAction(
+  command: string,
+  target: string,
+  cwd?: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["bun", "run", "src/action.ts"], {
     cwd: cwd ?? PROJECT_ROOT,
     stdout: "pipe",

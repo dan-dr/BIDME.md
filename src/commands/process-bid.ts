@@ -1,12 +1,12 @@
 import { loadConfig, resolvePaymentUrls } from "../lib/config.ts";
-import { GitHubAPI, GitHubAPIError } from "../lib/github-api.ts";
-import { parseBidComment, validateBid } from "../lib/validation.ts";
-import { updateBidIssueBody } from "../lib/issue-template.ts";
-import { logError, withRetry, isRateLimited } from "../lib/error-handler.ts";
 import { enforceContent } from "../lib/content-enforcer.ts";
+import { isRateLimited, logError, withRetry } from "../lib/error-handler.ts";
+import { GitHubAPI, GitHubAPIError } from "../lib/github-api.ts";
+import { updateBidIssueBody } from "../lib/issue-template.ts";
 import { StripeAPI } from "../lib/stripe-integration.ts";
+import type { BidRecord, PeriodData } from "../lib/types.ts";
+import { parseBidComment, validateBid } from "../lib/validation.ts";
 import { readAnalytics, readCurrentPeriod, writeCurrentPeriod } from "../lib/variable-store.ts";
-import type { PeriodData, BidRecord } from "../lib/types.ts";
 
 export interface ProcessBidOptions {
   target?: string;
@@ -92,7 +92,7 @@ export async function runProcessBid(
   const parsed = parseBidComment(commentBody);
   if (!parsed) {
     const msg =
-      "Could not parse bid. Attach a banner image and use:\n\n```yaml\n---\nbid:\n  amount: 100\n  destination_url: \"https://example.com\"\n  tagline: \"Build faster\"\n---\n```";
+      'Could not parse bid. Attach a banner image and use:\n\n```yaml\n---\nbid:\n  amount: 100\n  destination_url: "https://example.com"\n  tagline: "Build faster"\n---\n```';
     console.log("✗ Failed to parse bid comment");
 
     if (owner && repo) {
@@ -153,10 +153,9 @@ export async function runProcessBid(
 
       if (!paymentLinked && owner && repo) {
         const paymentUrls = resolvePaymentUrls(config, owner, repo);
-        const customerId = customer?.id ?? (await stripe.createCustomer(
-          `${bidder}@github.bidme`,
-          { github_username: bidder },
-        )).id;
+        const customerId =
+          customer?.id ??
+          (await stripe.createCustomer(`${bidder}@github.bidme`, { github_username: bidder })).id;
         const session = await stripe.createCheckoutSession(
           customerId,
           paymentUrls.success,
@@ -167,7 +166,9 @@ export async function runProcessBid(
         console.log(`✓ Generated Stripe Checkout session for @${bidder}`);
       }
     } catch (err) {
-      console.warn(`⚠ Stripe payment check failed: ${err instanceof Error ? err.message : "unknown"}`);
+      console.warn(
+        `⚠ Stripe payment check failed: ${err instanceof Error ? err.message : "unknown"}`,
+      );
     }
   }
 
@@ -222,8 +223,7 @@ export async function runProcessBid(
   console.log("✓ Content enforcement passed");
 
   // 6. Accept the bid
-  let bidStatus: BidRecord["status"] =
-    config.approval.mode === "auto" ? "approved" : "pending";
+  const bidStatus: BidRecord["status"] = config.approval.mode === "auto" ? "approved" : "pending";
 
   const bidRecord: BidRecord = {
     bidder,
@@ -246,9 +246,8 @@ export async function runProcessBid(
 
     try {
       const analytics = await readAnalytics();
-      const previousStats = analytics.periods.length > 0
-        ? analytics.periods[analytics.periods.length - 1]
-        : undefined;
+      const previousStats =
+        analytics.periods.length > 0 ? analytics.periods[analytics.periods.length - 1] : undefined;
 
       const issue = await api.getIssue(issueNumber);
       const updatedBody = updateBidIssueBody(issue.body, freshPeriodData.bids, previousStats);
@@ -260,9 +259,8 @@ export async function runProcessBid(
     }
 
     try {
-      const statusLabel = bidStatus === "approved"
-        ? "✅ Approved (auto-accept)"
-        : "⏳ Pending owner approval";
+      const statusLabel =
+        bidStatus === "approved" ? "✅ Approved (auto-accept)" : "⏳ Pending owner approval";
 
       let commentText = `✅ **Bid accepted!**\n\n@${bidder} has placed a bid of **$${parsed.amount}**.\n\nStatus: ${statusLabel}`;
 
@@ -304,17 +302,20 @@ async function processApprovalCommand(args: {
   const requestedBidder = match?.[1];
   const approvable = periodData.bids.filter((bid) => bid.status === "pending");
   const bid = requestedBidder
-    ? approvable.find((candidate) => candidate.bidder.toLowerCase() === requestedBidder.toLowerCase())
+    ? approvable.find(
+        (candidate) => candidate.bidder.toLowerCase() === requestedBidder.toLowerCase(),
+      )
     : approvable.length === 1
       ? approvable[0]
       : undefined;
 
   if (!bid) {
     const hasUnlinked = requestedBidder
-      ? periodData.bids.some((candidate) =>
-        candidate.bidder.toLowerCase() === requestedBidder.toLowerCase() &&
-        candidate.status === "unlinked_pending"
-      )
+      ? periodData.bids.some(
+          (candidate) =>
+            candidate.bidder.toLowerCase() === requestedBidder.toLowerCase() &&
+            candidate.status === "unlinked_pending",
+        )
       : periodData.bids.some((candidate) => candidate.status === "unlinked_pending");
     const msg = hasUnlinked
       ? "Bid cannot be approved until payment is linked"
@@ -335,13 +336,15 @@ async function processApprovalCommand(args: {
     const api = new GitHubAPI(owner, repo);
     try {
       const analytics = await readAnalytics();
-      const previousStats = analytics.periods.length > 0
-        ? analytics.periods[analytics.periods.length - 1]
-        : undefined;
+      const previousStats =
+        analytics.periods.length > 0 ? analytics.periods[analytics.periods.length - 1] : undefined;
       const issue = await api.getIssue(issueNumber);
       const updatedBody = updateBidIssueBody(issue.body, periodData.bids, previousStats);
       await api.updateIssueBody(issueNumber, updatedBody);
-      await api.addComment(issueNumber, `✅ Approved bid from @${bid.bidder} for **$${bid.amount}**.`);
+      await api.addComment(
+        issueNumber,
+        `✅ Approved bid from @${bid.bidder} for **$${bid.amount}**.`,
+      );
     } catch (err) {
       console.warn("⚠ Failed to update issue after approval — approval is still recorded");
       logError(err, "process-bid:approve");

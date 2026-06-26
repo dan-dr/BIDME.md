@@ -1,4 +1,4 @@
-import { describe, test, expect, mock, afterEach } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { StripeAPI } from "../../lib/stripe-integration.js";
 
 describe("Stripe payment enforcement primitives", () => {

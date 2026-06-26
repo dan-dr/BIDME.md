@@ -1,13 +1,13 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { resolve, join } from "path";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { scaffold } from "../../lib/scaffold.js";
-import { DEFAULT_CONFIG, generateToml } from "../../lib/config.js";
+import { join, resolve } from "path";
 import type { BidMeConfig } from "../../lib/config.js";
-import type { PeriodData, BidRecord } from "../../lib/types.js";
-import { parseBidComment, validateBid } from "../../lib/validation.js";
+import { DEFAULT_CONFIG, generateToml } from "../../lib/config.js";
 import { generateBidIssueBody } from "../../lib/issue-template.js";
+import { scaffold } from "../../lib/scaffold.js";
+import type { BidRecord, PeriodData } from "../../lib/types.js";
+import { parseBidComment, validateBid } from "../../lib/validation.js";
 import { appendTrackingParams } from "../close-bidding.js";
 
 function makePeriodData(bids: BidRecord[] = []): PeriodData {
@@ -70,9 +70,10 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
 
     if (url.includes("/actions/variables/") && method === "GET") {
       const name = url.split("/").pop()!;
-      const value = name === "BIDME_CURRENT_PERIOD"
-        ? JSON.stringify(overrides.period ?? makePeriodData())
-        : JSON.stringify(overrides.analytics ?? { clicks: [], daily_views: [], periods: [] });
+      const value =
+        name === "BIDME_CURRENT_PERIOD"
+          ? JSON.stringify(overrides.period ?? makePeriodData())
+          : JSON.stringify(overrides.analytics ?? { clicks: [], daily_views: [], periods: [] });
       return Response.json({ name, value });
     }
 
@@ -84,7 +85,9 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
     }
 
     if (url.includes("/customers/search")) {
-      return Response.json({ data: overrides.customers ?? [{ id: "cus_123", metadata: { github_username: "bidder1" } }] });
+      return Response.json({
+        data: overrides.customers ?? [{ id: "cus_123", metadata: { github_username: "bidder1" } }],
+      });
     }
 
     if (url.endsWith("/customers") && method === "POST") {
@@ -92,14 +95,19 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
     }
 
     if (url.includes("/customers/cus_123/payment_methods")) {
-      return Response.json({ data: overrides.paymentMethods ?? [{ id: "pm_123", type: "card", customer: "cus_123" }] });
+      return Response.json({
+        data: overrides.paymentMethods ?? [{ id: "pm_123", type: "card", customer: "cus_123" }],
+      });
     }
 
     if (url.includes("/checkout/sessions") && method === "POST") {
       if (overrides.checkoutFails) {
         return Response.json({ error: { message: "checkout unavailable" } }, { status: 500 });
       }
-      return Response.json({ id: "cs_test_123", url: "https://checkout.stripe.com/c/pay/cs_test_123" });
+      return Response.json({
+        id: "cs_test_123",
+        url: "https://checkout.stripe.com/c/pay/cs_test_123",
+      });
     }
 
     if (url.includes("/comments/") && method === "GET") {
@@ -125,13 +133,23 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
     if (url.includes("/issues/42") && method === "PATCH") {
       const body = JSON.parse(String(init?.body ?? "{}")) as { body?: string };
       if (body.body) state.issueBodyUpdates.push(body.body);
-      return Response.json({ number: 42, body: body.body ?? "", html_url: "", title: "", state: "open", node_id: "" });
+      return Response.json({
+        number: 42,
+        body: body.body ?? "",
+        html_url: "",
+        title: "",
+        state: "open",
+        node_id: "",
+      });
     }
 
     if (url.includes("/comments") && method === "POST") {
       const body = JSON.parse(String(init?.body ?? "{}")) as { body?: string };
       state.comments.push(body.body ?? "");
-      return Response.json({ id: 2000, body: body.body ?? "", user: { login: "bidme-bot" }, created_at: "" }, { status: 201 });
+      return Response.json(
+        { id: 2000, body: body.body ?? "", user: { login: "bidme-bot" }, created_at: "" },
+        { status: 201 },
+      );
     }
 
     if (!url.includes("api.github.com") && (method === "HEAD" || method === "GET")) {
@@ -157,9 +175,16 @@ describe("bid parsing and validation", () => {
   });
 
   test("requires an attached banner image and tagline", () => {
-    expect(parseBidComment("---\nbid:\n  amount: 100\n  destination_url: \"https://example.com\"\n---")).toBeNull();
+    expect(
+      parseBidComment('---\nbid:\n  amount: 100\n  destination_url: "https://example.com"\n---'),
+    ).toBeNull();
     const result = validateBid(
-      { amount: 100, banner_url: "", destination_url: "https://example.com", tagline: "Build faster" },
+      {
+        amount: 100,
+        banner_url: "",
+        destination_url: "https://example.com",
+        tagline: "Build faster",
+      },
       DEFAULT_CONFIG,
     );
     expect(result.valid).toBe(false);
@@ -168,7 +193,12 @@ describe("bid parsing and validation", () => {
 
   test("validates amount and URL fields", () => {
     const result = validateBid(
-      { amount: 53, banner_url: "https://x.com/b.png", destination_url: "notaurl", tagline: "Build faster" },
+      {
+        amount: 53,
+        banner_url: "https://x.com/b.png",
+        destination_url: "notaurl",
+        tagline: "Build faster",
+      },
       DEFAULT_CONFIG,
     );
     expect(result.valid).toBe(false);
