@@ -1,0 +1,3 @@
+{
+  "ignorePatterns": ["Auto Run Docs/**", ".bidme/**", "dist/**", "node_modules/**"]
+}

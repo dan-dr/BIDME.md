@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readdir, rm, stat } from "fs/promises";
+import { mkdir, mkdtemp, rm, stat } from "fs/promises";
 import { tmpdir } from "os";
 import { join, resolve } from "path";
 import { runUpdate } from "../../commands/update.js";

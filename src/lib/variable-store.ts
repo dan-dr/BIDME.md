@@ -79,7 +79,7 @@ async function requestVariable(
       "Content-Type": "application/json",
       "X-GitHub-Api-Version": "2022-11-28",
     },
-    body,
+    ...(body ? { body } : {}),
   });
 }
 

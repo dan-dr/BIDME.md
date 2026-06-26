@@ -127,7 +127,7 @@ describe("computePreviousWeekStats", () => {
   }
 
   test("sums views within previous week window", () => {
-    const { startStr, endStr } = getPreviousWeekRange();
+    const { startStr } = getPreviousWeekRange();
     const d1 = startStr;
     const d2 = new Date(new Date(startStr).getTime() + 86400000).toISOString().split("T")[0]!;
 

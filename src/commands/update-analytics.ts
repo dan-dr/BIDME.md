@@ -116,9 +116,8 @@ function updateAnalyticsSection(body: string, section: string): string {
 }
 
 export async function runUpdateAnalytics(
-  options: UpdateAnalyticsOptions = {},
+  _options: UpdateAnalyticsOptions = {},
 ): Promise<{ success: boolean; message: string }> {
-  const target = options.target ?? process.cwd();
   console.log("=== BIDME: Updating Analytics ===\n");
 
   const analytics = await readAnalytics();

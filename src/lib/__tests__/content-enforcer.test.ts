@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import type { BidMeConfig } from "../config.js";
 import { DEFAULT_CONFIG } from "../config.js";
 import {
@@ -15,10 +15,10 @@ function makeConfig(overrides: Partial<BidMeConfig> = {}): BidMeConfig {
   return {
     ...DEFAULT_CONFIG,
     ...overrides,
-    banner: { ...DEFAULT_CONFIG.banner, ...(overrides.banner ?? {}) },
+    banner: { ...DEFAULT_CONFIG.banner, ...overrides.banner },
     content_guidelines: {
       ...DEFAULT_CONFIG.content_guidelines,
-      ...(overrides.content_guidelines ?? {}),
+      ...overrides.content_guidelines,
     },
   };
 }
@@ -114,8 +114,7 @@ describe("validateBannerImage", () => {
       const config = makeConfig({ banner: { ...DEFAULT_CONFIG.banner, max_size: 200 } });
       const pngBuf = makePngBuffer(400, 50);
 
-      globalThis.fetch = mock(async (input: any) => {
-        const url = typeof input === "string" ? input : input.url;
+      globalThis.fetch = mock(async (_input: any) => {
         return new Response(new Uint8Array(pngBuf), {
           status: 200,
           headers: {

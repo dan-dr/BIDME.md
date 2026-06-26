@@ -2,23 +2,21 @@
   "name": "bidme",
   "version": "0.3.0",
   "description": "Auction-based README sponsorships for GitHub repositories",
-  "module": "index.ts",
-  "type": "module",
+  "keywords": [
+    "bidding",
+    "cli",
+    "github",
+    "readme",
+    "sponsors",
+    "stripe"
+  ],
+  "homepage": "https://github.com/dan-dr/BIDME.md",
   "license": "MIT",
   "author": "dan-dr",
   "repository": {
     "type": "git",
     "url": "https://github.com/dan-dr/BIDME.md.git"
   },
-  "homepage": "https://github.com/dan-dr/BIDME.md",
-  "keywords": [
-    "cli",
-    "github",
-    "sponsors",
-    "stripe",
-    "bidding",
-    "readme"
-  ],
   "bin": {
     "bidme": "./dist/cli.js"
   },
@@ -26,29 +24,32 @@
     "dist",
     "templates"
   ],
+  "type": "module",
+  "module": "index.ts",
   "scripts": {
     "dev": "bun run src/cli.ts",
     "build": "bun build src/cli.ts --outdir dist --target node",
-    "check": "biome check .",
+    "check": "bun run format:check && bun run lint",
     "cli": "bun run src/cli.ts",
-    "format": "biome format . --write",
-    "format:check": "biome format .",
-    "lint": "biome lint .",
-    "lint:fix": "biome check . --write",
+    "format": "oxfmt --write src action.ts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json",
+    "format:check": "oxfmt --check src action.ts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json",
+    "lint": "oxlint src action.ts --deny-warnings",
+    "lint:fix": "oxlint src action.ts --fix",
     "test": "bun test",
     "typecheck": "bun x tsc --noEmit"
   },
+  "dependencies": {
+    "@clack/core": "^0.4.1",
+    "@clack/prompts": "^0.9.1",
+    "@iarna/toml": "^2.2.5",
+    "commander": "^13.1.0"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.1",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "@clack/prompts": "^0.9.1",
-    "@clack/core": "^0.4.1",
-    "@iarna/toml": "^2.2.5",
-    "commander": "^13.1.0"
   }
 }
