@@ -1,6 +1,5 @@
 import { mkdir } from "fs/promises";
 import { resolve } from "path";
-import { generateBannerSection } from "../lib/badge-generator.ts";
 import type { BidMeConfig } from "../lib/config.ts";
 import { loadConfig } from "../lib/config.ts";
 import { logError } from "../lib/error-handler.ts";
@@ -30,6 +29,59 @@ export function appendTrackingParams(
     return `${destinationUrl}&${params}`;
   }
   return `${destinationUrl}?${params}`;
+}
+
+const MIME_TO_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/svg+xml": "svg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+interface DownloadedBanner {
+  bytes: Buffer;
+  ext: string;
+}
+
+async function downloadBanner(
+  url: string,
+  allowedFormats: string[],
+): Promise<DownloadedBanner | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const contentType = (response.headers.get("content-type") ?? "")
+      .split(";")[0]!
+      .trim()
+      .toLowerCase();
+    const urlExt = new URL(url).pathname.split(".").pop() ?? "";
+    const ext = MIME_TO_EXT[contentType] ?? (allowedFormats.includes(urlExt) ? urlExt : "png");
+    if (!allowedFormats.includes(ext)) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return { bytes, ext };
+  } catch {
+    return null;
+  }
+}
+
+function buildWinnerBannerBlock(
+  winner: BidRecord,
+  periodData: PeriodData,
+  bannerPath: string,
+  trackingUrl: string,
+): string {
+  const alt = winner.tagline ?? "BIDME Banner";
+  const issueUrl =
+    periodData.issue_url ??
+    `https://github.com/dan-dr/bidme-test/issues/${periodData.issue_number}`;
+  const bidLink = `${issueUrl}#issuecomment-${winner.comment_id}`;
+  return [
+    `[![${alt}](${bannerPath})](${trackingUrl})`,
+    "",
+    `<sub>Sponsored via [BIDME](https://github.com/danarrib/bidme) — [view winning bid](${bidLink})</sub>`,
+  ].join("\n");
 }
 
 interface PaymentResult {
@@ -121,7 +173,7 @@ async function processPayment(
   }
 }
 
-async function archivePeriod(periodData: PeriodData, target: string): Promise<void> {
+async function archivePeriodLocal(periodData: PeriodData, target: string): Promise<void> {
   const archiveDir = resolve(target, ".bidme/data/archive");
   await mkdir(archiveDir, { recursive: true });
 
@@ -129,6 +181,111 @@ async function archivePeriod(periodData: PeriodData, target: string): Promise<vo
   const archivePath = resolve(archiveDir, `period-${dateStr}.json`);
   await Bun.write(archivePath, JSON.stringify(periodData, null, 2));
   console.log(`✓ Period archived to ${archivePath}`);
+}
+
+interface WinnerPRArgs {
+  api: GitHubAPI;
+  periodData: PeriodData;
+  winner: BidRecord;
+  readmeContent: string;
+  archiveJson: string;
+  banner: DownloadedBanner | null;
+  trackingUrl: string;
+  paymentMessage: string;
+}
+
+async function createWinnerPR(args: WinnerPRArgs): Promise<{
+  url: string;
+  number: number;
+} | null> {
+  const {
+    api,
+    periodData,
+    winner,
+    readmeContent,
+    archiveJson,
+    banner,
+    trackingUrl,
+    paymentMessage,
+  } = args;
+  const branch = `bidme/winner-${periodData.period_id}`;
+  const dateStr = periodData.start_date.split("T")[0];
+  const bannerPath = banner
+    ? `.bidme/banners/${periodData.period_id}.${banner.ext}`
+    : winner.banner_url;
+
+  const bannerBlock = buildWinnerBannerBlock(winner, periodData, bannerPath, trackingUrl);
+  const updatedReadme = readmeContent.replace(
+    /<!-- bidme-banner-start -->[\s\S]*?<!-- bidme-banner-end -->/,
+    `<!-- bidme-banner-start -->\n${bannerBlock}\n<!-- bidme-banner-end -->`,
+  );
+
+  const issueUrl =
+    periodData.issue_url ??
+    `https://github.com/dan-dr/bidme-test/issues/${periodData.issue_number}`;
+  const bidLink = `${issueUrl}#issuecomment-${winner.comment_id}`;
+
+  try {
+    const baseSha = await api.getBranchSha("main");
+    await api.createBranch(branch, baseSha);
+    console.log(`✓ Created branch ${branch}`);
+
+    if (banner) {
+      await api.commitFileToBranch(
+        branch,
+        bannerPath,
+        banner.bytes.toString("base64"),
+        `chore(bidme): add winning banner for ${periodData.period_id}`,
+      );
+      console.log(`✓ Uploaded banner to ${bannerPath}`);
+    }
+
+    await api.commitFileToBranch(
+      branch,
+      "README.md",
+      Buffer.from(updatedReadme).toString("base64"),
+      `docs(bidme): update README banner for ${periodData.period_id}`,
+    );
+    console.log("✓ Updated README on branch");
+
+    const archivePath = `.bidme/data/archive/period-${dateStr}.json`;
+    await api.commitFileToBranch(
+      branch,
+      archivePath,
+      Buffer.from(archiveJson).toString("base64"),
+      `chore(bidme): archive period ${periodData.period_id}`,
+    );
+    console.log("✓ Archived period on branch");
+
+    const prBody = `## 🏆 Winning banner — ${periodData.period_id}
+
+| Detail | Value |
+|--------|-------|
+| Winner | @${winner.bidder} |
+| Amount | $${winner.amount} |
+| Tagline | ${winner.tagline ?? ""} |
+| Destination | ${winner.destination_url} |
+| Winning bid | ${bidLink} |
+| Payment | ${paymentMessage} |
+
+Merging this PR publishes the winning banner to the README and archives the period.
+
+---
+*Powered by [BIDME](https://github.com/danarrib/bidme)*`;
+
+    const pr = await api.createPR(
+      `BIDME: Winning banner — @${winner.bidder} $${winner.amount} (${periodData.period_id})`,
+      prBody,
+      branch,
+      "main",
+    );
+    console.log(`✓ Opened PR #${pr.number}: ${pr.html_url}`);
+    return { url: pr.html_url, number: pr.number };
+  } catch (err) {
+    console.warn("⚠ Failed to create winner PR");
+    logError(err, "close-bidding:createWinnerPR");
+    return null;
+  }
 }
 
 export async function runCloseBidding(
@@ -185,11 +342,11 @@ export async function runCloseBidding(
         periodData.payment = payment;
       }
     } else {
-      console.log("\n✗ No approved bids — no winner");
+      console.log("\n✗ No active bids — no winner");
     }
 
     periodData.status = "closed";
-    await archivePeriod(periodData, target);
+    await archivePeriodLocal(periodData, target);
     await writeCurrentPeriod({});
     console.log("✓ BIDME_CURRENT_PERIOD cleared");
 
@@ -219,44 +376,47 @@ export async function runCloseBidding(
     const trackingUrl = `${pagesBase}/.bidme/pay/redirect.html?id=${encodeURIComponent(periodData.period_id)}&dest=${encodedDest}`;
     console.log(`  Tracking URL: ${trackingUrl}`);
 
-    const readmePath = resolve(target, "README.md");
-    const readmeFile = Bun.file(readmePath);
-    let readmeContent: string;
+    const banner = await downloadBanner(winner.banner_url, config.banner.formats);
+    if (banner) {
+      console.log(`✓ Downloaded banner (${banner.ext}, ${banner.bytes.length} bytes)`);
+    } else {
+      console.warn("⚠ Could not download banner — PR will reference the external URL");
+    }
 
+    let readmeContent = "";
     try {
-      readmeContent = await readmeFile.text();
+      readmeContent = await Bun.file(resolve(target, "README.md")).text();
     } catch (err) {
-      console.warn("⚠ Could not read README.md — skipping banner update");
+      console.warn("⚠ Could not read README.md — banner update skipped");
       logError(err, "close-bidding:readReadme");
-      readmeContent = "";
     }
 
-    if (readmeContent) {
-      const bannerMarkdown = generateBannerSection(winner.banner_url, trackingUrl, []);
-
-      const sponsoredLine = `\n<sub>Sponsored via [BIDME](https://github.com/danarrib/bidme)</sub>`;
-      const fullBanner = `${bannerMarkdown}${sponsoredLine}`;
-
-      const updatedReadme = readmeContent.replace(
-        /<!-- bidme-banner-start -->[\s\S]*?<!-- bidme-banner-end -->/,
-        `<!-- bidme-banner-start -->\n${fullBanner}\n<!-- bidme-banner-end -->`,
-      );
-
-      try {
-        await Bun.write(readmePath, updatedReadme);
-        console.log("✓ README updated locally with winning banner");
-      } catch (err) {
-        console.warn("⚠ Failed to update README — banner not updated");
-        logError(err, "close-bidding:updateReadme");
-      }
-    }
+    periodData.status = "closed";
+    const archiveJson = JSON.stringify(periodData, null, 2);
 
     const paymentMessage = stripePaymentSuccess
       ? "✅ Payment processed successfully"
       : "⏳ Payment pending — winner will be contacted";
+
+    const pr = readmeContent
+      ? await createWinnerPR({
+          api,
+          periodData,
+          winner,
+          readmeContent,
+          archiveJson,
+          banner,
+          trackingUrl,
+          paymentMessage,
+        })
+      : null;
+
     const announcement = generateWinnerAnnouncement(winner, periodData, paymentMessage);
+    const announcementWithPR = pr
+      ? `${announcement}\n\n> 📝 Banner change proposed in [PR #${pr.number}](${pr.url}). Merge to publish.`
+      : announcement;
     try {
-      await api.addComment(periodData.issue_number, announcement);
+      await api.addComment(periodData.issue_number, announcementWithPR);
       console.log("✓ Winner announcement posted");
     } catch (err) {
       console.warn("⚠ Failed to post winner announcement");
@@ -270,6 +430,22 @@ export async function runCloseBidding(
     } catch (err) {
       console.warn("⚠ Failed to post no-winner comment");
       logError(err, "close-bidding:noWinnerComment");
+    }
+
+    periodData.status = "closed";
+    const archiveJson = JSON.stringify(periodData, null, 2);
+    const dateStr = periodData.start_date.split("T")[0];
+    try {
+      await api.commitFileToBranch(
+        "main",
+        `.bidme/data/archive/period-${dateStr}.json`,
+        Buffer.from(archiveJson).toString("base64"),
+        `chore(bidme): archive period ${periodData.period_id}`,
+      );
+      console.log("✓ Archived period to main");
+    } catch (err) {
+      console.warn("⚠ Failed to commit period archive");
+      logError(err, "close-bidding:archiveCommit");
     }
   }
 
@@ -290,10 +466,6 @@ export async function runCloseBidding(
     console.warn("⚠ Failed to close issue");
     logError(err, "close-bidding:closeIssue");
   }
-
-  periodData.status = "closed";
-
-  await archivePeriod(periodData, target);
 
   const analytics = await readAnalytics();
   analytics.periods.push({

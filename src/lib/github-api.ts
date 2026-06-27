@@ -236,4 +236,41 @@ export class GitHubAPI {
 
     return this.request<CommitResponse>("PUT", "/contents/README.md", body);
   }
+
+  async getBranchSha(branch: string): Promise<string> {
+    const data = await this.request<{ object: { sha: string } }>(
+      "GET",
+      `/git/refs/heads/${branch}`,
+    );
+    return data.object.sha;
+  }
+
+  async createBranch(name: string, fromSha: string): Promise<void> {
+    await this.request("POST", "/git/refs", {
+      ref: `refs/heads/${name}`,
+      sha: fromSha,
+    });
+  }
+
+  async commitFileToBranch(
+    branch: string,
+    path: string,
+    contentBase64: string,
+    message: string,
+  ): Promise<void> {
+    const existing = await this.request<{ sha: string }>(
+      "GET",
+      `/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    ).catch(() => null);
+
+    const body: Record<string, unknown> = {
+      message,
+      content: contentBase64,
+      branch,
+    };
+    if (existing) {
+      body["sha"] = existing.sha;
+    }
+    await this.request("PUT", `/contents/${path}`, body);
+  }
 }

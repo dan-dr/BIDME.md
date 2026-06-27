@@ -23,7 +23,7 @@ The CLI scaffolds config, four GitHub Actions workflows, Stripe/redirect pages, 
 2. **Bidding Opens** — A cron-triggered workflow creates a pinned GitHub Issue for the new bidding period. Sponsors comment with their bid.
 3. **Bids Come In** — Each bid is validated automatically. BIDME edits the bidder's own comment in place with a status banner: accepted (with rank), payment required (with a Stripe link), or rejected (with the reason). Stripe customer metadata is the bidder source of truth.
 4. **Payment Grace** — A bid without a linked Stripe payment method is paused and given a grace window. A scheduled check activates it once the card is linked, or expires it when the window elapses.
-5. **Winner Goes Live** — The period closes, the highest active bid is charged, the README banner updates, and the period archive is committed.
+5. **Winner Goes Live** — The period closes, the highest active bid is charged, and BIDME opens a PR that uploads the winning banner into the repo, updates the README to show it (with a link back to the winning bid), and archives the period. Merge the PR to publish.
 
 Runtime state lives in GitHub Actions variables:
 

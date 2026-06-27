@@ -62,19 +62,19 @@ describe("workflow template validation", () => {
     expect(action).toContain("src/action.ts");
   });
 
-  test("only close workflow commits archive and README changes", async () => {
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain(
-      "stefanzweifel/git-auto-commit-action@v5",
-    );
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text()).not.toContain(
-      "git-auto-commit-action",
-    );
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-analytics.yml")).text()).not.toContain(
-      "git-auto-commit-action",
-    );
-    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-open.yml")).text()).not.toContain(
-      "git-auto-commit-action",
-    );
+  test("close workflow opens a PR and no workflow commits directly", async () => {
+    const closeYml = await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text();
+    expect(closeYml).toContain("pull-requests: write");
+    expect(closeYml).not.toContain("git-auto-commit-action");
+    expect(closeYml).not.toContain("stefanzweifel");
+    for (const f of [
+      "bidme-process-bid.yml",
+      "bidme-analytics.yml",
+      "bidme-open.yml",
+      "bidme-check-grace.yml",
+    ]) {
+      expect(await Bun.file(join(TEMPLATES_DIR, f)).text()).not.toContain("git-auto-commit-action");
+    }
   });
 });
 
