@@ -275,17 +275,22 @@ Merging this PR publishes the winning banner to the README and archives the peri
 ---
 *Powered by [BIDME](https://github.com/danarrib/bidme)*`;
 
-    const pr = await prApi.createPR(
-      `BIDME: Winning banner — @${winner.bidder} $${winner.amount} (${periodData.period_id})`,
-      prBody,
-      branch,
-      "main",
-    );
+    const prTitle = `BIDME: Winning banner — @${winner.bidder} $${winner.amount} (${periodData.period_id})`;
+    // Try BIDME_PAT first (works when the PAT has PR scope), then fall back to
+    // GITHUB_TOKEN (works when the repo allows Actions to create PRs).
+    let pr: { number: number; html_url: string };
+    try {
+      pr = await prApi.createPR(prTitle, prBody, branch, "main");
+    } catch (patErr) {
+      console.warn("⚠ BIDME_PAT could not create PR, retrying with GITHUB_TOKEN…");
+      logError(patErr, "close-bidding:createWinnerPR:pat");
+      pr = await api.createPR(prTitle, prBody, branch, "main");
+    }
     console.log(`✓ Opened PR #${pr.number}: ${pr.html_url}`);
     return { url: pr.html_url, number: pr.number };
   } catch (err) {
     console.warn(
-      "⚠ Failed to create winner PR — set BIDME_PAT or enable 'Allow GitHub Actions to create and approve pull requests'",
+      "⚠ Failed to create winner PR — set BIDME_PAT (with pull-requests scope) or enable 'Allow GitHub Actions to create and approve pull requests' in repo Settings → Actions → General",
     );
     logError(err, "close-bidding:createWinnerPR");
     return null;
