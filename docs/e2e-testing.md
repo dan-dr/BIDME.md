@@ -11,7 +11,7 @@ on `dan-dr/bidme-test`.
 | `gh` CLI authenticated with `repo`, `workflow` scopes | `gh auth status` |
 | A throwaway test repo (e.g. `dan-dr/bidme-test`) | `gh repo view <owner>/<repo>` |
 | `STRIPE_SECRET_KEY` (`sk_test_...`) set as a repo secret | `gh secret list --repo <repo>` |
-| `BIDME_PAT` set as a repo secret (for Actions variable writes) | `gh secret list --repo <repo>` |
+| `BIDME_PAT` set as a repo secret (for Actions variable writes **and PR creation**) | `gh secret list --repo <repo>` |
 | GitHub Pages enabled on the test repo (main, `/`) | `gh api repos/<repo>/pages` |
 | BIDME source checked out locally and on `origin/main` | `git log --oneline origin/main -1` |
 | `agent-browser` available (for the Stripe checkout step) | `agent-browser --version` |
@@ -197,6 +197,7 @@ gh workflow run bidme-analytics.yml --repo dan-dr/bidme-test
 | Bid stuck `unlinked_pending` after checkout | check-grace didn't find the payment method | Confirm the Stripe customer's `metadata.github_username` matches the bidder login; re-run check-grace |
 | Close runs but no README commit | `git-auto-commit` step skipped (no diff) | Confirm the banner placeholder exists in README before close |
 | `gh variable` writes 403 | `GITHUB_TOKEN` lacks Actions variable perms | `BIDME_PAT` secret must be set and present in the workflow env |
+| Close log: "GitHub Actions is not permitted to create or approve pull requests" | `GITHUB_TOKEN` can't open PRs by default | Set `BIDME_PAT` (the action uses it for PR creation), or enable "Allow GitHub Actions to create and approve pull requests" in repo Settings → Actions → General |
 | Stripe checkout stuck on "Processing" | iframe fill didn't register | Re-open the URL; use `focus` + `keyboard type` for card fields |
 
 ## Agent tips

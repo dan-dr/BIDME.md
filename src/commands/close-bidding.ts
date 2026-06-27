@@ -185,6 +185,7 @@ async function archivePeriodLocal(periodData: PeriodData, target: string): Promi
 
 interface WinnerPRArgs {
   api: GitHubAPI;
+  prApi: GitHubAPI;
   periodData: PeriodData;
   winner: BidRecord;
   readmeContent: string;
@@ -200,6 +201,7 @@ async function createWinnerPR(args: WinnerPRArgs): Promise<{
 } | null> {
   const {
     api,
+    prApi,
     periodData,
     winner,
     readmeContent,
@@ -273,7 +275,7 @@ Merging this PR publishes the winning banner to the README and archives the peri
 ---
 *Powered by [BIDME](https://github.com/danarrib/bidme)*`;
 
-    const pr = await api.createPR(
+    const pr = await prApi.createPR(
       `BIDME: Winning banner — @${winner.bidder} $${winner.amount} (${periodData.period_id})`,
       prBody,
       branch,
@@ -282,7 +284,9 @@ Merging this PR publishes the winning banner to the README and archives the peri
     console.log(`✓ Opened PR #${pr.number}: ${pr.html_url}`);
     return { url: pr.html_url, number: pr.number };
   } catch (err) {
-    console.warn("⚠ Failed to create winner PR");
+    console.warn(
+      "⚠ Failed to create winner PR — set BIDME_PAT or enable 'Allow GitHub Actions to create and approve pull requests'",
+    );
     logError(err, "close-bidding:createWinnerPR");
     return null;
   }
@@ -358,6 +362,7 @@ export async function runCloseBidding(
   }
 
   const api = new GitHubAPI(owner, repo);
+  const prApi = new GitHubAPI(owner, repo, process.env["BIDME_PAT"] ?? undefined);
 
   let stripePaymentSuccess = false;
   if (winner) {
@@ -401,6 +406,7 @@ export async function runCloseBidding(
     const pr = readmeContent
       ? await createWinnerPR({
           api,
+          prApi,
           periodData,
           winner,
           readmeContent,
