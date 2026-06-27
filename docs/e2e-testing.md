@@ -11,7 +11,8 @@ on `dan-dr/bidme-test`.
 | `gh` CLI authenticated with `repo`, `workflow` scopes | `gh auth status` |
 | A throwaway test repo (e.g. `dan-dr/bidme-test`) | `gh repo view <owner>/<repo>` |
 | `STRIPE_SECRET_KEY` (`sk_test_...`) set as a repo secret | `gh secret list --repo <repo>` |
-| `BIDME_PAT` set as a repo secret (for Actions variable writes **and PR creation**) | `gh secret list --repo <repo>` |
+| `BIDME_PAT` set as a repo secret (for Actions variable writes) | `gh secret list --repo <repo>` |
+| "Allow GitHub Actions to create and approve pull requests" enabled (so the winner PR opens) | `gh api repos/<repo>/actions/permissions/workflow` → `can_approve_pull_request_reviews: true`, or set via UI Settings → Actions → General |
 | GitHub Pages enabled on the test repo (main, `/`) | `gh api repos/<repo>/pages` |
 | BIDME source checked out locally and on `origin/main` | `git log --oneline origin/main -1` |
 | `agent-browser` available (for the Stripe checkout step) | `agent-browser --version` |
@@ -19,6 +20,9 @@ on `dan-dr/bidme-test`.
 
 > The test repo's workflows run `uses: dan-dr/BIDME.md@main`, so the action code
 > must be on `main` before the workflows will use it.
+
+> To enable PR creation via the API (one-time):
+> `gh api -X PUT repos/<repo>/actions/permissions/workflow -f default_workflow_permissions=write -F can_approve_pull_request_reviews=true`
 
 ## Mental model
 
@@ -197,7 +201,7 @@ gh workflow run bidme-analytics.yml --repo dan-dr/bidme-test
 | Bid stuck `unlinked_pending` after checkout | check-grace didn't find the payment method | Confirm the Stripe customer's `metadata.github_username` matches the bidder login; re-run check-grace |
 | Close runs but no README commit | `git-auto-commit` step skipped (no diff) | Confirm the banner placeholder exists in README before close |
 | `gh variable` writes 403 | `GITHUB_TOKEN` lacks Actions variable perms | `BIDME_PAT` secret must be set and present in the workflow env |
-| Close log: "GitHub Actions is not permitted to create or approve pull requests" | `GITHUB_TOKEN` can't open PRs by default | Set `BIDME_PAT` (the action uses it for PR creation), or enable "Allow GitHub Actions to create and approve pull requests" in repo Settings → Actions → General |
+| Close log: "GitHub Actions is not permitted to create or approve pull requests" or "Resource not accessible by personal access token" | Neither `BIDME_PAT` nor `GITHUB_TOKEN` can open PRs | The action tries `BIDME_PAT` first, then `GITHUB_TOKEN`. Enable "Allow GitHub Actions to create and approve pull requests" in repo Settings → Actions → General (or use a PAT with `pull-requests: write` scope) |
 | Stripe checkout stuck on "Processing" | iframe fill didn't register | Re-open the URL; use `focus` + `keyboard type` for card fields |
 
 ## Agent tips
