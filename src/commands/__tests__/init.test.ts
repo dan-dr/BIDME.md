@@ -54,9 +54,9 @@ describe("init end-to-end", () => {
 
     expect(parsed.bidding.schedule).toBe("monthly");
     expect(parsed.banner.formats).toEqual(["png", "jpg", "svg", "webp"]);
-    expect(parsed.approval.mode).toBe("emoji");
     expect(parsed.payment.mode).toBe("own_keys");
     expect(parsed.payment.bidme_fee_percent).toBe(10);
+    expect(parsed.payment.unlinked_grace_hours).toBe(24);
     expect(parsed.tracking.utm_params).toBe("utm_source=bidme&utm_campaign={owner}/{repo}");
   });
 
@@ -89,7 +89,7 @@ describe("init end-to-end", () => {
     const config = await loadConfig(tempDir);
     expect(config.bidding).toEqual(DEFAULT_CONFIG.bidding);
     expect(config.banner).toEqual(DEFAULT_CONFIG.banner);
-    expect(config.approval).toEqual(DEFAULT_CONFIG.approval);
+    expect(config.payment).toEqual(DEFAULT_CONFIG.payment);
     expect(config.payment.mode).toBe("own_keys");
   });
 
@@ -107,11 +107,12 @@ describe("init end-to-end", () => {
 
     expect(ymlFiles).toEqual([
       "bidme-analytics.yml",
+      "bidme-check-grace.yml",
       "bidme-close.yml",
       "bidme-open.yml",
       "bidme-process-bid.yml",
     ]);
-    expect(result.workflowsCopied.length).toBe(4);
+    expect(result.workflowsCopied.length).toBe(5);
     expect(await Bun.file(join(tempDir, "README.md")).text()).toContain("testowner/testrepo");
   });
 

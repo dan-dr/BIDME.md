@@ -14,15 +14,12 @@ export interface BidMeConfig {
     formats: string[];
     max_size: number;
   };
-  approval: {
-    mode: "auto" | "emoji";
-    allowed_reactions: string[];
-  };
   payment: {
     mode: "own_keys" | "connect";
     base_url: string;
     stripe_account_id?: string;
     bidme_fee_percent: number;
+    unlinked_grace_hours: number;
   };
   tracking: {
     append_utm: boolean;
@@ -47,14 +44,11 @@ export const DEFAULT_CONFIG: BidMeConfig = {
     formats: ["png", "jpg", "svg", "webp"],
     max_size: 200,
   },
-  approval: {
-    mode: "emoji",
-    allowed_reactions: ["👍"],
-  },
   payment: {
     mode: "own_keys",
     base_url: "",
     bidme_fee_percent: 10,
+    unlinked_grace_hours: 24,
   },
   tracking: {
     append_utm: true,
@@ -134,13 +128,6 @@ export function validateConfig(config: unknown): BidMeConfig {
     }
   }
 
-  if (merged.approval) {
-    const validModes = ["auto", "emoji"];
-    if (!validModes.includes(merged.approval.mode)) {
-      throw new ConfigValidationError(`approval.mode must be one of: ${validModes.join(", ")}`);
-    }
-  }
-
   if (merged.payment) {
     const validModes = ["own_keys", "connect"];
     if (!validModes.includes(merged.payment.mode)) {
@@ -154,6 +141,12 @@ export function validateConfig(config: unknown): BidMeConfig {
       throw new ConfigValidationError(
         "payment.bidme_fee_percent must be a number between 0 and 100",
       );
+    }
+    if (
+      typeof merged.payment.unlinked_grace_hours !== "number" ||
+      merged.payment.unlinked_grace_hours < 0
+    ) {
+      throw new ConfigValidationError("payment.unlinked_grace_hours must be a non-negative number");
     }
   }
 
@@ -217,16 +210,11 @@ formats = ${JSON.stringify(config.banner.formats)}
 max_size = ${config.banner.max_size}
 `);
 
-  sections.push(`# Bid approval settings
-[approval]
-mode = "${config.approval.mode}"
-allowed_reactions = ${JSON.stringify(config.approval.allowed_reactions)}
-`);
-
   sections.push(`# Payment configuration
 [payment]
 mode = "${config.payment.mode}"
 bidme_fee_percent = ${config.payment.bidme_fee_percent}
+unlinked_grace_hours = ${config.payment.unlinked_grace_hours}
 base_url = "${config.payment.base_url}"
 ${config.payment.stripe_account_id ? `stripe_account_id = "${config.payment.stripe_account_id}"` : '# stripe_account_id = "acct_..."'}
 `);

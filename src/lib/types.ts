@@ -11,10 +11,10 @@
  * @property tagline - Short sponsor tagline shown in the bidding table.
  * @property contact - Optional contact information provided by the bidder.
  * @property status - Current lifecycle state of the bid:
- *   - `"pending"` — Awaiting repo owner approval.
- *   - `"approved"` — Accepted by the repo owner.
- *   - `"rejected"` — Declined by the repo owner.
- *   - `"unlinked_pending"` — Bidder has not linked a payment method yet.
+ *   - `"active"` — Valid bid with a linked Stripe payment method; competes for the slot.
+ *   - `"unlinked_pending"` — Valid bid awaiting a linked Stripe payment method.
+ *   - `"rejected"` — Failed validation or content rules.
+ *   - `"expired"` — Grace window elapsed without a linked payment method.
  * @property comment_id - GitHub issue comment ID where the bid was submitted.
  * @property timestamp - ISO 8601 timestamp of when the bid was recorded.
  *
@@ -26,7 +26,7 @@
  *   banner_url: "https://example.com/banner.png",
  *   destination_url: "https://example.com",
  *   tagline: "Build faster",
- *   status: "pending",
+ *   status: "active",
  *   comment_id: 12345,
  *   timestamp: "2026-02-05T12:00:00Z",
  * };
@@ -39,7 +39,7 @@ export interface BidRecord {
   destination_url: string;
   tagline?: string;
   contact?: string;
-  status: "pending" | "approved" | "rejected" | "unlinked_pending";
+  status: "active" | "unlinked_pending" | "rejected" | "expired";
   comment_id: number;
   timestamp: string;
 }

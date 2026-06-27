@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { join, resolve } from "path";
-import type { BidMeConfig } from "../../lib/config.js";
-import { DEFAULT_CONFIG, generateToml } from "../../lib/config.js";
+import { resolve } from "path";
+import { DEFAULT_CONFIG } from "../../lib/config.js";
 import { generateBidIssueBody } from "../../lib/issue-template.js";
 import { scaffold } from "../../lib/scaffold.js";
 import type { BidRecord, PeriodData } from "../../lib/types.js";
@@ -31,17 +30,10 @@ function makeBid(overrides: Partial<BidRecord> = {}): BidRecord {
     banner_url: "https://example.com/banner.png",
     destination_url: "https://example.com",
     tagline: "Build faster",
-    status: "pending",
+    status: "active",
     comment_id: 1001,
     timestamp: "2026-02-02T10:00:00.000Z",
     ...overrides,
-  };
-}
-
-function makeAutoConfig(): BidMeConfig {
-  return {
-    ...DEFAULT_CONFIG,
-    approval: { ...DEFAULT_CONFIG.approval, mode: "auto" },
   };
 }
 
@@ -59,6 +51,7 @@ bid:
 interface MockState {
   variableWrites: Record<string, unknown>;
   comments: string[];
+  commentEdits: string[];
   issueBodyUpdates: string[];
 }
 
@@ -115,6 +108,17 @@ function mockFetchForGitHub(state: MockState, overrides: Record<string, unknown>
         id: 1001,
         body: overrides.commentBody ?? bidBody(),
         user: { login: overrides.commentUser ?? "bidder1" },
+        created_at: "2026-02-02T10:00:00.000Z",
+      });
+    }
+
+    if (url.includes("/comments/") && method === "PATCH") {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { body?: string };
+      state.commentEdits.push(body.body ?? "");
+      return Response.json({
+        id: 1001,
+        body: body.body ?? "",
+        user: { login: "bidder1" },
         created_at: "2026-02-02T10:00:00.000Z",
       });
     }
@@ -228,9 +232,13 @@ describe("process-bid with GitHub variable state", () => {
     mock.restore();
   });
 
-  test("auto-approve mode records approved bid in BIDME_CURRENT_PERIOD", async () => {
-    await Bun.write(join(tempDir, ".bidme/config.toml"), generateToml(makeAutoConfig()));
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+  test("linked bidder records an active bid and accepts the comment", async () => {
+    const state: MockState = {
+      variableWrites: {},
+      comments: [],
+      commentEdits: [],
+      issueBodyUpdates: [],
+    };
     const originalFetch = mockFetchForGitHub(state);
 
     const { runProcessBid } = await import("../process-bid.js");
@@ -239,15 +247,22 @@ describe("process-bid with GitHub variable state", () => {
     expect(result.success).toBe(true);
     const saved = state.variableWrites["BIDME_CURRENT_PERIOD"] as PeriodData;
     expect(saved.bids).toHaveLength(1);
-    expect(saved.bids[0]!.status).toBe("approved");
+    expect(saved.bids[0]!.status).toBe("active");
     expect(saved.bids[0]!.tagline).toBe("Build faster");
     expect(state.issueBodyUpdates.at(-1)).toContain("@bidder1");
+    expect(state.commentEdits.at(-1)).toContain("Bid active");
+    expect(state.commentEdits.at(-1)).toContain("Rank #1");
 
     globalThis.fetch = originalFetch;
   });
 
-  test("unlinked bidder is recorded as unlinked_pending and gets setup warning", async () => {
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+  test("unlinked bidder is recorded as unlinked_pending and comment shows Stripe link", async () => {
+    const state: MockState = {
+      variableWrites: {},
+      comments: [],
+      commentEdits: [],
+      issueBodyUpdates: [],
+    };
     const originalFetch = mockFetchForGitHub(state, { customers: [], paymentMethods: [] });
 
     const { runProcessBid } = await import("../process-bid.js");
@@ -256,14 +271,21 @@ describe("process-bid with GitHub variable state", () => {
     expect(result.success).toBe(true);
     const saved = state.variableWrites["BIDME_CURRENT_PERIOD"] as PeriodData;
     expect(saved.bids[0]!.status).toBe("unlinked_pending");
-    expect(state.comments.join("\n")).toContain("authorize your payment method");
-    expect(state.comments.join("\n")).toContain("https://checkout.stripe.com/c/pay/cs_test_123");
+    expect(state.commentEdits.join("\n")).toContain("Payment required");
+    expect(state.commentEdits.join("\n")).toContain(
+      "https://checkout.stripe.com/c/pay/cs_test_123",
+    );
 
     globalThis.fetch = originalFetch;
   });
 
-  test("does not link payment authorization to success page when checkout cannot be created", async () => {
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+  test("does not surface a Stripe link when checkout cannot be created", async () => {
+    const state: MockState = {
+      variableWrites: {},
+      comments: [],
+      commentEdits: [],
+      issueBodyUpdates: [],
+    };
     const originalFetch = mockFetchForGitHub(state, {
       customers: [],
       paymentMethods: [],
@@ -274,17 +296,22 @@ describe("process-bid with GitHub variable state", () => {
     const result = await runProcessBid(42, 1001, { target: tempDir });
 
     expect(result.success).toBe(true);
-    const comments = state.comments.join("\n");
-    expect(comments).toContain("payment authorization could not be started");
-    expect(comments).not.toContain("success.html");
+    const edits = state.commentEdits.join("\n");
+    expect(edits).toContain("could not be started");
+    expect(edits).not.toContain("success.html");
 
     globalThis.fetch = originalFetch;
   });
 
-  test("rejects bid lower than current highest", async () => {
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+  test("rejects and strikes through a bid lower than current highest", async () => {
+    const state: MockState = {
+      variableWrites: {},
+      comments: [],
+      commentEdits: [],
+      issueBodyUpdates: [],
+    };
     const originalFetch = mockFetchForGitHub(state, {
-      period: makePeriodData([makeBid({ amount: 200, status: "approved" })]),
+      period: makePeriodData([makeBid({ amount: 200, status: "active" })]),
     });
 
     const { runProcessBid } = await import("../process-bid.js");
@@ -293,44 +320,27 @@ describe("process-bid with GitHub variable state", () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain("higher");
     expect(state.variableWrites["BIDME_CURRENT_PERIOD"]).toBeUndefined();
+    expect(state.commentEdits.at(-1)).toContain("Bid rejected");
 
     globalThis.fetch = originalFetch;
   });
 
-  test("owner slash command approves a pending bid", async () => {
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
+  test("rejects and strikes through an unlinked bid competing below an active bid", async () => {
+    const state: MockState = {
+      variableWrites: {},
+      comments: [],
+      commentEdits: [],
+      issueBodyUpdates: [],
+    };
     const originalFetch = mockFetchForGitHub(state, {
-      commentBody: "/approve @bidder1",
-      commentUser: "testowner",
-      period: makePeriodData([makeBid({ status: "pending" })]),
-    });
-
-    const { runProcessBid } = await import("../process-bid.js");
-    const result = await runProcessBid(42, 1001, { target: tempDir });
-
-    expect(result.success).toBe(true);
-    const saved = state.variableWrites["BIDME_CURRENT_PERIOD"] as PeriodData;
-    expect(saved.bids[0]!.status).toBe("approved");
-    expect(state.comments.join("\n")).toContain("Approved bid from @bidder1");
-    expect(state.issueBodyUpdates.at(-1)).toContain("✅ approved");
-
-    globalThis.fetch = originalFetch;
-  });
-
-  test("slash approval does not approve unlinked payment bids", async () => {
-    const state: MockState = { variableWrites: {}, comments: [], issueBodyUpdates: [] };
-    const originalFetch = mockFetchForGitHub(state, {
-      commentBody: "/approve @bidder1",
-      commentUser: "testowner",
-      period: makePeriodData([makeBid({ status: "unlinked_pending" })]),
+      period: makePeriodData([makeBid({ amount: 300, status: "unlinked_pending" })]),
     });
 
     const { runProcessBid } = await import("../process-bid.js");
     const result = await runProcessBid(42, 1001, { target: tempDir });
 
     expect(result.success).toBe(false);
-    expect(result.message).toContain("payment is linked");
-    expect(state.variableWrites["BIDME_CURRENT_PERIOD"]).toBeUndefined();
+    expect(result.message).toContain("higher");
 
     globalThis.fetch = originalFetch;
   });

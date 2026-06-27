@@ -1,45 +1,42 @@
-# BidMe V1 Flow
+# BIDME V1 Flow
 
 ```mermaid
 flowchart TD
-  A[Scheduler opens bidding issue] --> B[Advertiser comments with bid YAML]
+  A[Scheduler opens bidding issue] --> B[Advertiser comments with bid YAML + banner image]
   B --> C[process-bid workflow]
-  C --> D{Valid bid?}
-  D -- no --> E[Bot comments rejection]
-  D -- yes --> F{Payment linked?}
-  F -- yes --> G[Record bid pending approval]
-  F -- no --> H[Create Stripe Checkout session]
-  H --> I[Bot comments Stripe link]
+  C --> D{Valid bid + passes house rules?}
+  D -- no --> E[Edit comment: strikethrough + reject reason]
+  D -- yes --> F{Stripe payment method linked?}
+  F -- yes --> G[Record bid active]
+  G --> H[Edit comment: accepted + rank]
+  F -- no --> I[Create Stripe Checkout session]
   I --> J[Record bid unlinked_pending]
-  J --> K[Commit repo state]
+  J --> K[Edit comment: payment required + Stripe link]
+  H --> L[Update issue leaderboard]
+  K --> L
 
-  H --> L[Bidder completes Stripe-hosted checkout]
-  L --> M[Stripe redirects back to GitHub issue/repo]
+  M[Bidder completes Stripe-hosted card setup] --> N[Stripe saves payment method]
 
-  N[Scheduled check-grace every 10-15m] --> O[Poll Stripe customer/payment methods]
-  O --> P{Payment method found?}
-  P -- yes --> Q[Restore bid to pending approval]
-  P -- no --> R{Grace expired?}
-  R -- yes --> S[Expire bid]
-  R -- no --> T[Leave pending]
-  Q --> U[Commit repo state]
-  S --> U
-  T --> U
+  O[Scheduled check-grace every 15m] --> P[For each unlinked_pending bid: poll Stripe]
+  P --> Q{Payment method found?}
+  Q -- yes --> R[Activate bid + edit comment: accepted]
+  Q -- no --> S{Grace window elapsed?}
+  S -- yes --> T[Expire bid + edit comment: expired]
+  S -- no --> U[Leave pending]
+  R --> V[Update issue leaderboard]
+  T --> V
 
-  V[Scheduled approval poll every 10-15m] --> W[Fetch reactions on bid comments]
-  W --> X{Owner emoji present?}
-  X -- yes --> Y[Approve/reject bid]
-  X -- no --> Z[Leave pending]
-  Y --> AA[Update issue body leaderboard]
+  W[Scheduled close] --> X[Select highest active bid]
+  X --> Y[Charge saved Stripe payment method]
+  Y --> Z[Update README banner]
+  Z --> AA[Comment winner + archive period]
   AA --> AB[Commit repo state]
 
-  AC[Scheduled close] --> AD[Select highest approved bid]
-  AD --> AE[Charge saved Stripe payment method]
-  AE --> AF[Update README banner]
-  AF --> AG[Comment winner]
-  AG --> AH[Archive period]
-  AH --> AI[Commit repo state]
-
-  AJ[Scheduled analytics] --> AK[Fetch GitHub repo traffic/referrers/popular content]
-  AK --> AL[Persist repo traffic snapshots]
+  AC[Scheduled analytics] --> AD[Fetch GitHub traffic/referrers + clicks]
+  AD --> AE[Persist analytics snapshots + refresh dashboard]
 ```
+
+There is no owner approval step. A bid is valid the moment Stripe is linked, and
+the highest active bid at close wins. The owner's only gate is
+`content_guidelines.prohibited` (house rules, e.g. "crypto"); anything else is
+handled by the owner deleting a comment manually.

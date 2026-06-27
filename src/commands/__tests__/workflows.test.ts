@@ -8,6 +8,7 @@ import { scaffold } from "../../lib/scaffold.js";
 const WORKFLOW_FILES = [
   "bidme-open.yml",
   "bidme-process-bid.yml",
+  "bidme-check-grace.yml",
   "bidme-close.yml",
   "bidme-analytics.yml",
 ];
@@ -15,7 +16,7 @@ const WORKFLOW_FILES = [
 const TEMPLATES_DIR = resolve(import.meta.dir, "../../../templates/workflows");
 
 describe("workflow template validation", () => {
-  test("only the four GitHub-variable workflows are shipped", async () => {
+  test("only the five GitHub-variable workflows are shipped", async () => {
     const ymlFiles = (await readdir(TEMPLATES_DIR)).filter((f) => f.endsWith(".yml")).sort();
     expect(ymlFiles).toEqual([...WORKFLOW_FILES].sort());
   });
@@ -42,6 +43,9 @@ describe("workflow template validation", () => {
     const processBid = await Bun.file(join(TEMPLATES_DIR, "bidme-process-bid.yml")).text();
     expect(processBid).toContain("command: process-bid");
     expect(processBid).toContain("contains(github.event.comment.body, 'bid:')");
+    expect(await Bun.file(join(TEMPLATES_DIR, "bidme-check-grace.yml")).text()).toContain(
+      "command: check-grace",
+    );
     expect(await Bun.file(join(TEMPLATES_DIR, "bidme-close.yml")).text()).toContain(
       "command: close-bidding",
     );
@@ -90,7 +94,7 @@ describe("init copies workflows correctly", () => {
     await rm(tempDir, { recursive: true });
   });
 
-  test("init copies all four workflow files to .github/workflows/", async () => {
+  test("init copies all five workflow files to .github/workflows/", async () => {
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
 
     const files = await readdir(join(tempDir, ".github", "workflows"));
@@ -111,7 +115,11 @@ describe("init copies workflows correctly", () => {
     const result = await scaffold(tempDir, DEFAULT_CONFIG);
 
     expect(result.workflowsSkipped.sort()).toEqual(["bidme-analytics.yml", "bidme-open.yml"]);
-    expect(result.workflowsCopied.sort()).toEqual(["bidme-close.yml", "bidme-process-bid.yml"]);
+    expect(result.workflowsCopied.sort()).toEqual([
+      "bidme-check-grace.yml",
+      "bidme-close.yml",
+      "bidme-process-bid.yml",
+    ]);
     expect(await Bun.file(join(workflowDir, "bidme-open.yml")).text()).toBe(customContent);
   });
 

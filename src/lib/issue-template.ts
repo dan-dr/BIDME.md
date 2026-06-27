@@ -1,42 +1,55 @@
 import type { BidMeConfig } from "./config.ts";
 import type { BidRecord, PeriodAnalytics, PeriodData } from "./types.ts";
 
+const STATUS_LABELS: Record<BidRecord["status"], string> = {
+  active: "✅ active",
+  unlinked_pending: "💳 payment pending",
+  rejected: "❌ rejected",
+  expired: "⌛ expired",
+};
+
+const TABLE_HEADER = `| Rank | Bidder | Amount | Status | Tagline | Banner |
+|------|--------|--------|--------|---------|--------|`;
+
+/** Bids that compete for the slot, highest first. */
+export function competingBids(bids: BidRecord[]): BidRecord[] {
+  return bids
+    .filter((b) => b.status === "active" || b.status === "unlinked_pending")
+    .sort((a, b) => b.amount - a.amount);
+}
+
+/** 1-based rank of a bid (by its comment id) among competing bids. */
+export function rankOf(bids: BidRecord[], commentId: number): number {
+  const index = competingBids(bids).findIndex((b) => b.comment_id === commentId);
+  return index === -1 ? competingBids(bids).length + 1 : index + 1;
+}
+
 export function generateBidTable(bids: BidRecord[]): string {
-  if (bids.length === 0) {
-    return `| Rank | Bidder | Amount | Status | Tagline | Banner |
-|------|--------|--------|--------|---------|--------|
-| — | No bids yet | — | — | — |`;
+  const ranked = competingBids(bids);
+  if (ranked.length === 0) {
+    return `${TABLE_HEADER}
+| — | No bids yet | — | — | — | — |`;
   }
 
-  const sorted = [...bids].sort((a, b) => b.amount - a.amount);
-  const statusEmoji: Record<string, string> = {
-    pending: "⏳",
-    approved: "✅",
-    rejected: "❌",
-    unlinked_pending: "⚠️",
-  };
-
-  const rows = sorted
+  const rows = ranked
     .map((bid, i) => {
-      const emoji = statusEmoji[bid.status] ?? "⏳";
       const preview = `[preview](${bid.banner_url})`;
-      return `| ${i + 1} | @${bid.bidder} | $${bid.amount} | ${emoji} ${bid.status} | ${bid.tagline ?? ""} | ${preview} |`;
+      return `| ${i + 1} | @${bid.bidder} | $${bid.amount} | ${STATUS_LABELS[bid.status]} | ${bid.tagline ?? ""} | ${preview} |`;
     })
     .join("\n");
 
-  return `| Rank | Bidder | Amount | Status | Tagline | Banner |
-|------|--------|--------|--------|---------|--------|
+  return `${TABLE_HEADER}
 ${rows}`;
 }
 
 export function generateCurrentTopBid(bids: BidRecord[]): string {
-  const approved = bids.filter((b) => b.status === "approved").sort((a, b) => b.amount - a.amount);
+  const active = bids.filter((b) => b.status === "active").sort((a, b) => b.amount - a.amount);
 
-  if (approved.length === 0) {
-    return "No bids yet";
+  if (active.length === 0) {
+    return "No active bids yet";
   }
 
-  const top = approved[0]!;
+  const top = active[0]!;
   return `**$${top.amount}** by @${top.bidder} — [view bid](#issuecomment-${top.comment_id})`;
 }
 
@@ -140,7 +153,7 @@ bid:
 
 **${deadline}** — ${countdown}
 
-Bids must be submitted before the deadline. The highest approved bid wins the banner slot.
+Bids must be submitted before the deadline. The highest active bid wins the banner slot.
 
 ---
 *Powered by [BIDME](https://github.com/danarrib/bidme)*`);
@@ -215,7 +228,7 @@ export function updateBidIssueBody(
 export function generateNoBidsMessage(period: PeriodData): string {
   return `## 📭 Bidding Period Closed — No Winner
 
-The bidding period (**${period.start_date.split("T")[0]}** to **${period.end_date.split("T")[0]}**) has ended with no approved bids.
+The bidding period (**${period.start_date.split("T")[0]}** to **${period.end_date.split("T")[0]}**) has ended with no active bids.
 
 The banner slot remains unchanged. A new bidding period will open on the next scheduled cycle.
 

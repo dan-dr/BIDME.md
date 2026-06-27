@@ -156,13 +156,11 @@ export async function runCloseBidding(
   console.log(`  Period: ${periodData.period_id}`);
   console.log(`  Total bids: ${periodData.bids.length}`);
 
-  const approvedBids = periodData.bids.filter((b) => b.status === "approved");
-  console.log(`  Approved bids: ${approvedBids.length}`);
+  const activeBids = periodData.bids.filter((b) => b.status === "active");
+  console.log(`  Active bids: ${activeBids.length}`);
 
   const winner =
-    approvedBids.length > 0
-      ? approvedBids.reduce((max, b) => (b.amount > max.amount ? b : max))
-      : null;
+    activeBids.length > 0 ? activeBids.reduce((max, b) => (b.amount > max.amount ? b : max)) : null;
 
   const owner = process.env["GITHUB_REPOSITORY_OWNER"] ?? "";
   const fullRepo = process.env["GITHUB_REPOSITORY"] ?? "";

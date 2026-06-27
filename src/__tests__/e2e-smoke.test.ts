@@ -115,6 +115,7 @@ describe("full end-to-end smoke test", () => {
       .sort();
     expect(workflows).toEqual([
       "bidme-analytics.yml",
+      "bidme-check-grace.yml",
       "bidme-close.yml",
       "bidme-open.yml",
       "bidme-process-bid.yml",
@@ -127,9 +128,9 @@ describe("full end-to-end smoke test", () => {
 
     expect(parsed.bidding.schedule).toBe("monthly");
     expect(parsed.banner.formats).toEqual(["png", "jpg", "svg", "webp"]);
-    expect(parsed.approval.mode).toBe("emoji");
     expect(parsed.payment.mode).toBe("own_keys");
     expect(parsed.payment.bidme_fee_percent).toBe(10);
+    expect(parsed.payment.unlinked_grace_hours).toBe(24);
     expect(parsed.tracking.utm_params).toBe("utm_source=bidme&utm_campaign={owner}/{repo}");
   });
 

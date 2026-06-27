@@ -59,7 +59,7 @@ content_guidelines:
     expect(parsed.content_guidelines.required).toEqual(["alt text"]);
   });
 
-  test("adds default sections (approval, payment, tracking) to migrated config", async () => {
+  test("adds default sections (payment, tracking) to migrated config", async () => {
     const yaml = `bidding:
   schedule: monthly
   duration: 7
@@ -73,8 +73,8 @@ content_guidelines:
     const tomlContent = await Bun.file(join(tempDir, ".bidme", "config.toml")).text();
     const parsed = parseToml(tomlContent);
 
-    expect(parsed.approval.mode).toBe("emoji");
     expect(parsed.payment.mode).toBe("own_keys");
+    expect(parsed.payment.unlinked_grace_hours).toBe(24);
     expect(parsed.tracking.append_utm).toBe(true);
   });
 

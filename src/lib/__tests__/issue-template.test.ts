@@ -35,7 +35,7 @@ function makeBid(overrides: Partial<BidRecord> = {}): BidRecord {
     banner_url: "https://example.com/banner.png",
     destination_url: "https://example.com",
     tagline: "Build faster",
-    status: "approved",
+    status: "active",
     comment_id: 1001,
     timestamp: "2026-02-02T10:00:00.000Z",
     ...overrides,
@@ -81,16 +81,18 @@ describe("generateBidTable", () => {
     expect(lines[4]).toContain("| 3 |");
   });
 
-  test("shows correct status emojis", () => {
+  test("shows competing bids with status labels and hides terminal ones", () => {
     const bids = [
-      makeBid({ status: "approved", comment_id: 1 }),
-      makeBid({ status: "pending", comment_id: 2, amount: 50 }),
-      makeBid({ status: "rejected", comment_id: 3, amount: 25 }),
+      makeBid({ status: "active", comment_id: 1 }),
+      makeBid({ status: "unlinked_pending", comment_id: 2, amount: 50, bidder: "pending-user" }),
+      makeBid({ status: "rejected", comment_id: 3, amount: 25, bidder: "rejected-user" }),
+      makeBid({ status: "expired", comment_id: 4, amount: 30, bidder: "expired-user" }),
     ];
     const table = generateBidTable(bids);
-    expect(table).toContain("✅ approved");
-    expect(table).toContain("⏳ pending");
-    expect(table).toContain("❌ rejected");
+    expect(table).toContain("✅ active");
+    expect(table).toContain("💳 payment pending");
+    expect(table).not.toContain("@rejected-user");
+    expect(table).not.toContain("@expired-user");
   });
 
   test("includes banner preview links", () => {
@@ -101,23 +103,23 @@ describe("generateBidTable", () => {
 });
 
 describe("generateCurrentTopBid", () => {
-  test("returns 'No bids yet' when no bids", () => {
-    expect(generateCurrentTopBid([])).toBe("No bids yet");
+  test("returns 'No active bids yet' when no bids", () => {
+    expect(generateCurrentTopBid([])).toBe("No active bids yet");
   });
 
-  test("returns 'No bids yet' when no approved bids", () => {
+  test("returns 'No active bids yet' when no active bids", () => {
     const bids = [
-      makeBid({ status: "pending" }),
+      makeBid({ status: "unlinked_pending" }),
       makeBid({ status: "rejected", amount: 200, comment_id: 2 }),
     ];
-    expect(generateCurrentTopBid(bids)).toBe("No bids yet");
+    expect(generateCurrentTopBid(bids)).toBe("No active bids yet");
   });
 
-  test("returns highest approved bid", () => {
+  test("returns highest active bid", () => {
     const bids = [
-      makeBid({ bidder: "low", amount: 50, status: "approved", comment_id: 1 }),
-      makeBid({ bidder: "high", amount: 200, status: "approved", comment_id: 2 }),
-      makeBid({ bidder: "pending-high", amount: 300, status: "pending", comment_id: 3 }),
+      makeBid({ bidder: "low", amount: 50, status: "active", comment_id: 1 }),
+      makeBid({ bidder: "high", amount: 200, status: "active", comment_id: 2 }),
+      makeBid({ bidder: "unlinked-high", amount: 300, status: "unlinked_pending", comment_id: 3 }),
     ];
     const result = generateCurrentTopBid(bids);
     expect(result).toContain("$200");
@@ -205,7 +207,7 @@ describe("generateBidIssueBody", () => {
   test("includes deadline section", () => {
     const body = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
     expect(body).toContain("### Deadline");
-    expect(body).toContain("highest approved bid wins");
+    expect(body).toContain("highest active bid wins");
   });
 
   test("shows first bidding period message when no previous stats", () => {
@@ -222,24 +224,24 @@ describe("generateBidIssueBody", () => {
     expect(body).toContain("Stats based on the previous full week of sponsorship");
   });
 
-  test("shows top bid when period has approved bids", () => {
-    const bids = [makeBid({ bidder: "alice", amount: 150, status: "approved", comment_id: 5001 })];
+  test("shows top bid when period has active bids", () => {
+    const bids = [makeBid({ bidder: "alice", amount: 150, status: "active", comment_id: 5001 })];
     const body = generateBidIssueBody(DEFAULT_CONFIG, makePeriod({ bids }));
     expect(body).toContain("$150");
     expect(body).toContain("@alice");
     expect(body).toContain("#issuecomment-5001");
   });
 
-  test("bid table includes all bids with statuses", () => {
+  test("bid table includes competing bids with status labels", () => {
     const bids = [
-      makeBid({ bidder: "alice", amount: 150, status: "approved", comment_id: 101 }),
-      makeBid({ bidder: "bob", amount: 100, status: "pending", comment_id: 102 }),
+      makeBid({ bidder: "alice", amount: 150, status: "active", comment_id: 101 }),
+      makeBid({ bidder: "bob", amount: 100, status: "unlinked_pending", comment_id: 102 }),
     ];
     const body = generateBidIssueBody(DEFAULT_CONFIG, makePeriod({ bids }));
     expect(body).toContain("@alice");
     expect(body).toContain("@bob");
-    expect(body).toContain("✅ approved");
-    expect(body).toContain("⏳ pending");
+    expect(body).toContain("✅ active");
+    expect(body).toContain("💳 payment pending");
   });
 
   test("uses weekly schedule in header when config is weekly", () => {
@@ -270,7 +272,7 @@ describe("updateBidIssueBody", () => {
     const initial = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
     expect(initial).toContain("No bids yet");
 
-    const bids = [makeBid({ bidder: "alice", amount: 200, status: "approved", comment_id: 42 })];
+    const bids = [makeBid({ bidder: "alice", amount: 200, status: "active", comment_id: 42 })];
     const updated = updateBidIssueBody(initial, bids);
 
     expect(updated).toContain("$200");
@@ -283,8 +285,8 @@ describe("updateBidIssueBody", () => {
     const initial = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
 
     const bids = [
-      makeBid({ bidder: "alice", amount: 200, status: "approved", comment_id: 1 }),
-      makeBid({ bidder: "bob", amount: 100, status: "pending", comment_id: 2 }),
+      makeBid({ bidder: "alice", amount: 200, status: "active", comment_id: 1 }),
+      makeBid({ bidder: "bob", amount: 100, status: "unlinked_pending", comment_id: 2 }),
     ];
     const updated = updateBidIssueBody(initial, bids);
 
@@ -347,19 +349,19 @@ describe("updateBidIssueBody", () => {
     expect(update2).not.toMatch(/\n{4,}/);
   });
 
-  test("correctly shows highest approved bid when pending bids are higher", () => {
+  test("correctly shows highest active bid when unlinked bids are higher", () => {
     const initial = generateBidIssueBody(DEFAULT_CONFIG, makePeriod());
 
     const bids = [
-      makeBid({ bidder: "approved", amount: 100, status: "approved", comment_id: 1 }),
-      makeBid({ bidder: "pending", amount: 500, status: "pending", comment_id: 2 }),
+      makeBid({ bidder: "active-user", amount: 100, status: "active", comment_id: 1 }),
+      makeBid({ bidder: "unlinked", amount: 500, status: "unlinked_pending", comment_id: 2 }),
     ];
     const updated = updateBidIssueBody(initial, bids);
 
     const topBidMatch = updated.match(/### 🔝 Current Top Bid\n\n([\s\S]*?)\n\n### /);
     expect(topBidMatch).not.toBeNull();
     expect(topBidMatch![1]).toContain("$100");
-    expect(topBidMatch![1]).toContain("@approved");
+    expect(topBidMatch![1]).toContain("@active-user");
     expect(topBidMatch![1]).not.toContain("$500");
   });
 });
@@ -403,6 +405,6 @@ describe("generateNoBidsMessage", () => {
     expect(msg).toContain("2026-02-01");
     expect(msg).toContain("2026-02-08");
     expect(msg).toContain("No Winner");
-    expect(msg).toContain("no approved bids");
+    expect(msg).toContain("no active bids");
   });
 });

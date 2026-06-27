@@ -125,19 +125,6 @@ export async function collectConfig(): Promise<WizardConfig> {
     process.exit(0);
   }
 
-  const approvalMode = await clack.select({
-    message: "Bid approval mode:",
-    options: [
-      { value: "auto" as const, label: "Auto-accept all bids" },
-      { value: "emoji" as const, label: "Owner command approval", hint: "comment /approve @user" },
-    ],
-    initialValue: "emoji" as const,
-  });
-  if (clack.isCancel(approvalMode)) {
-    clack.cancel("Setup cancelled.");
-    process.exit(0);
-  }
-
   clack.log.info("Payment provider: Stripe");
   clack.log.info("Required: STRIPE_SECRET_KEY environment variable");
 
@@ -171,14 +158,11 @@ export async function collectConfig(): Promise<WizardConfig> {
       formats,
       max_size: parseInt(maxSizeStr, 10),
     },
-    approval: {
-      mode: approvalMode,
-      allowed_reactions: ["👍"],
-    },
     payment: {
       mode: paymentMode,
       base_url: "",
       bidme_fee_percent: 10,
+      unlinked_grace_hours: 24,
     },
     tracking: {
       append_utm: true,

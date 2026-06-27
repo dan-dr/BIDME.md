@@ -40,6 +40,12 @@ async function main(): Promise<void> {
       if (!result.success) process.exitCode = 1;
       break;
     }
+    case "check-grace": {
+      const { runCheckGrace } = await import("./commands/check-grace.js");
+      const result = await runCheckGrace({ target });
+      if (!result.success) process.exitCode = 1;
+      break;
+    }
     case "update-analytics": {
       const { runUpdateAnalytics } = await import("./commands/update-analytics.js");
       const result = await runUpdateAnalytics({ target });

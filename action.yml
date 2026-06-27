@@ -3,7 +3,7 @@ description: "Run BIDME automation inside a GitHub repository"
 
 inputs:
   command:
-    description: "BIDME runtime command: open-bidding, process-bid, close-bidding, update-analytics"
+    description: "BIDME runtime command: open-bidding, process-bid, check-grace, close-bidding, update-analytics"
     required: true
   issue:
     description: "GitHub issue number for process-bid"

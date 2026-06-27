@@ -1,6 +1,6 @@
 # BIDME — Auction-Based README Sponsorships
 
-Let companies bid for banner space in your README. Highest approved bid wins.
+Let companies bid for banner space in your README. Highest active bid wins.
 
 <!-- bidme-banner-start -->
 [![BIDME Banner](https://img.shields.io/badge/Your_Ad_Here-BIDME-22c55e?style=for-the-badge&logoColor=white)](https://github.com/dan-dr/BIDME.md)
@@ -21,8 +21,9 @@ The CLI scaffolds config, four GitHub Actions workflows, Stripe/redirect pages, 
 
 1. **Init** — Run `bidme init` to scaffold `.bidme/` config, GitHub Actions workflows, and a banner placeholder in your README.
 2. **Bidding Opens** — A cron-triggered workflow creates a pinned GitHub Issue for the new bidding period. Sponsors comment with their bid.
-3. **Bids Come In** — Each bid is validated automatically. Stripe customer metadata is the bidder source of truth.
-4. **Winner Goes Live** — The period closes, the winner is charged, the README banner updates, and the period archive is committed.
+3. **Bids Come In** — Each bid is validated automatically. BIDME edits the bidder's own comment in place with a status banner: accepted (with rank), payment required (with a Stripe link), or rejected (with the reason). Stripe customer metadata is the bidder source of truth.
+4. **Payment Grace** — A bid without a linked Stripe payment method is paused and given a grace window. A scheduled check activates it once the card is linked, or expires it when the window elapses.
+5. **Winner Goes Live** — The period closes, the highest active bid is charged, the README banner updates, and the period archive is committed.
 
 Runtime state lives in GitHub Actions variables:
 
@@ -48,19 +49,22 @@ height = 100
 formats = ["png", "jpg", "svg"]
 max_size = 200             # Max file size in KB
 
-[approval]
-mode = "emoji"             # Repo owner approves with /approve @user
-allowed_reactions = ["👍"]
-
 [payment]
 mode = "own_keys"          # "own_keys" or "connect"
 bidme_fee_percent = 10
+unlinked_grace_hours = 24  # Hours an unlinked bid waits for a Stripe payment method
 base_url = ""              # defaults to https://{owner}.github.io/{repo}/.bidme/pay/stripe
 
 [content_guidelines]
 prohibited = ["adult content", "gambling", "misleading claims"]
 required = ["alt text", "clear branding"]
 ```
+
+There is no manual approval step. A bid becomes **active** the moment its bidder
+has a linked Stripe payment method, and the highest active bid at period close
+wins. `content_guidelines.prohibited` are the owner's house rules (for example
+`"crypto"`); bids matching them are rejected automatically. Owners who want to
+decline a specific bid for any other reason can simply delete its comment.
 
 ## CLI Commands
 
@@ -71,7 +75,7 @@ required = ["alt text", "clear branding"]
 | `bidme update` | Upgrade an existing BIDME installation (runs migrations) |
 | `bidme remove` | Remove BIDME files from a repository |
 
-Runtime jobs (`open-bidding`, `process-bid`, `close-bidding`, `update-analytics`) run through the generated GitHub workflows using the BIDME GitHub Action.
+Runtime jobs (`open-bidding`, `process-bid`, `check-grace`, `close-bidding`, `update-analytics`) run through the generated GitHub workflows using the BIDME GitHub Action.
 
 ## Payment Setup
 
@@ -112,7 +116,7 @@ Attach the banner image directly to the GitHub comment. GitHub hosts it and BIDM
 | `destination_url` | Yes | Click-through destination URL |
 | `tagline` | Yes | Short accessible banner description |
 
-Your bid is validated automatically. If it meets all requirements and has a linked payment method, it enters the ranking. The repo owner can approve a pending bid with `/approve @username`. The highest approved bid at period close wins.
+Your bid is validated automatically and BIDME edits your comment with the result. If it meets all requirements and you have a linked Stripe payment method, it becomes **active** and enters the ranking immediately. If you have no payment method yet, your comment shows a Stripe link — authorize your card within the grace window and a scheduled check activates the bid. The highest active bid at period close wins.
 
 ## License
 

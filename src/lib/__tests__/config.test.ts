@@ -38,8 +38,8 @@ describe("TOML config system", () => {
       expect(config.bidding.increment).toBe(5);
       expect(config.banner.width).toBe(800);
       expect(config.banner.formats).toEqual(["png", "jpg", "svg", "webp"]);
-      expect(config.approval.mode).toBe("emoji");
       expect(config.payment.mode).toBe("own_keys");
+      expect(config.payment.unlinked_grace_hours).toBe(24);
       expect(config.tracking.append_utm).toBe(true);
       expect(config.tracking.utm_params).toBe("utm_source=bidme&utm_campaign={owner}/{repo}");
       expect(config.content_guidelines.prohibited).toEqual([
@@ -68,7 +68,6 @@ increment = 10
       expect(config.banner.width).toBe(DEFAULT_CONFIG.banner.width);
       expect(config.banner.height).toBe(DEFAULT_CONFIG.banner.height);
       expect(config.banner.formats).toEqual(DEFAULT_CONFIG.banner.formats);
-      expect(config.approval.mode).toBe(DEFAULT_CONFIG.approval.mode);
       expect(config.payment.mode).toBe(DEFAULT_CONFIG.payment.mode);
       expect(config.tracking.append_utm).toBe(DEFAULT_CONFIG.tracking.append_utm);
       expect(config.content_guidelines.prohibited).toEqual(
@@ -102,15 +101,12 @@ increment = 10
           formats: ["png", "webp"],
           max_size: 500,
         },
-        approval: {
-          mode: "auto",
-          allowed_reactions: ["👍", "🎉"],
-        },
         payment: {
           mode: "connect",
           base_url: "https://custom.dev",
           stripe_account_id: "acct_123",
           bidme_fee_percent: 15,
+          unlinked_grace_hours: 48,
         },
         tracking: {
           append_utm: false,
@@ -133,10 +129,9 @@ increment = 10
       expect(loaded.banner.height).toBe(200);
       expect(loaded.banner.formats).toEqual(["png", "webp"]);
       expect(loaded.banner.max_size).toBe(500);
-      expect(loaded.approval.mode).toBe("auto");
-      expect(loaded.approval.allowed_reactions).toEqual(["👍", "🎉"]);
       expect(loaded.payment.mode).toBe("connect");
       expect(loaded.payment.stripe_account_id).toBe("acct_123");
+      expect(loaded.payment.unlinked_grace_hours).toBe(48);
       expect(loaded.tracking.append_utm).toBe(false);
       expect(loaded.tracking.utm_params).toBe("source=custom");
       expect(loaded.content_guidelines.prohibited).toEqual(["spam"]);
@@ -189,12 +184,12 @@ increment = 10
       ).toThrow("bidding.schedule must be one of: weekly, monthly");
     });
 
-    test("rejects invalid approval mode", () => {
+    test("rejects negative grace hours", () => {
       expect(() =>
         validateConfig({
-          approval: { mode: "manual" },
+          payment: { unlinked_grace_hours: -1 },
         }),
-      ).toThrow("approval.mode must be one of: auto, emoji");
+      ).toThrow("payment.unlinked_grace_hours must be a non-negative number");
     });
 
     test("rejects invalid payment mode", () => {
@@ -232,7 +227,7 @@ increment = 10
       expect(result.bidding.schedule).toBe("weekly");
       expect(result.bidding.duration).toBe(DEFAULT_CONFIG.bidding.duration);
       expect(result.banner).toEqual(DEFAULT_CONFIG.banner);
-      expect(result.approval).toEqual(DEFAULT_CONFIG.approval);
+      expect(result.payment).toEqual(DEFAULT_CONFIG.payment);
     });
   });
 
@@ -243,7 +238,6 @@ increment = 10
       expect(toml).toContain("# BIDME Configuration");
       expect(toml).toContain("# Bidding schedule and pricing");
       expect(toml).toContain("# Banner display constraints");
-      expect(toml).toContain("# Bid approval settings");
       expect(toml).toContain("# Payment configuration");
       expect(toml).toContain("# UTM tracking for bid links");
       expect(toml).toContain("# Content guidelines for banner submissions");
@@ -256,8 +250,8 @@ increment = 10
       expect(parsed.bidding.schedule).toBe(DEFAULT_CONFIG.bidding.schedule);
       expect(parsed.bidding.duration).toBe(DEFAULT_CONFIG.bidding.duration);
       expect(parsed.banner.width).toBe(DEFAULT_CONFIG.banner.width);
-      expect(parsed.approval.mode).toBe(DEFAULT_CONFIG.approval.mode);
       expect(parsed.payment.mode).toBe(DEFAULT_CONFIG.payment.mode);
+      expect(parsed.payment.unlinked_grace_hours).toBe(DEFAULT_CONFIG.payment.unlinked_grace_hours);
       expect(parsed.tracking.append_utm).toBe(DEFAULT_CONFIG.tracking.append_utm);
     });
   });

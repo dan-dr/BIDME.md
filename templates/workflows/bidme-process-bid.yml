@@ -15,16 +15,8 @@ jobs:
     if: |
       !github.event.issue.pull_request &&
       contains(toJSON(github.event.issue.labels.*.name), 'bidme') &&
-      (
-        (
-          contains(github.event.comment.body, '---') &&
-          contains(github.event.comment.body, 'bid:')
-        ) ||
-        (
-          startsWith(github.event.comment.body, '/approve') &&
-          github.event.comment.user.login == github.repository_owner
-        )
-      )
+      contains(github.event.comment.body, '---') &&
+      contains(github.event.comment.body, 'bid:')
     steps:
       - uses: actions/checkout@v4
 

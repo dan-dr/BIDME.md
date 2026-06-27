@@ -89,6 +89,7 @@ export async function runDoctor(
   const workflows = [
     "bidme-open.yml",
     "bidme-process-bid.yml",
+    "bidme-check-grace.yml",
     "bidme-close.yml",
     "bidme-analytics.yml",
   ];
